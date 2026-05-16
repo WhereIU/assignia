@@ -1,0 +1,48 @@
+version: '3.8'
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: >
+      sh -c "while ! nc -z db 5432; do sleep 0.1; done;
+             python manage.py migrate --noinput;
+             python manage.py collectstatic --noinput --clear;
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./app:/app
+      - static_volume:/app/staticfiles
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    networks:
+      - assignia-network
+
+  db:
+    image: postgres:15
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB}
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    networks:
+      - assignia-network
+
+networks:
+  assignia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  static_volume:
