@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'projects:public_projects' %}">Публичные проекты</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ project.name }}</li>
+  </ol>
+</nav>
+<h1>{{ project.name }}</h1>
+<h1>{{ project.name }}</h1>
+<p>{{ project.description }}</p>
+<hr>
+<h2>Задачи проекта</h2>
+{% for task in tasks %}
+  {% include 'tasks/partials/task_item.html' with task=task show_take_button=True %}
+{% empty %}
+  <p>Задач пока нет.</p>
+{% endfor %}
+
+{% if user.is_authenticated %}
+    <button class="btn btn-outline-primary btn-sm" data-bs-toggle="modal" data-bs-target="#requestModal">Оставить запрос</button>
+{% endif %}
+<div class="modal fade" id="requestModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <form hx-post="{% url 'tasks:create_request' project.pk %}" hx-target="#requestResult">
+        {% csrf_token %}
+        <div class="modal-header">
+          <h5 class="modal-title">Оставить запрос</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body">
+          <textarea class="form-control" name="description" rows="3" placeholder="Опишите задачу..."></textarea>
+        </div>
+        <div class="modal-footer">
+          <button type="submit" class="btn btn-success">Отправить</button>
+        </div>
+      </form>
+      <div id="requestResult"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}

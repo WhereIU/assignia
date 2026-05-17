@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}{{ task.title }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+  <ol class="breadcrumb">
+    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'projects:public_projects' %}">Публичные проекты</a></li>
+    <li class="breadcrumb-item"><a href="{% url 'projects:project_detail' task.project.pk %}">{{ task.project.name }}</a></li>
+    <li class="breadcrumb-item active" aria-current="page">{{ task.title }}</li>
+  </ol>
+</nav>
+<h1>{{ task.title }}</h1>
+<h1>{{ task.title }}</h1>
+<div class="card mb-3">
+  <div class="card-body">
+    <p>{{ task.description }}</p>
+    <span class="badge bg-info">Приоритет: {{ task.priority }}</span>
+    <span class="badge bg-info">Шанс риска: {{ task.risk_chance }}</span>
+    <span class="badge bg-info">Последствия: {{ task.risk_impact }}</span>
+    <span class="badge bg-primary">{{ task.get_status_display }}</span>
+    {% if task.deadline %}
+      <small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>
+    {% endif %}
+    {% if task.assignee %}
+      <div>Исполнитель: {{ task.assignee.first_name|default:task.assignee.username }}</div>
+    {% endif %}
+    {% if show_take_button and user.is_authenticated and task.status == 'new' and not task.assignee %}
+      <button hx-post="{% url 'tasks:take_task' task.pk %}"
+              hx-target="closest .card"
+              hx-swap="outerHTML"
+              class="btn btn-sm btn-success mt-2">Взять</button>
+    {% endif %}
+  </div>
+</div>
+
+<h3>Комментарии</h3>
+<div id="comments-list">
+  {% include 'tasks/partials/comments.html' with comments=comments %}
+</div>
+
+{% if user.is_authenticated %}
+<form hx-post="{% url 'tasks:add_comment' task.pk %}" hx-target="#comments-list" hx-swap="innerHTML">
+  {% csrf_token %}
+  <div class="mb-3">
+    <textarea class="form-control" name="text" rows="2" placeholder="Ваш комментарий..."></textarea>
+  </div>
+  <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+</form>
+{% endif %}
+{% endblock %}

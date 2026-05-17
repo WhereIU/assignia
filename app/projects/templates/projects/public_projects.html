@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}Публичные проекты{% endblock %}
+{% block content %}
+<h1>Публичные проекты</h1>
+<div class="row">
+    {% for project in projects %}
+    <div class="col-md-4 mb-3">
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title"><a href="{% url 'projects:project_detail' project.pk %}">{{ project.name }}</a></h5>
+                <p class="card-text">{{ project.description|truncatechars:100 }}</p>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <p>Нет публичных проектов.</p>
+    {% endfor %}
+</div>
+{% endblock %}

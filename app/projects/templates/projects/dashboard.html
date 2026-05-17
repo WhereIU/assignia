@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд{% endblock %}
+{% block content %}
+<h1>Мой дашборд</h1>
+
+<div class="row">
+    <div class="col-md-6">
+        <h2>Мои проекты</h2>
+        <ul class="list-group">
+            {% for project in user_projects %}
+            <li class="list-group-item">
+                <a href="{% url 'projects:project_detail' project.pk %}">{{ project.name }}</a>
+            </li>
+            {% empty %}
+            <p>Вы не участвуете ни в одном проекте.</p>
+            {% endfor %}
+        </ul>
+    </div>
+    <div class="col-md-6">
+        <h2>Мои задачи</h2>
+        <ul class="list-group">
+            {% for task in assigned_tasks %}
+            <li class="list-group-item">
+                {{ task.title }} ({{ task.get_status_display }})
+                <span class="badge bg-{% if task.priority >= 4 %}danger{% else %}secondary{% endif %}">Приоритет: {{ task.priority }}</span>
+            </li>
+            {% empty %}
+            <p>У вас нет назначенных задач.</p>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+
+<h2 class="mt-4">Доступные задачи</h2>
+<ul class="list-group">
+    {% for task in available_tasks %}
+    <li class="list-group-item">
+        {{ task.title }} (проект: {{ task.project.name }})
+        <a href="#" class="btn btn-sm btn-success">Взять</a>
+    </li>
+    {% empty %}
+    <p>Нет доступных задач.</p>
+    {% endfor %}
+</ul>
+{% endblock %}

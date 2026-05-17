@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}Аналитика: {{ project.name }}{% endblock %}
+{% block content %}
+<a href="{% url 'projects:project_detail' project.pk %}" class="btn btn-outline-secondary btn-sm mb-3">← К проекту</a>
+<h1>Аналитика проекта «{{ project.name }}»</h1>
+
+<h2>По направлениям</h2>
+<table class="table table-striped">
+    <thead><tr><th>Направление</th><th>Всего задач</th><th>Новые</th><th>В работе</th><th>Выполнено</th></tr></thead>
+    <tbody>
+    {% for d in directions %}
+        <tr>
+            <td>{{ d.name }}</td>
+            <td>{{ d.total_tasks }}</td>
+            <td>{{ d.new_tasks }}</td>
+            <td>{{ d.in_progress_tasks }}</td>
+            <td>{{ d.done_tasks }}</td>
+        </tr>
+    {% empty %}
+        <tr><td colspan="5">Нет направлений</td></tr>
+    {% endfor %}
+    </tbody>
+</table>
+
+<h2>По участникам</h2>
+<table class="table table-striped">
+    <thead><tr><th>Участник</th><th>Назначено задач</th><th>Выполнено</th></tr></thead>
+    <tbody>
+    {% for p in participants %}
+        <tr>
+            <td>{{ p.first_name|default:p.username }}</td>
+            <td>{{ p.assigned_count}}</td>
+            <td>{{ p.done_count }}</td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
