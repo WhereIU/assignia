@@ -7,6 +7,12 @@ run:
 run-build:
 	docker compose up --build
 
+run-prod:
+	docker compose -f docker-compose.prod.yml up
+
+run-build-prod:
+	docker compose -f docker-compose.prod.yml up --build
+
 docker-shell:
 	docker compose run --rm web python manage.py shell
 

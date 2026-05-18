@@ -12,9 +12,11 @@ staticfiles/
 
 # Environment
 .env
+.env.prod
 venv/
 env/
 .venv/
+
 
 # Docker
 docker-compose.override.yml
