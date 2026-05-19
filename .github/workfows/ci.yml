@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: ci
+    services:
+      db:
+        image: postgres:15
+        env:
+          POSTGRES_DB: assignia_db
+          POSTGRES_USER: assignia_user
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U assignia_user -d assignia_db"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      - name: Install dependencies
+        run: |
+          cd app
+          pip install -r ../requirements-dev.txt
+      - name: Run tests
+        env:
+          SECRET_KEY: test-secret-key
+          DEBUG: '1'
+          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+          POSTGRES_DB: assignia_db
+          POSTGRES_USER: assignia_user
+          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+          SQL_HOST: localhost
+          SQL_PORT: 5432
+          DATABASE: postgres
+        run: cd app && pytest
