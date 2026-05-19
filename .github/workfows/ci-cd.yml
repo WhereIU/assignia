@@ -1,4 +1,4 @@
-name: CI
+name: CI/CD
 
 on:
   push:
@@ -37,7 +37,7 @@ jobs:
           pip install -r ../requirements-dev.txt
       - name: Run tests
         env:
-          SECRET_KEY: test-secret-key
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
           DEBUG: '1'
           DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
           POSTGRES_DB: assignia_db
@@ -47,3 +47,20 @@ jobs:
           SQL_PORT: 5432
           DATABASE: postgres
         run: cd app && pytest
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    environment: cd
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v3
+      - name: Run Ansible playbook
+        uses: dawidd6/action-ansible-playbook@v2
+        with:
+          playbook: ansible/deploy.yml
+          inventory: ansible/hosts.ini
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          options: |
+            --user ${{ secrets.SSH_USER }}
+            --extra-vars "ansible_host=${{ secrets.SSH_HOST }}"
