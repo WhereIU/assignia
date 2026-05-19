@@ -1,5 +1,5 @@
 install: docker-build
-	echo "Установка"
+	echo "Установка завершена"
 
 run:
 	docker compose up
