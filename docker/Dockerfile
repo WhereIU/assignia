@@ -9,13 +9,13 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements-dev.txt .
+RUN pip install --no-cache-dir -r requirements-dev.txt
 
 ARG UID=1000
 ARG GID=1000
 RUN groupadd -g $GID assignia && useradd -m -u $UID -g $GID assignia
 
-# Даёт полные права на запись в /app для всех (только для локальной разработки)
 RUN chmod 777 /app
 RUN chown -R assignia:assignia /app
 
