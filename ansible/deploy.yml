@@ -1,0 +1,18 @@
+---
+- name: Deploy Assignia
+  hosts: assignia_server
+  tasks:
+    - name: Copy project files
+      copy:
+        src: "{{ item }}"
+        dest: /opt/assignia/
+      loop:
+        - ../docker-compose.prod.yml
+        - ../.env.prod
+        - ../nginx/nginx.conf
+
+    - name: Start services
+      docker_compose:
+        project_src: /opt/assignia
+        files: docker-compose.prod.yml
+        state: present
