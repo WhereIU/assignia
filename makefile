@@ -18,3 +18,9 @@ docker-shell:
 
 docker-build:
 	docker compose build --build-arg UID=$$(id -u) --build-arg GID=$$(id -g) web
+
+save-images:
+	docker save -o assignia-images.tar python:3.11-slim postgres:15 nginx:latest
+
+load-images:
+	docker load -i assignia-images.tar
