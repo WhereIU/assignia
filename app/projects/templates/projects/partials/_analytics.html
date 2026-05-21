@@ -24,7 +24,7 @@
     <tbody>
     {% for p in participants %}
         <tr>
-            <td>{{ p.first_name|default:p.username }}</td>
+            <td><a href="{% url 'users:public_profile' username=p.username %}" class="text-decoration-none">{{ p.username }}</a></td>
             <td>{{ p.assigned_count }}</td>
             <td>{{ p.done_count }}</td>
         </tr>

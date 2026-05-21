@@ -1,14 +1,20 @@
 {% extends 'base.html' %}
 {% block title %}{{ task.title }}{% endblock %}
+{% block navbar_left %}
+<ul class="navbar-nav me-auto align-items-center">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'users:public_profile' username=project.owner.username %}">{{ project.owner.username }}</a>
+    </li>
+    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
+    <li class="nav-item">
+        <a class="nav-link fw-bold" href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">{{ project.name }}</a>
+    </li>
+    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
+    <li class="nav-item"><span class="nav-link text-white-50">{{ task.title }}</span></li>
+</ul>
+{% endblock %}
+
 {% block content %}
-<nav aria-label="breadcrumb">
-  <ol class="breadcrumb">
-    <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'projects:available_projects' %}">Проекты</a></li>
-    <li class="breadcrumb-item"><a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">{{ project.name }}</a></li>
-    <li class="breadcrumb-item active">{{ task.title }}</li>
-  </ol>
-</nav>
 
 <div class="card mb-4">
   <div class="card-body">
@@ -23,7 +29,9 @@
     {% if task.deadline %}<small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>{% endif %}
     <div class="mt-2">
       <i class="bi bi-person me-1"></i>
-      Исполнитель: {% if task.assignee %}{{ task.assignee.first_name|default:task.assignee.username }}{% else %}не назначен{% endif %}
+        Исполнитель: {% if task.assignee %}
+            <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none">{{ task.assignee.username }}</a>
+        {% else %}не назначен{% endif %}
     </div>
 
     {% if task.status == 'new' and not task.assignee and user.is_authenticated %}
@@ -37,7 +45,7 @@
 
 <h3>Комментарии</h3>
 <div id="comments-list">
-  {% include 'tasks/partials/comments.html' with comments=comments %}
+  {% include 'tasks/partials/_comments.html' with comments=comments %}
 </div>
 
 {% if user.is_authenticated %}

@@ -4,6 +4,8 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.views.decorators.http import require_http_methods
 from projects.models import Project, ProjectMembership
 from .models import Task, TaskRequest, Comment, Notification
+from .forms import TaskCreateForm
+from django.contrib import messages
 
 @login_required
 @require_http_methods(["POST"])
@@ -18,6 +20,30 @@ def take_task(request, pk):
     task.status = 'in_progress'
     task.save()
     return render(request, 'tasks/partials/_task_item.html', {'task': task})
+
+@login_required
+def task_create(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
+    if not membership:
+        return HttpResponseForbidden("Вы не участник проекта")
+    
+    if request.method == 'POST':
+        form = TaskCreateForm(request.POST, project=project)
+        if form.is_valid():
+            task = form.save(commit=False)
+            task.project = project
+            task.creator = request.user
+            task.save()
+            messages.success(request, f'Задача «{task.title}» создана!')
+            return redirect('projects:project_detail', username=username, slug=slug)
+    else:
+        form = TaskCreateForm(project=project)
+    
+    return render(request, 'tasks/create.html', {
+        'form': form,
+        'project': project,
+    })
 
 @login_required
 @require_http_methods(["POST"])

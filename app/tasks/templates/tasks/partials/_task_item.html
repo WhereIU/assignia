@@ -16,7 +16,11 @@
       <small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>
     {% endif %}
     {% if task.assignee %}
-      <div class="mt-1"><small>Исполнитель: {{ task.assignee.first_name|default:task.assignee.username }}</small></div>
+        <div class="mt-1"><small>Исполнитель: 
+            <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none text-muted">
+                {{ task.assignee.username }}
+            </a>
+        </small></div>
     {% endif %}
     <div class="mt-1 text-muted small">
       <i class="bi bi-kanban"></i> {{ task.project.name }}

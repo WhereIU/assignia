@@ -1,0 +1,13 @@
+{% for msg in messages_list %}
+<div class="border rounded p-2 mb-2">
+    <strong>
+        <a href="{% url 'users:public_profile' username=msg.author.username %}" class="text-decoration-none text-reset">
+            {{ msg.author.username }}
+        </a>
+    </strong>
+    <small class="text-muted">{{ msg.created_at|date:"d.m H:i" }}</small>
+    <p class="mb-0">{{ msg.text }}</p>
+</div>
+{% empty %}
+<p class="text-muted">Пока нет сообщений.</p>
+{% endfor %}

@@ -37,8 +37,9 @@
                 </h5>
                 <p class="card-text">{{ project.description|truncatechars:100 }}</p>
                 <div class="d-flex align-items-center text-muted small">
-                    <i class="bi bi-person me-1"></i>
-                    {{ project.owner.first_name|default:project.owner.username }}
+                    <a href="{% url 'users:public_profile' username=project.owner.username %}" class="text-decoration-none text-muted">
+                        <i class="bi bi-person me-1"></i>{{ project.owner.username }}
+                    </a>
                 </div>
             </div>
         </div>

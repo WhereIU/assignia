@@ -1,19 +1,42 @@
 <div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>Мои запросы</h2>
-    <a href="{% url 'projects:project_request_create' username=project.owner.username slug=project.slug %}" class="btn btn-success">
+    <h2>
+        {% if is_tech_support %}Запросы проекта{% else %}Мои запросы{% endif %}
+    </h2>
+    <button class="btn btn-success btn-sm"
+            hx-get="{% url 'projects:request_create_form' username=project.owner.username slug=project.slug %}"
+            hx-target="#request-form-container" hx-swap="innerHTML">
         <i class="bi bi-plus-lg"></i> Создать запрос
-    </a>
+    </button>
 </div>
-{% if requests %}
-    <div class="list-group">
-    {% for req in requests %}
-        <div class="list-group-item">
-            <p class="mb-1">{{ req.description }}</p>
-            <small class="text-muted">{{ req.created_at|date:"d.m.Y H:i" }}</small>
-            <span class="badge bg-secondary">{{ req.get_status_display }}</span>
+
+<div style="position: relative;">
+    <div id="request-form-container"></div>
+
+    {% if requests %}
+        <div class="list-group">
+            {% for req in requests %}
+                <a href="{% url 'projects:request_detail' username=project.owner.username slug=project.slug request_pk=req.pk %}"
+                   class="list-group-item list-group-item-action">
+                    <div class="d-flex w-100 justify-content-between">
+                        <div>
+                            <strong>{{ req.description|truncatechars:80 }}</strong>
+                            <div class="text-muted small">
+                                {% if req.author %}
+                                    {{ req.author.username }}
+                                {% else %}
+                                    неизвестный
+                                {% endif %}
+                                · {{ req.created_at|date:"d.m.Y H:i" }}
+                            </div>
+                        </div>
+                        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% else %}secondary{% endif %} align-self-start">
+                            {{ req.get_status_display }}
+                        </span>
+                    </div>
+                </a>
+            {% endfor %}
         </div>
-    {% endfor %}
-    </div>
-{% else %}
-    <p>У вас пока нет запросов.</p>
-{% endif %}
+    {% else %}
+        <p>Нет запросов.</p>
+    {% endif %}
+</div>

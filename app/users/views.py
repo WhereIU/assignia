@@ -7,6 +7,7 @@ from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView, LogoutView
 from .forms import CustomUserCreationForm, CustomUserChangeForm
 from .models import User
+from projects.models import Project
 
 
 def register(request):
@@ -43,7 +44,18 @@ def profile(request):
 
 def public_profile(request, username):
     profile_user = get_object_or_404(User, username=username)
-    return render(request, 'users/public_profile.html', {'profile_user': profile_user})
+    owned_projects = Project.objects.filter(owner=profile_user, is_public=True).order_by('-created_at')
+    contributed_projects = Project.objects.filter(
+        projectmembership__user=profile_user,
+        is_public=True
+    ).exclude(owner=profile_user).distinct().order_by('-created_at')
+
+    return render(request, 'users/public_profile.html', {
+        'profile_user': profile_user,
+        'owned_projects': owned_projects,
+        'contributed_projects': contributed_projects,
+    })
+
 
 
 @login_required

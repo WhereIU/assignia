@@ -1,6 +1,10 @@
 {% for comment in comments %}
 <div class="border-bottom pb-1 mb-1">
-  <strong>{{ comment.author.first_name|default:comment.author.username }}</strong>
+  <strong>
+      <a href="{% url 'users:public_profile' username=comment.author.username %}" class="text-decoration-none text-reset">
+          {{ comment.author.username }}
+      </a>
+  </strong>
   <small class="text-muted">{{ comment.created_at|date:"d.m H:i" }}</small>
   <p class="mb-0">{{ comment.text }}</p>
 </div>

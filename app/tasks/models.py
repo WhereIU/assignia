@@ -40,6 +40,15 @@ class TaskRequest(models.Model):
     status = models.CharField(max_length=20, choices=[('pending', 'На рассмотрении'), ('reviewed', 'Рассмотрен'), ('converted', 'Преобразован в задачу')], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
+class RequestMessage(models.Model):
+    request = models.ForeignKey(TaskRequest, on_delete=models.CASCADE, related_name='messages')
+    author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    text = models.TextField()
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Сообщение от {self.author.username} в запросе #{self.request.pk}"
+
 class Comment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
