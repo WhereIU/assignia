@@ -1,0 +1,67 @@
+{% extends 'base.html' %}
+{% block title %}{{ project.name }}{% endblock %}
+
+{% block navbar_left %}
+<ul class="navbar-nav me-auto align-items-center">
+    <li class="nav-item">
+        <a class="nav-link" href="{% url 'users:public_profile' username=project.owner.username %}">
+            {{ project.owner.username }}
+        </a>
+    </li>
+    <li class="nav-item">
+        <span class="navbar-text text-secondary">/</span>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link fw-bold" href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">
+            {{ project.name }}
+        </a>
+    </li>
+    <li class="nav-item ms-3">
+        <ul class="nav nav-tabs" id="projectTabs">
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'tasks' or not tab %}active{% endif %}"
+                   hx-get="{% url 'projects:project_tasks' username=project.owner.username slug=project.slug %}"
+                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'requests' %}active{% endif %}"
+                   hx-get="{% url 'projects:project_requests_content' username=project.owner.username slug=project.slug %}"
+                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'analytics' %}active{% endif %}"
+                   hx-get="{% url 'projects:project_analytics_content' username=project.owner.username slug=project.slug %}"
+                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
+            </li>
+        </ul>
+    </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div id="tab-content">
+    {% if tab == 'tasks' or not tab %}
+        {% include 'projects/partials/_tasks.html' with tasks=tasks %}
+    {% elif tab == 'requests' %}
+        {% include 'projects/partials/_requests.html' with requests=requests %}
+    {% elif tab == 'analytics' %}
+        {% include 'projects/partials/_analytics.html' with directions=directions participants=participants %}
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+        if (evt.detail.target.id === 'tab-content') {
+            const tabs = document.querySelectorAll('#projectTabs .nav-link');
+            tabs.forEach(link => link.classList.remove('active'));
+            const requestPath = evt.detail.requestConfig.path;
+            const activeTab = document.querySelector(`#projectTabs .nav-link[hx-get="${requestPath}"]`);
+            if (activeTab) {
+                activeTab.classList.add('active');
+            }
+        }
+    });
+</script>
+{% endblock %}

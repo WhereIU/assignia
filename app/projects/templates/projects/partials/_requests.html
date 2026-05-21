@@ -1,0 +1,19 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Мои запросы</h2>
+    <a href="{% url 'projects:project_request_create' username=project.owner.username slug=project.slug %}" class="btn btn-success">
+        <i class="bi bi-plus-lg"></i> Создать запрос
+    </a>
+</div>
+{% if requests %}
+    <div class="list-group">
+    {% for req in requests %}
+        <div class="list-group-item">
+            <p class="mb-1">{{ req.description }}</p>
+            <small class="text-muted">{{ req.created_at|date:"d.m.Y H:i" }}</small>
+            <span class="badge bg-secondary">{{ req.get_status_display }}</span>
+        </div>
+    {% endfor %}
+    </div>
+{% else %}
+    <p>У вас пока нет запросов.</p>
+{% endif %}

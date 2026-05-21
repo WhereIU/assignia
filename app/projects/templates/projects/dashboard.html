@@ -1,45 +1,60 @@
 {% extends 'base.html' %}
 {% block title %}Дашборд{% endblock %}
 {% block content %}
-<h1>Мой дашборд</h1>
-
-<div class="row">
-    <div class="col-md-6">
-        <h2>Мои проекты</h2>
-        <ul class="list-group">
-            {% for project in user_projects %}
-            <li class="list-group-item">
-                <a href="{% url 'projects:project_detail' project.pk %}">{{ project.name }}</a>
-            </li>
-            {% empty %}
-            <p>Вы не участвуете ни в одном проекте.</p>
-            {% endfor %}
-        </ul>
-    </div>
-    <div class="col-md-6">
-        <h2>Мои задачи</h2>
-        <ul class="list-group">
-            {% for task in assigned_tasks %}
-            <li class="list-group-item">
-                {{ task.title }} ({{ task.get_status_display }})
-                <span class="badge bg-{% if task.priority >= 4 %}danger{% else %}secondary{% endif %}">Приоритет: {{ task.priority }}</span>
-            </li>
-            {% empty %}
-            <p>У вас нет назначенных задач.</p>
-            {% endfor %}
-        </ul>
-    </div>
+<div class="d-flex align-items-center mb-3">
+    <h1 class="me-3">Дашборд</h1>
 </div>
 
-<h2 class="mt-4">Доступные задачи</h2>
-<ul class="list-group">
-    {% for task in available_tasks %}
-    <li class="list-group-item">
-        {{ task.title }} (проект: {{ task.project.name }})
-        <a href="#" class="btn btn-sm btn-success">Взять</a>
+<ul class="nav nav-tabs mb-3" id="dashboardTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active" id="projects-tab" data-bs-toggle="tab" data-bs-target="#projects" type="button" role="tab">Мои проекты</button>
     </li>
-    {% empty %}
-    <p>Нет доступных задач.</p>
-    {% endfor %}
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="tasks-tab" data-bs-toggle="tab" data-bs-target="#tasks" type="button" role="tab">Мои задачи</button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link" id="available-tab" data-bs-toggle="tab" data-bs-target="#available" type="button" role="tab">Доступные задачи</button>
+    </li>
 </ul>
+
+<div class="tab-content">
+    <div class="tab-pane fade show active" id="projects" role="tabpanel">
+        <div class="row">
+            {% for project in user_projects %}
+            <div class="col-md-6 col-lg-4 mb-3">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h5 class="card-title">
+                            <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">{{ project.name }}</a>
+                        </h5>
+                        <p class="card-text small text-muted">{{ project.description|truncatechars:80 }}</p>
+                        <div class="d-flex align-items-center text-muted small">
+                            <i class="bi bi-person me-1"></i>
+                            {{ project.owner.first_name|default:project.owner.username }}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12"><p>Вы не участвуете ни в одном проекте.</p></div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="tab-pane fade" id="tasks" role="tabpanel">
+        {% for task in assigned_tasks %}
+            {% include 'tasks/partials/task_item.html' with task=task show_take_button=False %}
+        {% empty %}
+            <p>У вас нет назначенных задач.</p>
+        {% endfor %}
+    </div>
+
+    <div class="tab-pane fade" id="available" role="tabpanel">
+        {% for task in available_tasks %}
+            {% include 'tasks/partials/task_item.html' with task=task show_take_button=True %}
+        {% empty %}
+            <p>Нет доступных задач.</p>
+        {% endfor %}
+    </div>
+</div>
 {% endblock %}

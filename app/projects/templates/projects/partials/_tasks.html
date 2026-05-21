@@ -1,0 +1,6 @@
+<h2>Задачи проекта</h2>
+{% for task in tasks %}
+    {% include 'tasks/partials/task_item.html' with task=task show_take_button=True %}
+{% empty %}
+    <p>Задач пока нет.</p>
+{% endfor %}

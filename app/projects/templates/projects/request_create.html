@@ -1,0 +1,26 @@
+{% extends 'base.html' %}
+{% block title %}Создать запрос: {{ project.name }}{% endblock %}
+{% block content %}
+<nav aria-label="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'core:home' %}">Главная</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'projects:public_projects' %}">Проекты</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">{{ project.name }}</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'projects:project_requests_content' username=project.owner.username slug=project.slug %}">Мои запросы</a></li>
+        <li class="breadcrumb-item active">Новый запрос</li>
+    </ol>
+</nav>
+
+<h1>Создать запрос</h1>
+<p class="text-muted">Проект: {{ project.name }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    <div class="mb-3">
+        <label for="description" class="form-label">Опишите проблему или задачу</label>
+        <textarea class="form-control" id="description" name="description" rows="5" required></textarea>
+    </div>
+    <button type="submit" class="btn btn-success">Отправить</button>
+    <a href="{% url 'projects:project_requests_content' username=project.owner.username slug=project.slug %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}

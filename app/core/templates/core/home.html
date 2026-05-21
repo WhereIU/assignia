@@ -1,28 +1,55 @@
 {% extends 'base.html' %}
 {% block title %}Assignia — распределение задач{% endblock %}
 {% block content %}
-<h1>Добро пожаловать в Assignia</h1>
-<p>Система распределения задач с ролевой моделью, рисками и аналитикой.</p>
-{% if user.is_authenticated %}
-    <a href="{% url 'users:profile' %}" class="btn btn-primary">Профиль</a>
-{% else %}
-    <a href="{% url 'users:login' %}" class="btn btn-primary">Войти</a>
-    <a href="{% url 'users:register' %}" class="btn btn-success">Регистрация</a>
-{% endif %}
-<hr>
-<h2>Публичные проекты</h2>
-{% for project in public_projects %}
-    <div class="card mb-2">
-        <div class="card-body">
-            <h5 class="card-title">
-                <a href="{% url 'projects:project_detail' project.pk %}" class="text-decoration-none">
-                    {{ project.name }}
-                </a>
-            </h5>
-            <p class="card-text">{{ project.description|truncatechars:150 }}</p>
+
+<div class="text-center py-5">
+    <h1 class="display-4">Assignia</h1>
+    <p class="lead">Распределение задач с учётом ролей, рисков и аналитики</p>
+    <div class="mt-4">
+        <a href="{% url 'users:register' %}" class="btn btn-success btn-lg me-2">Регистрация</a>
+        <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg">Войти</a>
+    </div>
+</div>
+
+<h2>Вам может понравиться</h2>
+<div class="row">
+    {% for project in public_projects %}
+    <div class="col-md-4 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <h5 class="card-title">
+                    <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
+                        {{ project.name }}
+                    </a>
+                </h5>
+                <p class="card-text">{{ project.description|truncatechars:100 }}</p>
+                <div class="d-flex align-items-center text-muted small">
+                    <i class="bi bi-person me-1"></i>
+                    {{ project.owner.first_name|default:project.owner.username }}
+                </div>
+            </div>
         </div>
     </div>
-{% empty %}
-    <p>Пока нет публичных проектов.</p>
-{% endfor %}
+    {% empty %}
+    <p>Нет публичных проектов.</p>
+    {% endfor %}
+</div>
+
+<div class="row text-center mt-5">
+    <div class="col-md-4">
+        <i class="bi bi-people fs-1"></i>
+        <h5>Ролевая модель</h5>
+        <p>Гость, участник, менеджер, администратор, владелец</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-graph-up fs-1"></i>
+        <h5>Аналитика</h5>
+        <p>Статистика по направлениям и участникам</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-shield-check fs-1"></i>
+        <h5>Оценка рисков</h5>
+        <p>Шанс и последствия рисков по задачам</p>
+    </div>
+</div>
 {% endblock %}

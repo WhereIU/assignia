@@ -9,12 +9,11 @@ def create_comment_notification(sender, instance, created, **kwargs):
             Notification.objects.create(
                 recipient=instance.task.creator,
                 text=f'Новый комментарий от {instance.author.first_name or instance.author.username} в задаче «{instance.task.title}»',
-                url=f'/tasks/{instance.task.pk}/'
+                url=f'/tasks/user/{instance.task.project.owner.username}/projects/{instance.task.project.slug}/tasks/{instance.task.pk}/'
             )
-
         if instance.task.assignee and instance.task.assignee != instance.author and instance.task.assignee != instance.task.creator:
             Notification.objects.create(
                 recipient=instance.task.assignee,
                 text=f'Новый комментарий от {instance.author.first_name or instance.author.username} в задаче «{instance.task.title}»',
-                url=f'/tasks/{instance.task.pk}/'
+                url=f'/tasks/user/{instance.task.project.owner.username}/projects/{instance.task.project.slug}/tasks/{instance.task.pk}/'
             )

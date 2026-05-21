@@ -7,6 +7,6 @@ urlpatterns = [
     path('take/<int:pk>/', views.take_task, name='take_task'),
     path('<int:task_pk>/comment/', views.add_comment, name='add_comment'),
     path('request/<int:project_pk>/', views.create_request, name='create_request'),
-    path('<int:pk>/', views.task_detail, name='task_detail'),
     path('notifications/', views.notifications_list, name='notifications'),
+    path('projects/custom/<str:username>/<str:slug>/tasks/<int:task_pk>/', views.task_detail, name='task_detail'),
 ]
