@@ -1,13 +1,24 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.contrib.auth import login, logout, update_session_auth_hash
+from django.contrib import messages
+from django.contrib.auth import login, update_session_auth_hash
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
-from django.contrib import messages
-from django.urls import reverse_lazy
 from django.contrib.auth.views import LoginView, LogoutView
-from .forms import CustomUserCreationForm, CustomUserChangeForm
-from .models import User
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse_lazy
+
 from projects.models import Project
+
+from .forms import CustomUserChangeForm, CustomUserCreationForm
+from .models import User
+
+
+class AssigniaLoginView(LoginView):
+    template_name = 'users/login.html'
+    redirect_authenticated_user = True
+
+
+class AssigniaLogoutView(LogoutView):
+    next_page = reverse_lazy('core:home')
 
 
 def register(request):
@@ -21,25 +32,6 @@ def register(request):
     else:
         form = CustomUserCreationForm()
     return render(request, 'users/register.html', {'form': form})
-
-class AssigniaLoginView(LoginView):
-    template_name = 'users/login.html'
-    redirect_authenticated_user = True
-
-class AssigniaLogoutView(LogoutView):
-    next_page = reverse_lazy('core:home')
-
-@login_required
-def profile(request):
-    if request.method == 'POST':
-        form = CustomUserChangeForm(request.POST, instance=request.user)
-        if form.is_valid():
-            form.save()
-            messages.success(request, 'Профиль обновлён.')
-            return redirect('users:profile')
-    else:
-        form = CustomUserChangeForm(instance=request.user)
-    return render(request, 'users/profile.html', {'form': form})
 
 
 def public_profile(request, username):
@@ -56,6 +48,18 @@ def public_profile(request, username):
         'contributed_projects': contributed_projects,
     })
 
+
+@login_required
+def profile(request):
+    if request.method == 'POST':
+        form = CustomUserChangeForm(request.POST, instance=request.user)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Профиль обновлён.')
+            return redirect('users:profile')
+    else:
+        form = CustomUserChangeForm(instance=request.user)
+    return render(request, 'users/profile.html', {'form': form})
 
 
 @login_required

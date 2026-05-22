@@ -9,31 +9,13 @@
     </button>
 </div>
 
-<div style="position: relative;">
+<div class="position-relative">
     <div id="request-form-container"></div>
 
     {% if requests %}
         <div class="list-group">
             {% for req in requests %}
-                <a href="{% url 'projects:request_detail' username=project.owner.username slug=project.slug request_pk=req.pk %}"
-                   class="list-group-item list-group-item-action">
-                    <div class="d-flex w-100 justify-content-between">
-                        <div>
-                            <strong>{{ req.description|truncatechars:80 }}</strong>
-                            <div class="text-muted small">
-                                {% if req.author %}
-                                    {{ req.author.username }}
-                                {% else %}
-                                    неизвестный
-                                {% endif %}
-                                · {{ req.created_at|date:"d.m.Y H:i" }}
-                            </div>
-                        </div>
-                        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% else %}secondary{% endif %} align-self-start">
-                            {{ req.get_status_display }}
-                        </span>
-                    </div>
-                </a>
+                {% include 'projects/partials/_request_item.html' with req=req project=project %}
             {% endfor %}
         </div>
     {% else %}

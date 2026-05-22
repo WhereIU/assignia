@@ -1,21 +1,12 @@
-{% extends 'base.html' %}
+{% extends 'projects/project_base.html' %}
 {% block title %}{{ task.title }}{% endblock %}
-{% block navbar_left %}
-<ul class="navbar-nav me-auto align-items-center">
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'users:public_profile' username=project.owner.username %}">{{ project.owner.username }}</a>
-    </li>
-    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
-    <li class="nav-item">
-        <a class="nav-link fw-bold" href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">{{ project.name }}</a>
-    </li>
+
+{% block project_navbar_tabs %}
     <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
     <li class="nav-item"><span class="nav-link text-white-50">{{ task.title }}</span></li>
-</ul>
 {% endblock %}
 
 {% block content %}
-
 <div class="card mb-4">
   <div class="card-body">
     <h1 class="card-title">{{ task.title }}</h1>
@@ -35,10 +26,14 @@
     </div>
 
     {% if task.status == 'new' and not task.assignee and user.is_authenticated %}
-      <button hx-post="{% url 'tasks:take_task' task.pk %}"
+      <button hx-post="{% url 'tasks:task_take' task.pk %}"
               hx-target="closest .card"
               hx-swap="outerHTML"
               class="btn btn-success mt-3">Взять</button>
+    {% endif %}
+
+    {% if is_privileged %}
+      {# Панель управления для менеджера/админа #}
     {% endif %}
   </div>
 </div>
@@ -60,5 +55,4 @@
   <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
 </form>
 {% endif %}
-
 {% endblock %}

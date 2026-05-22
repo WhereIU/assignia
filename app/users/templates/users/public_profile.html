@@ -29,22 +29,11 @@
 <h3>Проекты</h3>
 <div class="row">
     {% for project in owned_projects %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
-                        {{ project.name }}
-                    </a>
-                </h5>
-                <p class="card-text">{{ project.description|truncatechars:100 }}</p>
-            </div>
+        <div class="col-md-4 mb-3">
+            {% include 'partials/_project_card.html' with project=project %}
         </div>
-    </div>
     {% empty %}
-    <div class="col-12">
         <p>Нет проектов.</p>
-    </div>
     {% endfor %}
 </div>
 
@@ -52,23 +41,9 @@
 <h3 class="mt-4">Участвует в проектах</h3>
 <div class="row">
     {% for project in contributed_projects %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
-                        {{ project.name }}
-                    </a>
-                </h5>
-                <p class="card-text">{{ project.description|truncatechars:100 }}</p>
-                <div class="text-muted small">
-                    <a href="{% url 'users:public_profile' username=project.owner.username %}" class="text-decoration-none text-muted">
-                        <i class="bi bi-person me-1"></i>{{ project.owner.username }}
-                    </a>
-                </div>
-            </div>
+        <div class="col-md-4 mb-3">
+            {% include 'partials/_project_card.html' with project=project %}
         </div>
-    </div>
     {% endfor %}
 </div>
 {% endif %}

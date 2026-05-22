@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
-{% block title %}Assignia — распределение задач{% endblock %}
-{% block content %}
+{% block title %}Assignia{% endblock %}
 
+{% block content %}
 <div class="text-center py-5">
     <h1 class="display-4">Assignia</h1>
     <p class="lead">Распределение задач с учётом ролей, рисков и аналитики</p>
@@ -11,30 +11,16 @@
     </div>
 </div>
 
-<h2>Вам может понравиться</h2>
-<div class="row">
-    {% for project in public_projects %}
-    <div class="col-md-4 mb-3">
-        <div class="card h-100">
-            <div class="card-body">
-                <h5 class="card-title">
-                    <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
-                        {{ project.name }}
-                    </a>
-                </h5>
-                <p class="card-text">{{ project.description|truncatechars:100 }}</p>
-                <div class="d-flex align-items-center text-muted small">
-                    <a href="{% url 'users:public_profile' username=project.owner.username %}" class="text-decoration-none text-muted">
-                        <i class="bi bi-person me-1"></i>{{ project.owner.username }}
-                    </a>
-                </div>
+{% if public_projects %}
+    <h2>Вам может понравиться</h2>
+    <div class="row">
+        {% for project in public_projects %}
+            <div class="col-md-4 mb-3">
+                {% include 'partials/_project_card.html' with project=project %}
             </div>
-        </div>
+        {% endfor %}
     </div>
-    {% empty %}
-    <p>Нет публичных проектов.</p>
-    {% endfor %}
-</div>
+{% endif %}
 
 <div class="row text-center mt-5">
     <div class="col-md-4">

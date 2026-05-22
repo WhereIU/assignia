@@ -1,6 +1,9 @@
 from django import forms
-from .models import Task
+
 from projects.models import Direction
+
+from .models import Task
+
 
 class TaskCreateForm(forms.ModelForm):
     class Meta:

@@ -1,18 +1,9 @@
-{% extends 'base.html' %}
+{% extends 'projects/project_base.html' %}
 {% block title %}Запрос #{{ req.pk }}{% endblock %}
 
-{% block navbar_left %}
-<ul class="navbar-nav me-auto align-items-center">
-    <li class="nav-item">
-        <a class="nav-link" href="{% url 'users:public_profile' username=project.owner.username %}">{{ project.owner.username }}</a>
-    </li>
-    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
-    <li class="nav-item">
-        <a class="nav-link fw-bold" href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">{{ project.name }}</a>
-    </li>
+{% block project_navbar_tabs %}
     <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
     <li class="nav-item"><span class="nav-link text-white-50">Запрос #{{ req.pk }}</span></li>
-</ul>
 {% endblock %}
 
 {% block content %}

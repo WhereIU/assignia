@@ -1,6 +1,8 @@
-from django.conf import settings
 from django.db import models
+from django.conf import settings
+
 from projects.models import Project, Direction, Team
+
 
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -53,11 +55,4 @@ class Comment(models.Model):
     task = models.ForeignKey(Task, on_delete=models.CASCADE, related_name='comments')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     text = models.TextField()
-    created_at = models.DateTimeField(auto_now_add=True)
-
-class Notification(models.Model):
-    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='notifications')
-    text = models.CharField(max_length=500)
-    url = models.CharField(max_length=500, blank=True)
-    is_read = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)

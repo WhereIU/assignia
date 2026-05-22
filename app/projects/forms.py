@@ -1,6 +1,8 @@
 from django import forms
-from .models import Project
 from django.utils.text import slugify
+
+from .models import Project
+
 
 class ProjectCreateForm(forms.ModelForm):
     class Meta:

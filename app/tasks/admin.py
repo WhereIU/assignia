@@ -1,5 +1,7 @@
 from django.contrib import admin
-from .models import Task, TaskRequest, Comment, Notification
+
+from .models import Task, TaskRequest, Comment
+
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
@@ -34,7 +36,3 @@ class TaskRequestAdmin(admin.ModelAdmin):
 @admin.register(Comment)
 class CommentAdmin(admin.ModelAdmin):
     list_display = ('task', 'author', 'created_at')
-
-@admin.register(Notification)
-class NotificationAdmin(admin.ModelAdmin):
-    list_display = ('recipient', 'text', 'is_read', 'created_at')

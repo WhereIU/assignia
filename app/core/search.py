@@ -2,7 +2,7 @@ import re
 from django.db.models import Q
 
 def parse_search_query(query: str):
-    """Парсит поисковый запрос с квалификаторами."""
+    """Parses a search query with qualifiers."""
     filters = {
         'owner': None,
         'project': None,
@@ -60,7 +60,7 @@ def parse_search_query(query: str):
 
 
 def apply_project_search_filters(queryset, filters):
-    """Применяет фильтры к проектам."""
+    """Applies filters to projects."""
     q = Q()
 
     free = filters.get('free_text', '')
@@ -84,7 +84,7 @@ def apply_project_search_filters(queryset, filters):
 
 
 def apply_task_search_filters(queryset, filters):
-    """Применяет фильтры к задачам."""
+    """Applies filters to tasks."""
     q = Q()
 
     free = filters.get('free_text', '')

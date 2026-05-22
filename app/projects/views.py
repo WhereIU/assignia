@@ -1,35 +1,37 @@
-from django.shortcuts import render, get_object_or_404, redirect
-from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_http_methods
-from django.http import HttpResponse, HttpResponseForbidden
-from django.db.models import Count, Q
-from .models import Project, ProjectMembership, Direction
-from tasks.models import Task, TaskRequest, RequestMessage
-from users.models import User
-from .forms import ProjectCreateForm
 from django.contrib import messages
-from django.urls import reverse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count, Q
+from django.http import HttpResponseForbidden
+from django.shortcuts import get_object_or_404, redirect, render
+from django.views.decorators.http import require_http_methods
+
+from tasks.models import RequestMessage, Task, TaskRequest
+from users.models import User
+
+from .forms import ProjectCreateForm
+from .models import Direction, Project, ProjectMembership
+
 
 def available_projects(request):
     query = request.GET.get('q', '').strip()
-    
     projects = Project.objects.filter(is_public=True)
-    
+
     if request.user.is_authenticated:
         private_memberships = ProjectMembership.objects.filter(user=request.user).values('project')
         projects = projects | Project.objects.filter(pk__in=private_memberships)
         projects = projects.distinct()
-    
+
     if query:
-        from core.search import parse_search_query, apply_project_search_filters
+        from core.search import apply_project_search_filters, parse_search_query
         filters = parse_search_query(query)
         projects = apply_project_search_filters(projects, filters)
-    
+
     projects = projects.order_by('-created_at')
     return render(request, 'projects/available_projects.html', {
         'projects': projects,
         'query': query,
     })
+
 
 @login_required
 def dashboard(request):
@@ -47,7 +49,7 @@ def dashboard(request):
         project__in=user_projects,
         status='new',
         assignee__isnull=True,
-        is_deleted=False
+        is_deleted=False,
     )
 
     if status_filter:
@@ -77,12 +79,13 @@ def dashboard(request):
     }
 
     tasks = assigned_tasks if source == 'assigned' else available_tasks
-    show_take_button = (source != 'assigned')
+    show_take_button = source != 'assigned'
     context = {
         'tasks': tasks,
         'show_take_button': show_take_button,
         'filters': filters,
         'source': source,
+        'target_id': 'dashboard-content',
     }
 
     if request.headers.get('HX-Request'):
@@ -104,18 +107,19 @@ def project_detail(request, username, slug):
         membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
         if not membership:
             return HttpResponseForbidden("Вы не участник проекта")
+
     tasks = Task.objects.filter(project=project, is_deleted=False).order_by('-priority')
+    is_member = request.user.is_authenticated and ProjectMembership.objects.filter(
+        user=request.user, project=project
+    ).exists()
 
-    is_member = False
-    if request.user.is_authenticated:
-        is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
-
-    return render(request, 'projects/detail.html', {
+    return render(request, 'projects/project_detail.html', {
         'project': project,
         'tasks': tasks,
         'tab': 'tasks',
         'is_member': is_member,
     })
+
 
 @login_required
 def project_tasks(request, username, slug):
@@ -130,7 +134,7 @@ def project_tasks(request, username, slug):
     if status:
         tasks = tasks.filter(status=status)
     if priority:
-        tasks = tasks.filter(priority=priority)
+        tasks = tasks.filter(priority=int(priority))
     if risk == 'high':
         tasks = tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
     elif risk == 'low':
@@ -145,11 +149,13 @@ def project_tasks(request, username, slug):
         'show_take_button': True,
         'filters': {
             'status': status,
-            'priority': priority,
+            'priority': str(priority) if priority else '',
             'risk': risk,
             'q': q,
         },
+        'target_id': 'tab-content',
     })
+
 
 @login_required
 def project_join(request, username, slug):
@@ -163,12 +169,13 @@ def project_join(request, username, slug):
         messages.success(request, f'Вы вступили в проект «{project.name}»!')
     return redirect('projects:project_detail', username=username, slug=slug)
 
+
 def can_handle_requests(user, project):
-    """Проверяет, может ли пользователь обрабатывать запросы (техподдержка и выше)"""
     if not user.is_authenticated:
         return False
     membership = ProjectMembership.objects.filter(user=user, project=project).first()
     return membership and membership.role in ('tech_support', 'manager', 'admin', 'owner')
+
 
 @login_required
 def project_requests_content(request, username, slug):
@@ -192,6 +199,7 @@ def project_requests_content(request, username, slug):
         return render(request, 'projects/partials/_requests.html', context)
     return render(request, 'projects/detail.html', {**context, 'tab': 'requests'})
 
+
 @login_required
 def request_detail(request, username, slug, request_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
@@ -205,6 +213,7 @@ def request_detail(request, username, slug, request_pk):
         'messages_list': messages_list,
         'is_tech_support': can_handle_requests(request.user, project),
     })
+
 
 @login_required
 def request_add_message(request, username, slug, request_pk):
@@ -225,6 +234,7 @@ def request_add_message(request, username, slug, request_pk):
         'messages_list': messages_list,
     })
 
+
 @login_required
 def request_convert_to_task(request, username, slug, request_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
@@ -241,11 +251,11 @@ def request_convert_to_task(request, username, slug, request_pk):
     req.status = 'converted'
     req.save()
     messages.success(request, f'Задача «{task.title}» создана!')
-    return redirect('tasks:task_detail', username=username, slug=slug, task_pk=task.pk)
+    return redirect('tasks:task_detail', task_pk=task.pk)
+
 
 @login_required
 def project_analytics_content(request, username, slug):
-    """HTMX или полная страница: аналитика."""
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
     if not membership:
@@ -270,10 +280,10 @@ def project_analytics_content(request, username, slug):
         'directions': directions,
         'participants': participants,
     }
-
     if request.headers.get('HX-Request'):
         return render(request, 'projects/partials/_analytics.html', context)
-    return render(request, 'projects/detail.html', {**context, 'tab': 'analytics'})
+    return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})
+
 
 @login_required
 def request_create_form(request, username, slug):
@@ -283,6 +293,7 @@ def request_create_form(request, username, slug):
         if not membership:
             return HttpResponseForbidden("Вы не участник проекта")
     return render(request, 'projects/partials/_request_create_form.html', {'project': project})
+
 
 @login_required
 @require_http_methods(["POST"])
@@ -307,6 +318,7 @@ def request_create_submit(request, username, slug):
     }
     return render(request, 'projects/partials/_requests.html', context)
 
+
 @login_required
 def project_create(request):
     if request.method == 'POST':
@@ -320,4 +332,4 @@ def project_create(request):
             return redirect('projects:project_detail', username=request.user.username, slug=project.slug)
     else:
         form = ProjectCreateForm()
-    return render(request, 'projects/create.html', {'form': form})
+    return render(request, 'projects/project_create.html', {'form': form})

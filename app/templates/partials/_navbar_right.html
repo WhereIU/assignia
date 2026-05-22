@@ -1,0 +1,45 @@
+<ul class="navbar-nav ms-auto align-items-center">
+    <li class="nav-item me-2">
+        <div class="dropdown">
+            <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+                <i class="bi bi-search"></i>
+            </button>
+            <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 350px;">
+                {% include 'partials/_search_bar.html' %}
+            </div>
+        </div>
+    </li>
+
+    {% if user.is_authenticated %}
+        <li class="nav-item me-2">
+            <a class="btn btn-outline-light btn-sm" href="{% url 'projects:project_create' %}" title="Создать проект">
+                <i class="bi bi-plus-circle"></i>
+            </a>
+        </li>
+        <li class="nav-item me-2">
+            <a class="nav-link position-relative" href="{% url 'core:notifications' %}">
+                <i class="bi bi-bell"></i>
+                {% if unread_notifications_count %}
+                    <span class="position-absolute top-25 start-100 translate-middle badge rounded-pill bg-danger">
+                        {{ unread_notifications_count }}
+                    </span>
+                {% endif %}
+            </a>
+        </li>
+        <li class="nav-item dropdown">
+            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
+                <i class="bi bi-person-circle fs-5 me-1"></i>
+                {{ user.username }}
+            </a>
+            <ul class="dropdown-menu dropdown-menu-end">
+                <li><a class="dropdown-item" href="{% url 'users:profile' %}">Настройки профиля</a></li>
+                <li><a class="dropdown-item" href="{% url 'users:public_profile' username=user.username %}">Мой профиль</a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="{% url 'users:logout' %}">Выйти</a></li>
+            </ul>
+        </li>
+    {% else %}
+        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Войти</a></li>
+        <li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">Регистрация</a></li>
+    {% endif %}
+</ul>

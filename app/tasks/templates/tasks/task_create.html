@@ -1,0 +1,19 @@
+{% extends 'projects/project_base.html' %}
+{% block title %}Новая задача{{ project.name }}{% endblock %}
+
+{% block project_navbar_tabs %}
+    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
+    <li class="nav-item"><span class="nav-link text-white-50">Новая задача</span></li>
+{% endblock %}
+
+{% block content %}
+<h1>Новая задача</h1>
+<p class="text-muted">Проект: {{ project.name }}</p>
+
+<form method="post">
+    {% csrf_token %}
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-success">Создать</button>
+    <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="btn btn-outline-secondary">Отмена</a>
+</form>
+{% endblock %}
