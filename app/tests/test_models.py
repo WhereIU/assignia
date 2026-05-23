@@ -1,7 +1,10 @@
 import pytest
+
 from users.models import User
 from projects.models import Project, ProjectMembership
-from tasks.models import Task, TaskRequest, Comment, Notification
+from tasks.models import Task, TaskRequest, Comment
+from core.models import Notification
+
 
 @pytest.mark.django_db
 def test_user_creation():
