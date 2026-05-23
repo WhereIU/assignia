@@ -30,7 +30,7 @@
 <div class="row">
     {% for project in owned_projects %}
         <div class="col-md-4 mb-3">
-            {% include 'partials/_project_card.html' with project=project %}
+            {% include 'projects/partials/_project_card.html' with project=project %}
         </div>
     {% empty %}
         <p>Нет проектов.</p>
@@ -42,7 +42,7 @@
 <div class="row">
     {% for project in contributed_projects %}
         <div class="col-md-4 mb-3">
-            {% include 'partials/_project_card.html' with project=project %}
+            {% include 'projects/partials/_project_card.html' with project=project %}
         </div>
     {% endfor %}
 </div>

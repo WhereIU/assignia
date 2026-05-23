@@ -1,5 +1,13 @@
 html, body { height: 100%; }
 body { display: flex; flex-direction: column; min-height: 100vh; }
+
+#assignee-list {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
+#toast-container { position: fixed; top: 70px; left: 50%; transform: translateX(-50%); z-index: 9999; max-width: 400px; width: 100%;}
+
 .content-wrapper {flex: 1 0 auto; }
 footer { flex-shrink: 0; margin-top: auto;}
 .navbar .nav-tabs { border-bottom: none; }
@@ -29,4 +37,17 @@ footer { flex-shrink: 0; margin-top: auto;}
     border-radius: 0.5rem;
     padding: 1.5rem;
     box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+}
+
+.task-edit-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
+    display: none;
 }

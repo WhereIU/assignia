@@ -1,0 +1,8 @@
+{% for member in members %}
+  <button type="button" class="list-group-item list-group-item-action"
+          onclick="this.closest('form').querySelector('input[name=assignee_id]').value='{{ member.user.pk }}'; 
+                   this.closest('form').querySelector('input[name=assignee_search]').value='{{ member.user.username }}';
+                   document.getElementById('assignee-list').innerHTML = '';">
+    {{ member.user.username }}
+  </button>
+{% endfor %}

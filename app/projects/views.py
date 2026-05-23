@@ -3,9 +3,9 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods
+#from django.views.decorators.http import require_http_methods
 
-from tasks.models import RequestMessage, Task, TaskRequest
+from tasks.models import Task
 from users.models import User
 
 from .forms import ProjectCreateForm
@@ -99,7 +99,23 @@ def dashboard(request):
     })
 
 
-def project_detail(request, username, slug):
+@login_required
+def create_project(request):
+    if request.method == 'POST':
+        form = ProjectCreateForm(request.POST, initial={'owner': request.user})
+        if form.is_valid():
+            project = form.save(commit=False)
+            project.owner = request.user
+            project.save()
+            ProjectMembership.objects.create(user=request.user, project=project, role='owner')
+            messages.success(request, f'Проект «{project.name}» создан!')
+            return redirect('projects:detail_project', username=request.user.username, slug=project.slug)
+    else:
+        form = ProjectCreateForm(initial={'owner': request.user})
+    return render(request, 'projects/project_create.html', {'form': form})
+
+
+def detail_project(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     if not project.is_public:
         if not request.user.is_authenticated:
@@ -119,6 +135,19 @@ def project_detail(request, username, slug):
         'tab': 'tasks',
         'is_member': is_member,
     })
+
+
+@login_required
+def join_project(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not project.is_public:
+        return HttpResponseForbidden("Нельзя вступить в приватный проект.")
+    if ProjectMembership.objects.filter(user=request.user, project=project).exists():
+        messages.info(request, 'Вы уже участник этого проекта.')
+    else:
+        ProjectMembership.objects.create(user=request.user, project=project, role='participant')
+        messages.success(request, f'Вы вступили в проект «{project.name}»!')
+    return redirect('projects:detail_project', username=username, slug=slug)
 
 
 @login_required
@@ -158,104 +187,7 @@ def project_tasks(request, username, slug):
 
 
 @login_required
-def project_join(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not project.is_public:
-        return HttpResponseForbidden("Нельзя вступить в приватный проект.")
-    if ProjectMembership.objects.filter(user=request.user, project=project).exists():
-        messages.info(request, 'Вы уже участник этого проекта.')
-    else:
-        ProjectMembership.objects.create(user=request.user, project=project, role='participant')
-        messages.success(request, f'Вы вступили в проект «{project.name}»!')
-    return redirect('projects:project_detail', username=username, slug=slug)
-
-
-def can_handle_requests(user, project):
-    if not user.is_authenticated:
-        return False
-    membership = ProjectMembership.objects.filter(user=user, project=project).first()
-    return membership and membership.role in ('tech_support', 'manager', 'admin', 'owner')
-
-
-@login_required
-def project_requests_content(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not project.is_public:
-        membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
-        if not membership:
-            return HttpResponseForbidden("Вы не участник проекта")
-
-    if can_handle_requests(request.user, project):
-        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
-    else:
-        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
-
-    context = {
-        'project': project,
-        'requests': requests_qs,
-        'is_tech_support': can_handle_requests(request.user, project),
-    }
-    if request.headers.get('HX-Request'):
-        return render(request, 'projects/partials/_requests.html', context)
-    return render(request, 'projects/detail.html', {**context, 'tab': 'requests'})
-
-
-@login_required
-def request_detail(request, username, slug, request_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    req = get_object_or_404(TaskRequest, pk=request_pk, project=project)
-    if req.author != request.user and not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Нет доступа к этому запросу")
-    messages_list = req.messages.order_by('created_at')
-    return render(request, 'projects/request_detail.html', {
-        'project': project,
-        'req': req,
-        'messages_list': messages_list,
-        'is_tech_support': can_handle_requests(request.user, project),
-    })
-
-
-@login_required
-def request_add_message(request, username, slug, request_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    req = get_object_or_404(TaskRequest, pk=request_pk, project=project)
-    if req.author != request.user and not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Нет доступа к этому запросу")
-    if request.method == 'POST':
-        text = request.POST.get('text', '').strip()
-        if text:
-            RequestMessage.objects.create(request=req, author=request.user, text=text)
-            if can_handle_requests(request.user, project) and req.status == 'pending':
-                req.status = 'reviewed'
-                req.save()
-    messages_list = req.messages.order_by('created_at')
-    return render(request, 'projects/partials/_request_messages.html', {
-        'req': req,
-        'messages_list': messages_list,
-    })
-
-
-@login_required
-def request_convert_to_task(request, username, slug, request_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    req = get_object_or_404(TaskRequest, pk=request_pk, project=project)
-    if not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
-    task = Task.objects.create(
-        project=project,
-        title=f"Запрос от {req.author.username}: {req.description[:50]}",
-        description=req.description,
-        creator=request.user,
-        priority=2,
-    )
-    req.status = 'converted'
-    req.save()
-    messages.success(request, f'Задача «{task.title}» создана!')
-    return redirect('tasks:task_detail', task_pk=task.pk)
-
-
-@login_required
-def project_analytics_content(request, username, slug):
+def project_analytics_tab(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
     if not membership:
@@ -284,52 +216,3 @@ def project_analytics_content(request, username, slug):
         return render(request, 'projects/partials/_analytics.html', context)
     return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})
 
-
-@login_required
-def request_create_form(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not project.is_public:
-        membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
-        if not membership:
-            return HttpResponseForbidden("Вы не участник проекта")
-    return render(request, 'projects/partials/_request_create_form.html', {'project': project})
-
-
-@login_required
-@require_http_methods(["POST"])
-def request_create_submit(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not project.is_public:
-        membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
-        if not membership:
-            return HttpResponseForbidden("Вы не участник проекта")
-    description = request.POST.get('description', '').strip()
-    if description:
-        TaskRequest.objects.create(project=project, author=request.user, description=description)
-        messages.success(request, 'Запрос создан')
-    if can_handle_requests(request.user, project):
-        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
-    else:
-        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
-    context = {
-        'project': project,
-        'requests': requests_qs,
-        'is_tech_support': can_handle_requests(request.user, project),
-    }
-    return render(request, 'projects/partials/_requests.html', context)
-
-
-@login_required
-def project_create(request):
-    if request.method == 'POST':
-        form = ProjectCreateForm(request.POST)
-        if form.is_valid():
-            project = form.save(commit=False)
-            project.owner = request.user
-            project.save()
-            ProjectMembership.objects.create(user=request.user, project=project, role='owner')
-            messages.success(request, f'Проект «{project.name}» создан!')
-            return redirect('projects:project_detail', username=request.user.username, slug=project.slug)
-    else:
-        form = ProjectCreateForm()
-    return render(request, 'projects/project_create.html', {'form': form})

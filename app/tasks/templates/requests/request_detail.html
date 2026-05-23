@@ -18,7 +18,7 @@
             {{ req.get_status_display }}
         </span>
         {% if is_tech_support and req.status != 'converted' %}
-            <a href="{% url 'projects:request_convert_to_task' username=project.owner.username slug=project.slug request_pk=req.pk %}"
+            <a href="{% url 'tasks:request_convert_to_task' username=project.owner.username slug=project.slug request_pk=req.pk %}"
                class="btn btn-outline-success btn-sm ms-2">Создать задачу</a>
         {% endif %}
     </div>
@@ -26,13 +26,20 @@
 
 <h6>Обсуждение</h6>
 <div id="messages-container">
-    {% include 'projects/partials/_request_messages.html' with messages_list=messages_list %}
+    {% include 'requests/partials/_request_messages.html' with messages_list=messages_list %}
 </div>
 
-<form hx-post="{% url 'projects:request_add_message' username=project.owner.username slug=project.slug request_pk=req.pk %}"
+<form hx-post="{% url 'tasks:request_add_message' username=project.owner.username slug=project.slug request_pk=req.pk %}"
       hx-target="#messages-container" hx-swap="innerHTML" hx-on::after-request="this.reset()">
     {% csrf_token %}
     <textarea class="form-control mb-2" name="text" rows="2" placeholder="Ваше сообщение..."></textarea>
     <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
 </form>
+{% if req.author == user and req.status == 'pending' %}
+  <form hx-post="{% url 'tasks:delete_request' username=project.owner.username slug=project.slug request_pk=req.pk %}"
+        class="d-inline ms-2">
+    {% csrf_token %}
+    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить запрос</button>
+  </form>
+{% endif %}
 {% endblock %}

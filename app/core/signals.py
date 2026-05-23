@@ -13,7 +13,7 @@ def create_comment_notification(sender, instance, created, **kwargs):
         return
 
     task_pk = instance.task.pk
-    task_url = reverse('tasks:task_detail', kwargs={'task_pk': task_pk})
+    task_url = reverse('tasks:detail_task', kwargs={'task_pk': task_pk})
 
     if instance.task.creator and instance.task.creator != instance.author:
         Notification.objects.create(

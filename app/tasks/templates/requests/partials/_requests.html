@@ -3,7 +3,7 @@
         {% if is_tech_support %}Запросы проекта{% else %}Мои запросы{% endif %}
     </h2>
     <button class="btn btn-success btn-sm"
-            hx-get="{% url 'projects:request_create_form' username=project.owner.username slug=project.slug %}"
+            hx-get="{% url 'tasks:request_create_form' username=project.owner.username slug=project.slug %}"
             hx-target="#request-form-container" hx-swap="innerHTML">
         <i class="bi bi-plus-lg"></i> Создать запрос
     </button>
@@ -15,7 +15,7 @@
     {% if requests %}
         <div class="list-group">
             {% for req in requests %}
-                {% include 'projects/partials/_request_item.html' with req=req project=project %}
+                {% include 'requests/partials/_request_item.html' with req=req project=project %}
             {% endfor %}
         </div>
     {% else %}

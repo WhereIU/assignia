@@ -4,7 +4,7 @@
         <button type="button" class="btn-close" aria-label="Закрыть"
                 onclick="this.closest('#request-form-container').innerHTML = ''"></button>
     </div>
-    <form hx-post="{% url 'projects:request_create_submit' username=project.owner.username slug=project.slug %}"
+    <form hx-post="{% url 'tasks:request_create_submit' username=project.owner.username slug=project.slug %}"
           hx-target="#tab-content"
           hx-swap="innerHTML">
         {% csrf_token %}

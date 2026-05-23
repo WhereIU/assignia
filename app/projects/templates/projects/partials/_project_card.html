@@ -1,7 +1,7 @@
 <div class="card h-100">
     <div class="card-body">
         <h5 class="card-title">
-            <a href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
+            <a href="{% url 'projects:detail_project' username=project.owner.username slug=project.slug %}" class="text-decoration-none">
                 {{ project.name }}
             </a>
         </h5>

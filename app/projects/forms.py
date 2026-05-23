@@ -20,6 +20,7 @@ class ProjectCreateForm(forms.ModelForm):
     def clean_name(self):
         name = self.cleaned_data['name']
         slug = slugify(name)
-        if Project.objects.filter(owner=self.initial.get('owner'), slug=slug).exists():
+        owner = self.initial.get('owner')
+        if owner and Project.objects.filter(owner=owner, slug=slug).exists():
             raise forms.ValidationError('У вас уже есть проект с таким названием.')
         return name

@@ -9,7 +9,7 @@
 <div class="row">
     {% for project in projects %}
     <div class="col-md-4 mb-3">
-        {% include 'partials/_project_card.html' with project=project %}
+        {% include 'projects/partials/_project_card.html' with project=project %}
     </div>
     {% empty %}
     <div class="col-12">

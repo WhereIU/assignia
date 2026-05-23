@@ -1,0 +1,55 @@
+<div class="card mb-4 position-relative" id="task-main-card">
+  <div id="task-edit-overlay" class="task-edit-overlay"></div>
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start">
+      <h1 class="card-title">{{ task.title }}</h1>
+      {% if is_privileged %}
+        <button class="btn btn-outline-secondary btn-sm"
+                hx-get="{% url 'tasks:edit_task' task.pk %}"
+                hx-target="#task-edit-overlay"
+                hx-swap="innerHTML"
+                onclick="document.getElementById('task-edit-overlay').style.display='block'">
+          <i class="bi bi-pencil"></i> Edit
+        </button>
+      {% endif %}
+    </div>
+
+    <div class="mb-2">
+      <span class="badge bg-{% if task.priority >= 4 %}danger{% elif task.priority == 3 %}warning{% else %}secondary{% endif %}">Приоритет: {{ task.priority }}</span>
+      <span class="badge bg-info">Шанс риска: {{ task.risk_chance }}</span>
+      <span class="badge bg-info">Последствия: {{ task.risk_impact }}</span>
+      <span class="badge bg-primary">{{ task.get_status_display }}</span>
+    </div>
+    <p class="card-text">{{ task.description }}</p>
+    {% if task.deadline %}<small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>{% endif %}
+    <div class="mt-2">
+      <i class="bi bi-person me-1"></i>
+      Исполнитель: {% if task.assignee %}
+        <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none">{{ task.assignee.username }}</a>
+      {% else %}не назначен{% endif %}
+    </div>
+
+    <div class="mt-3">
+      {% if task.status == 'new' and not task.assignee and user.is_authenticated and not is_privileged %}
+        <button hx-post="{% url 'tasks:take_task' task.pk %}"
+                hx-target="#task-main-card"
+                hx-swap="outerHTML"
+                class="btn btn-success">Взять</button>
+      {% endif %}
+
+      {% if is_privileged and not task.is_deleted %}
+        <button hx-post="{% url 'tasks:delete_task' task.pk %}"
+                hx-target="#task-main-card"
+                hx-swap="innerHTML"
+                class="btn btn-outline-danger btn-sm">Удалить</button>
+      {% endif %}
+
+      {% if is_privileged and task.is_deleted %}
+        <button hx-post="{% url 'tasks:restore_task' task.pk %}"
+                hx-target="#task-main-card"
+                hx-swap="outerHTML"
+                class="btn btn-outline-success btn-sm">Восстановить</button>
+      {% endif %}
+    </div>
+  </div>
+</div>

@@ -7,40 +7,13 @@
 {% endblock %}
 
 {% block content %}
-<div class="card mb-4">
-  <div class="card-body">
-    <h1 class="card-title">{{ task.title }}</h1>
-    <div class="mb-2">
-      <span class="badge bg-{% if task.priority >= 4 %}danger{% elif task.priority == 3 %}warning{% else %}secondary{% endif %}">Приоритет: {{ task.priority }}</span>
-      <span class="badge bg-info">Шанс риска: {{ task.risk_chance }}</span>
-      <span class="badge bg-info">Последствия: {{ task.risk_impact }}</span>
-      <span class="badge bg-primary">{{ task.get_status_display }}</span>
-    </div>
-    <p class="card-text">{{ task.description }}</p>
-    {% if task.deadline %}<small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>{% endif %}
-    <div class="mt-2">
-      <i class="bi bi-person me-1"></i>
-        Исполнитель: {% if task.assignee %}
-            <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none">{{ task.assignee.username }}</a>
-        {% else %}не назначен{% endif %}
-    </div>
-
-    {% if task.status == 'new' and not task.assignee and user.is_authenticated %}
-      <button hx-post="{% url 'tasks:task_take' task.pk %}"
-              hx-target="closest .card"
-              hx-swap="outerHTML"
-              class="btn btn-success mt-3">Взять</button>
-    {% endif %}
-
-    {% if is_privileged %}
-      {# Панель управления для менеджера/админа #}
-    {% endif %}
-  </div>
+<div id="task-main-container">
+  {% include 'tasks/partials/_task_view.html' %}
 </div>
 
 <h3>Комментарии</h3>
 <div id="comments-list">
-  {% include 'tasks/partials/_comments.html' with comments=comments %}
+  {% include 'common/partials/_comments.html' with comments=comments %}
 </div>
 
 {% if user.is_authenticated %}

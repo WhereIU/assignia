@@ -4,6 +4,11 @@
 <h1>Создать проект</h1>
 <form method="post">
     {% csrf_token %}
+    {% if form.non_field_errors %}
+        <div class="alert alert-danger">
+            {{ form.non_field_errors }}
+        </div>
+    {% endif %}
     {{ form.as_p }}
     <button type="submit" class="btn btn-success">Создать</button>
     <a href="{% url 'projects:dashboard' %}" class="btn btn-outline-secondary">Отмена</a>
