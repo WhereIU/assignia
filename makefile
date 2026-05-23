@@ -4,6 +4,9 @@ install: docker-build
 run:
 	docker compose up
 
+test:
+	docker compose run --rm web pytest
+
 run-build:
 	docker compose up --build
 
