@@ -4,4 +4,9 @@
 {% block content %}
 <h1>Дашборд</h1>
 {% include 'projects/partials/_dashboard_tabs.html' with tasks=assigned_tasks show_take_button=False filters=filters source='assigned' %}
+{% if invitations %}
+<div id="invitations-container">
+    {% include 'projects/partials/_invitations.html' %}
+</div>
+{% endif %}
 {% endblock %}

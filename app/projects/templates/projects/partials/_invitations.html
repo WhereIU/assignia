@@ -1,0 +1,23 @@
+<div class="card mt-4" id="invitations-container">
+    <div class="card-body">
+        <h5>Приглашения</h5>
+        {% for inv in invitations %}
+            <div class="d-flex justify-content-between align-items-center mb-2">
+                <div>
+                    <strong>{{ inv.project.name }}</strong>
+                    <span class="text-muted small">от {{ inv.sender.username }} · {{ inv.created_at|date:"d.m.Y H:i" }}</span>
+                </div>
+                <div>
+                    <button hx-post="{% url 'projects:accept_invitation' inv.pk %}"
+                            hx-target="#invitations-container" hx-swap="outerHTML"
+                            class="btn btn-success btn-sm">Принять</button>
+                    <button hx-post="{% url 'projects:decline_invitation' inv.pk %}"
+                            hx-target="#invitations-container" hx-swap="outerHTML"
+                            class="btn btn-outline-danger btn-sm">Отклонить</button>
+                </div>
+            </div>
+        {% empty %}
+            <p>Нет активных приглашений.</p>
+        {% endfor %}
+    </div>
+</div>

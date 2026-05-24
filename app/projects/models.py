@@ -65,3 +65,19 @@ class ProjectMembership(models.Model):
 
     def __str__(self):
         return f"{self.user.username} в {self.project.name} как {self.get_role_display()}"
+
+class Invitation(models.Model):
+    STATUS_CHOICES = [
+        ('pending', 'Ожидает'),
+        ('accepted', 'Принято'),
+        ('declined', 'Отклонено'),
+        ('cancelled', 'Отменено'),
+    ]
+    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invitations')
+    sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
+    recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_invitations')
+    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.sender.username} → {self.recipient.username} ({self.project.name})"

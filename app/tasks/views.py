@@ -125,6 +125,7 @@ def save_task(request, task_pk):
     else:
         task.assignee = None
     task.save()
+    messages.success(request, 'Задача сохранена')
     return render(request, 'tasks/partials/_task_view.html', {
         'task': task,
         'is_privileged': True,

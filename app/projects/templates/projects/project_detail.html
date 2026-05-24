@@ -8,18 +8,23 @@
         <ul class="nav nav-tabs" id="projectTabs">
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'tasks' or not tab %}active{% endif %}"
-                   hx-get="{% url 'projects:project_tasks' username=project.owner.username slug=project.slug %}"
-                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
+                    hx-get="{% url 'projects:project_tasks' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'requests' %}active{% endif %}"
-                   hx-get="{% url 'tasks:project_requests_tab' username=project.owner.username slug=project.slug %}"
-                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
+                    hx-get="{% url 'tasks:project_requests_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'analytics' %}active{% endif %}"
-                   hx-get="{% url 'projects:project_analytics_tab' username=project.owner.username slug=project.slug %}"
-                   hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
+                    hx-get="{% url 'projects:project_analytics_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'members' %}active{% endif %}"
+                hx-get="{% url 'projects:project_members' username=project.owner.username slug=project.slug %}"
+                hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
         </ul>
     </li>
@@ -33,6 +38,10 @@
         {% include 'requests/partials/_requests.html' with requests=requests %}
     {% elif tab == 'analytics' %}
         {% include 'projects/partials/_analytics.html' with directions=directions participants=participants %}
+    {% elif tab == 'members' %}
+        <div id="members-container">
+            {% include 'projects/partials/_members.html' with members=members can_manage=can_manage roles=roles %}
+        </div>
     {% endif %}
 </div>
 {% endblock %}

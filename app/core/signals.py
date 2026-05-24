@@ -3,6 +3,7 @@ from django.dispatch import receiver
 from django.urls import reverse
 
 from tasks.models import Comment
+from projects.models import Invitation
 
 from .models import Notification
 
@@ -26,4 +27,14 @@ def create_comment_notification(sender, instance, created, **kwargs):
             recipient=instance.task.assignee,
             text=f'Новый комментарий от {instance.author.username} в задаче «{instance.task.title}»',
             url=task_url
+        )
+
+
+@receiver(post_save, sender=Invitation)
+def invitation_notification(sender, instance, created, **kwargs):
+    if created:
+        Notification.objects.create(
+            recipient=instance.recipient,
+            text=f'{instance.sender.username} приглашает вас в проект «{instance.project.name}»',
+            url=reverse('projects:accept_invitation', kwargs={'invitation_pk': instance.pk})
         )
