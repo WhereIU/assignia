@@ -13,7 +13,7 @@ def create_comment_notification(sender, instance, created, **kwargs):
     if not created:
         return
     task = instance.task
-    task_url = reverse('tasks:detail_task', kwargs={'task_pk': task.pk})
+    task_url = reverse('tasks:task_detail', kwargs={'task_pk': task.pk})
 
     if task.creator and task.creator != instance.author:
         Notification.objects.create(
@@ -36,5 +36,5 @@ def invitation_notification(sender, instance, created, **kwargs):
         Notification.objects.create(
             recipient=instance.recipient,
             text=f'{instance.sender.username} приглашает вас в проект «{instance.project.name}»',
-            url=reverse('projects:accept_invitation', kwargs={'invitation_pk': instance.pk})
+            url=reverse('projects:invitation_accept', kwargs={'invitation_pk': instance.pk})
         )

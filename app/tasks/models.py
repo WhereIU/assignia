@@ -1,8 +1,6 @@
 from django.db import models
 from django.conf import settings
 
-from projects.models import Project, Direction, Team
-
 
 class Task(models.Model):
     STATUS_CHOICES = [
@@ -15,7 +13,7 @@ class Task(models.Model):
     PRIORITY_CHOICES = [(i, str(i)) for i in range(1, 6)]
     RISK_CHOICES = [(i, str(i)) for i in range(1, 6)]
 
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='tasks')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks')
     title = models.CharField(max_length=300)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_tasks')
@@ -30,8 +28,8 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    directions = models.ManyToManyField(Direction, blank=True, related_name='tasks')
-    teams = models.ManyToManyField(Team, blank=True, related_name='tasks')
+    directions = models.ManyToManyField('divisions.Direction', blank=True, related_name='tasks')
+    teams = models.ManyToManyField('divisions.Team', blank=True, related_name='tasks')
 
     def __str__(self):
         return self.title
@@ -45,7 +43,7 @@ class TaskAssignment(models.Model):
         unique_together = ('task', 'user')
 
 class TaskRequest(models.Model):
-    project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='requests')
+    project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='requests')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     description = models.TextField()
     status = models.CharField(max_length=20, choices=[('pending', 'На рассмотрении'), ('reviewed', 'Рассмотрен'), ('converted', 'Преобразован в задачу')], default='pending')

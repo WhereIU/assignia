@@ -18,9 +18,12 @@ from django.urls import path, include
 from django.contrib import admin
 
 urlpatterns = [
-    path('', include('core.urls', namespace='core')),
-    path('projects/', include('projects.urls', namespace='projects')),
-    path('tasks/', include('tasks.urls', namespace='tasks')),
-    path('users/', include('users.urls', namespace='users')),
     path('admin/', admin.site.urls),
+    path('', include('core.urls', namespace='core')),
+    path('', include('users.urls', namespace='users')),
+    path('projects/', include('projects.urls', namespace='projects')),
+    path('tasks/', include('tasks.urls_tasks', namespace='tasks')),
+    path('requests/', include('tasks.urls_requests', namespace='requests')),
+    path('divisions/', include('divisions.urls_directions', namespace='divisions')),
+    path('teams/', include('divisions.urls_teams', namespace='teams')),
 ]

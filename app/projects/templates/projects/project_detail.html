@@ -8,27 +8,27 @@
         <ul class="nav nav-tabs" id="projectTabs">
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'tasks' or not tab %}active{% endif %}"
-                    hx-get="{% url 'projects:project_tasks' username=project.owner.username slug=project.slug %}"
+                    hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'requests' %}active{% endif %}"
-                    hx-get="{% url 'tasks:project_requests_tab' username=project.owner.username slug=project.slug %}"
+                    hx-get="{% url 'requests:requests_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'analytics' %}active{% endif %}"
-                    hx-get="{% url 'projects:project_analytics_tab' username=project.owner.username slug=project.slug %}"
+                    hx-get="{% url 'projects:analytics_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'members' %}active{% endif %}"
-                hx-get="{% url 'projects:project_members' username=project.owner.username slug=project.slug %}"
+                hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
                 hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'directions' %}active{% endif %}"
-                hx-get="{% url 'projects:directions_list' username=project.owner.username slug=project.slug %}"
+                hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}"
                 hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
             </li>
         </ul>

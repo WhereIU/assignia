@@ -1,0 +1,69 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>Направления</h5>
+    <div>
+        {% if not show_deleted %}
+            <button class="btn btn-outline-secondary btn-sm"
+                    hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}?show_deleted=1"
+                    hx-target="#tab-content" hx-swap="innerHTML">
+                Показать удалённые
+            </button>
+        {% else %}
+            <button class="btn btn-outline-secondary btn-sm"
+                    hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML">
+                Скрыть удалённые
+            </button>
+        {% endif %}
+        <button class="btn btn-success btn-sm ms-2"
+                hx-get="{% url 'directions:direction_create_form' username=project.owner.username slug=project.slug %}"
+                hx-target="#direction-form-container" hx-swap="innerHTML">
+            <i class="bi bi-plus-lg"></i> Добавить направление
+        </button>
+    </div>
+</div>
+
+<div id="direction-form-container"></div>
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead><tr>
+            <th>Название</th><th>Описание</th><th>Задач</th>
+            {% if can_manage %}<th>Действия</th>{% endif %}
+        </tr></thead>
+        <tbody>
+        {% for d in directions %}
+            <tr>
+                <td>{{ d.name }}</td>
+                <td class="text-muted small">{{ d.description|default:"—" }}</td>
+                <td>{{ d.task_count }}</td>
+                {% if can_manage %}
+                <td>
+                    <div class="d-flex gap-1">
+                        {% if not show_deleted %}
+                            <button class="btn btn-outline-secondary btn-sm"
+                                    hx-get="{% url 'directions:direction_edit_form' username=project.owner.username slug=project.slug direction_pk=d.pk %}"
+                                    hx-target="#direction-form-container" hx-swap="innerHTML">
+                                <i class="bi bi-pencil"></i>
+                            </button>
+                            <button class="btn btn-outline-danger btn-sm"
+                                    hx-post="{% url 'directions:direction_delete' direction_pk=d.pk %}"
+                                    hx-target="#tab-content" hx-swap="innerHTML">
+                                <i class="bi bi-trash"></i>
+                            </button>
+                        {% else %}
+                            <button class="btn btn-outline-success btn-sm"
+                                    hx-post="{% url 'directions:direction_restore' direction_pk=d.pk %}"
+                                    hx-target="#tab-content" hx-swap="innerHTML">
+                                <i class="bi bi-arrow-counterclockwise"></i> Восстановить
+                            </button>
+                        {% endif %}
+                    </div>
+                </td>
+                {% endif %}
+            </tr>
+        {% empty %}
+            <tr><td colspan="4">Нет направлений</td></tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>

@@ -1,20 +1,17 @@
-from urllib import request
-
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
-from django.views.decorators.http import require_http_methods
 from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 
-
+from core.models import Notification
 from tasks.models import Task
 from users.models import User
-from core.models import Notification
 
 from .forms import ProjectCreateForm
-from .models import Direction, Project, ProjectMembership, Invitation
+from .models import Invitation, Project, ProjectMembership
 
 
 def get_member_role(user, project):
@@ -37,13 +34,6 @@ def can_manage_member(actor, target_membership, project):
     return False
 
 
-def can_manage_directions(user, project):
-    if not user.is_authenticated:
-        return False
-    membership = ProjectMembership.objects.filter(user=user, project=project).first()
-    return membership and membership.role in ('admin', 'owner')
-
-
 def redirect_to_members(request, project):
     members = ProjectMembership.objects.filter(project=project).select_related('user')
     member_list = []
@@ -60,25 +50,13 @@ def redirect_to_members(request, project):
     })
 
 
-def can_change_role_to(actor, target_membership, new_role, project):
-    if not can_manage_member(actor, target_membership, project):
-        return False
-    actor_role = get_member_role(actor, project)
-    if actor_role == 'owner':
-        return True
-    if actor_role == 'admin':
-        allowed_roles = ['manager', 'tech_support', 'participant']
-        return new_role in allowed_roles
-    return False
-
-
 def available_projects(request):
     query = request.GET.get('q', '').strip()
     projects = Project.objects.filter(is_public=True)
 
     if request.user.is_authenticated:
-        private_memberships = ProjectMembership.objects.filter(user=request.user).values('project')
-        projects = projects | Project.objects.filter(pk__in=private_memberships)
+        private_ids = ProjectMembership.objects.filter(user=request.user).values('project')
+        projects = projects | Project.objects.filter(pk__in=private_ids)
         projects = projects.distinct()
 
     if query:
@@ -148,7 +126,6 @@ def dashboard(request):
         'source': source,
         'target_id': 'dashboard-content',
         'invitations': invitations,
-
     }
 
     if request.headers.get('HX-Request'):
@@ -163,7 +140,7 @@ def dashboard(request):
 
 
 @login_required
-def create_project(request):
+def project_create(request):
     if request.method == 'POST':
         form = ProjectCreateForm(request.POST, initial={'owner': request.user})
         if form.is_valid():
@@ -172,19 +149,18 @@ def create_project(request):
             project.save()
             ProjectMembership.objects.create(user=request.user, project=project, role='owner')
             messages.success(request, f'Проект «{project.name}» создан!')
-            return redirect('projects:detail_project', username=request.user.username, slug=project.slug)
+            return redirect('projects:project_detail', username=request.user.username, slug=project.slug)
     else:
         form = ProjectCreateForm(initial={'owner': request.user})
     return render(request, 'projects/project_create.html', {'form': form})
 
 
-def detail_project(request, username, slug):
+def project_detail(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     if not project.is_public:
         if not request.user.is_authenticated:
             return redirect('users:login')
-        membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
-        if not membership:
+        if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
             return HttpResponseForbidden("Вы не участник проекта")
 
     tasks = Task.objects.filter(project=project, is_deleted=False).order_by('-priority')
@@ -195,13 +171,12 @@ def detail_project(request, username, slug):
     return render(request, 'projects/project_detail.html', {
         'project': project,
         'tasks': tasks,
-        'tab': 'tasks',
         'is_member': is_member,
     })
 
 
 @login_required
-def join_project(request, username, slug):
+def project_join(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     if not project.is_public:
         return HttpResponseForbidden("Нельзя вступить в приватный проект.")
@@ -210,50 +185,13 @@ def join_project(request, username, slug):
     else:
         ProjectMembership.objects.create(user=request.user, project=project, role='participant')
         messages.success(request, f'Вы вступили в проект «{project.name}»!')
-    return redirect('projects:detail_project', username=username, slug=slug)
+    return redirect('projects:project_detail', username=username, slug=slug)
 
 
 @login_required
-def project_tasks(request, username, slug):
+def analytics_tab(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    tasks = Task.objects.filter(project=project, is_deleted=False)
-
-    status = request.GET.get('status', '')
-    priority = request.GET.get('priority', '')
-    risk = request.GET.get('risk', '')
-    q = request.GET.get('q', '')
-
-    if status:
-        tasks = tasks.filter(status=status)
-    if priority:
-        tasks = tasks.filter(priority=int(priority))
-    if risk == 'high':
-        tasks = tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
-    elif risk == 'low':
-        tasks = tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
-    if q:
-        tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
-
-    tasks = tasks.order_by('-priority', '-created_at')
-
-    return render(request, 'tasks/partials/_task_list.html', {
-        'tasks': tasks,
-        'show_take_button': True,
-        'filters': {
-            'status': status,
-            'priority': str(priority) if priority else '',
-            'risk': risk,
-            'q': q,
-        },
-        'target_id': 'tab-content',
-    })
-
-
-@login_required
-def project_analytics_tab(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
-    if not membership:
+    if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
         return HttpResponseForbidden("Вы не участник проекта")
 
     directions = project.directions.annotate(
@@ -270,30 +208,24 @@ def project_analytics_tab(request, username, slug):
         done_count=Count('task_assignments', filter=Q(task_assignments__task__project=project, task_assignments__task__status='done')),
     )
 
-    context = {
-        'project': project,
-        'directions': directions,
-        'participants': participants,
-    }
+    context = {'project': project, 'directions': directions, 'participants': participants}
     if request.headers.get('HX-Request'):
         return render(request, 'projects/partials/_analytics.html', context)
     return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})
 
 
 @login_required
-def project_members(request, username, slug):
+def members_tab(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    actor_role = get_member_role(request.user, project)
-    if actor_role not in ('admin', 'owner'):
+    if get_member_role(request.user, project) not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
     return redirect_to_members(request, project)
 
 
 @login_required
-def send_invitation(request, username, slug):
+def invitation_send(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    actor_role = get_member_role(request.user, project)
-    if actor_role not in ('admin', 'owner'):
+    if get_member_role(request.user, project) not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
     recipient_username = request.POST.get('username', '').strip()
     try:
@@ -313,22 +245,21 @@ def send_invitation(request, username, slug):
 
 
 @login_required
-def cancel_invitation(request, username, slug, invitation_pk):
+def invitation_cancel(request, username, slug, invitation_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    actor_role = get_member_role(request.user, project)
-    if actor_role not in ('admin', 'owner'):
+    if get_member_role(request.user, project) not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
     invitation = get_object_or_404(Invitation, pk=invitation_pk, project=project, status='pending')
     invitation.status = 'cancelled'
     invitation.save()
-    notification_url = reverse('projects:accept_invitation', kwargs={'invitation_pk': invitation.pk})
+    notification_url = reverse('projects:invitation_accept', kwargs={'invitation_pk': invitation.pk})
     Notification.objects.filter(recipient=invitation.recipient, url=notification_url).delete()
     messages.success(request, f'Приглашение {invitation.recipient.username} отменено')
     return redirect_to_members(request, project)
 
 
 @login_required
-def accept_invitation(request, invitation_pk):
+def invitation_accept(request, invitation_pk):
     invitation = get_object_or_404(Invitation, pk=invitation_pk, recipient=request.user, status='pending')
     project = invitation.project
     if ProjectMembership.objects.filter(user=request.user, project=project).exists():
@@ -340,13 +271,13 @@ def accept_invitation(request, invitation_pk):
         invitation.status = 'accepted'
         invitation.save()
         messages.success(request, f'Вы вступили в проект «{project.name}»')
-    return redirect('projects:detail_project', username=project.owner.username, slug=project.slug)
+    return redirect('projects:project_detail', username=project.owner.username, slug=project.slug)
 
 
 @login_required
-def decline_invitation(request, invitation_pk):
+def invitation_decline(request, invitation_pk):
     invitation = get_object_or_404(Invitation, pk=invitation_pk, recipient=request.user, status='pending')
-    notification_url = reverse('projects:accept_invitation', kwargs={'invitation_pk': invitation.pk})
+    notification_url = reverse('projects:invitation_accept', kwargs={'invitation_pk': invitation.pk})
     Notification.objects.filter(recipient=request.user, url=notification_url).delete()
     invitation.status = 'declined'
     invitation.save()
@@ -356,35 +287,7 @@ def decline_invitation(request, invitation_pk):
 
 @login_required
 @require_http_methods(["POST"])
-def change_member_role(request, username, slug, user_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    actor_role = get_member_role(request.user, project)
-    if actor_role not in ('admin', 'owner'):
-        return HttpResponseForbidden("Недостаточно прав")
-    target_membership = get_object_or_404(ProjectMembership, user__pk=user_pk, project=project)
-    if target_membership.role == 'owner':
-        messages.error(request, 'Нельзя изменить роль владельца')
-        return redirect_to_members(request, project)
-
-    new_role = request.POST.get('role')
-    if new_role not in dict(ProjectMembership.ROLE_CHOICES):
-        messages.error(request, 'Неверная роль')
-        return redirect_to_members(request, project)
-    if new_role == 'owner':
-        messages.error(request, 'Нельзя назначить владельца через смену роли. Используйте передачу владения.')
-        return redirect_to_members(request, project)
-    if actor_role == 'admin' and target_membership.role == 'admin':
-        messages.error(request, 'Недостаточно прав')
-        return redirect_to_members(request, project)
-    target_membership.role = new_role
-    target_membership.save()
-    messages.success(request, f'Роль {target_membership.user.username} изменена на {new_role}')
-    return redirect_to_members(request, project)
-
-
-@login_required
-@require_http_methods(["POST"])
-def remove_member(request, username, slug, user_pk):
+def member_remove(request, username, slug, user_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     actor_role = get_member_role(request.user, project)
     if actor_role not in ('admin', 'owner'):
@@ -403,144 +306,28 @@ def remove_member(request, username, slug, user_pk):
 
 
 @login_required
-def directions_list(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not can_manage_directions(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    directions = project.directions.filter(is_deleted=False).annotate(task_count=Count('tasks'))
-    return render(request, 'projects/partials/_directions.html', {
-        'project': project,
-        'directions': directions,
-        'can_manage': True,
-    })
-
-
-@login_required
 @require_http_methods(["POST"])
-def create_direction(request, username, slug):
+def member_update_role(request, username, slug, user_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not can_manage_directions(request.user, project):
+    actor_role = get_member_role(request.user, project)
+    if actor_role not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
+    target_membership = get_object_or_404(ProjectMembership, user__pk=user_pk, project=project)
+    if target_membership.role == 'owner':
+        messages.error(request, 'Нельзя изменить роль владельца')
+        return redirect_to_members(request, project)
 
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
-    if not name:
-        messages.error(request, 'Название направления обязательно')
-        return redirect_to_directions(request, project)
-
-    Direction.objects.create(project=project, name=name, description=description, created_by=request.user)
-    messages.success(request, f'Направление «{name}» создано')
-    return redirect_to_directions(request, project)
-
-
-@login_required
-@require_http_methods(["POST"])
-def update_direction(request, username, slug, direction_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not can_manage_directions(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
-    if not name:
-        messages.error(request, 'Название направления обязательно')
-        return redirect_to_directions(request, project)
-
-    direction.name = name
-    direction.description = description
-    direction.save()
-    messages.success(request, 'Направление обновлено')
-    return redirect_to_directions(request, project)
-
-
-@login_required
-@require_http_methods(["POST"])
-def delete_direction(request, username, slug, direction_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not can_manage_directions(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
-    direction.is_deleted = True
-    direction.save()
-    messages.success(request, f'Направление «{direction.name}» удалено')
-    return redirect_to_directions(request, project)
-
-
-def redirect_to_directions(request, project):
-    directions = project.directions.filter(is_deleted=False).annotate(task_count=Count('tasks'))
-    return render(request, 'projects/partials/_directions.html', {
-        'project': project,
-        'directions': directions,
-        'can_manage': True,
-    })
-
-
-@login_required
-def create_direction_form(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    return render(request, 'projects/partials/_direction_form.html', {
-        'project': project,
-        'submit_url': reverse('projects:create_direction', kwargs={'username': username, 'slug': slug}),
-    })
-
-
-@login_required
-def edit_direction_form(request, username, slug, direction_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
-    return render(request, 'projects/partials/_direction_form.html', {
-        'project': project,
-        'direction': direction,
-        'submit_url': reverse('projects:update_direction', kwargs={'username': username, 'slug': slug, 'direction_pk': direction.pk}),
-    })
-
-
-
-@login_required
-def search_directions(request, task_pk):
-    task = get_object_or_404(Task, pk=task_pk)
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-    query = request.GET.get('direction_search', '').strip()
-    directions = task.project.directions.filter(is_deleted=False)
-    if query:
-        directions = directions.filter(name__icontains=query)[:15]
-    else:
-        directions = directions.all()[:15]
-    return render(request, 'projects/partials/_direction_list.html', {
-        'directions': directions,
-        'task': task,
-    })
-
-
-@login_required
-@require_http_methods(["POST"])
-def add_direction_to_task(request, task_pk):
-    task = get_object_or_404(Task, pk=task_pk)
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-    direction_id = request.POST.get('direction_id')
-    try:
-        direction = Direction.objects.get(pk=direction_id, project=task.project, is_deleted=False)
-        task.directions.add(direction)
-    except Direction.DoesNotExist:
-        return HttpResponse("Направление не найдено", status=404)
-    return render(request, 'projects/partials/_selected_directions.html', {'task': task})
-
-
-@login_required
-@require_http_methods(["POST"])
-def remove_direction_from_task(request, task_pk):
-    task = get_object_or_404(Task, pk=task_pk)
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-    direction_id = request.POST.get('direction_id')
-    try:
-        direction = Direction.objects.get(pk=direction_id, project=task.project)
-        task.directions.remove(direction)
-    except Direction.DoesNotExist:
-        pass
-    return render(request, 'projects/partials/_selected_directions.html', {'task': task})
+    new_role = request.POST.get('role')
+    if new_role not in dict(ProjectMembership.ROLE_CHOICES):
+        messages.error(request, 'Неверная роль')
+        return redirect_to_members(request, project)
+    if new_role == 'owner':
+        messages.error(request, 'Нельзя назначить владельца через смену роли.')
+        return redirect_to_members(request, project)
+    if actor_role == 'admin' and target_membership.role == 'admin':
+        messages.error(request, 'Недостаточно прав')
+        return redirect_to_members(request, project)
+    target_membership.role = new_role
+    target_membership.save()
+    messages.success(request, f'Роль {target_membership.user.username} изменена на {new_role}')
+    return redirect_to_members(request, project)

@@ -5,7 +5,7 @@
       <h1 class="card-title">{{ task.title }}</h1>
       {% if is_privileged %}
         <button class="btn btn-outline-secondary btn-sm"
-                hx-get="{% url 'tasks:edit_task' task.pk %}"
+                hx-get="{% url 'tasks:task_edit' task.pk %}"
                 hx-target="#task-edit-overlay"
                 hx-swap="innerHTML"
                 onclick="document.getElementById('task-edit-overlay').style.display='block'">
@@ -40,21 +40,21 @@
 
     <div class="mt-3">
       {% if task.status == 'new' and not task.assignments.exists and user.is_authenticated and not is_privileged %}
-        <button hx-post="{% url 'tasks:take_task' task.pk %}"
+        <button hx-post="{% url 'tasks:task_take' task.pk %}"
                 hx-target="#task-main-card"
                 hx-swap="outerHTML"
                 class="btn btn-success">Взять</button>
       {% endif %}
 
       {% if is_privileged and not task.is_deleted %}
-        <button hx-post="{% url 'tasks:delete_task' task.pk %}"
+        <button hx-post="{% url 'tasks:task_delete' task.pk %}"
                 hx-target="#task-main-card"
                 hx-swap="innerHTML"
                 class="btn btn-outline-danger btn-sm">Удалить</button>
       {% endif %}
 
       {% if is_privileged and task.is_deleted %}
-        <button hx-post="{% url 'tasks:restore_task' task.pk %}"
+        <button hx-post="{% url 'tasks:task_restore' task.pk %}"
                 hx-target="#task-main-card"
                 hx-swap="outerHTML"
                 class="btn btn-outline-success btn-sm">Восстановить</button>

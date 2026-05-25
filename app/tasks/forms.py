@@ -1,6 +1,6 @@
 from django import forms
 
-from projects.models import Direction
+from divisions.models import Direction
 
 from .models import Task
 
@@ -21,9 +21,11 @@ class TaskCreateForm(forms.ModelForm):
             'description': forms.Textarea(attrs={'rows': 3}),
             'directions': forms.CheckboxSelectMultiple,
         }
-    
+
     def __init__(self, *args, **kwargs):
         self.project = kwargs.pop('project', None)
         super().__init__(*args, **kwargs)
         if self.project:
-            self.fields['directions'].queryset = Direction.objects.filter(project=self.project, is_deleted=False)
+            self.fields['directions'].queryset = Direction.objects.filter(
+                project=self.project, is_deleted=False
+            )

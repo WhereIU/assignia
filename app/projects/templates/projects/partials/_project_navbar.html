@@ -7,7 +7,7 @@
     </li>
     <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
     <li class="nav-item">
-        <a class="nav-link fw-bold" href="{% url 'projects:detail_project' username=project.owner.username slug=project.slug %}">
+        <a class="nav-link fw-bold" href="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}">
             {{ project.name }}
         </a>
     </li>

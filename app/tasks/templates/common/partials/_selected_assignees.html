@@ -2,7 +2,7 @@
     <span class="badge bg-secondary me-1 mb-1">
         {{ assignment.user.username }}
         <button type="button"
-                hx-post="{% url 'tasks:remove_assignee' task.pk %}"
+                hx-post="{% url 'tasks:assignee_remove' task.pk %}"
                 hx-vals='{"user_id": "{{ assignment.user.pk }}"}'
                 hx-target="#selected-assignees"
                 hx-swap="innerHTML"

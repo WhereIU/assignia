@@ -1,4 +1,5 @@
-from django.urls import path
+from django.urls import include, path
+
 from . import views
 
 app_name = 'projects'
@@ -6,26 +7,19 @@ app_name = 'projects'
 urlpatterns = [
     path('', views.available_projects, name='available_projects'),
     path('dashboard/', views.dashboard, name='dashboard'),
-    path('new/', views.create_project, name='create_project'),
 
-    path('project/<str:username>/<str:slug>/tab/analytics/', views.project_analytics_tab, name='project_analytics_tab'),
+    path('new/project/create/', views.project_create, name='project_create'),
+    path('project/<str:username>/<str:slug>/', views.project_detail, name='project_detail'),
+    path('project/<str:username>/<str:slug>/join/', views.project_join, name='project_join'),
 
-    path('project/<str:username>/<str:slug>/', views.detail_project, name='detail_project'),
-    path('project/<str:username>/<str:slug>/tasks/', views.project_tasks, name='project_tasks'),
-    path('project/<str:username>/<str:slug>/join/', views.join_project, name='join_project'),
+    path('project/<str:username>/<str:slug>/members/', views.members_tab, name='members_tab'),
+    path('project/<str:username>/<str:slug>/analytics/', views.analytics_tab, name='analytics_tab'),
 
-    path('project/<str:username>/<str:slug>/members/', views.project_members, name='project_members'),
-    path('project/<str:username>/<str:slug>/invite/', views.send_invitation, name='send_invitation'),
-    path('invitation/<int:invitation_pk>/invite/accept/', views.accept_invitation, name='accept_invitation'),
-    path('invitation/<int:invitation_pk>/invite/decline/', views.decline_invitation, name='decline_invitation'),
-    path('project/<str:username>/<str:slug>/invite/<int:invitation_pk>/cancel/', views.cancel_invitation, name='cancel_invitation'),
-    path('project/<str:username>/<str:slug>/members/<int:user_pk>/remove/', views.remove_member, name='remove_member'),
-    path('project/<str:username>/<str:slug>/members/<int:user_pk>/update/role/', views.change_member_role, name='change_member_role'),
+    path('project/<str:username>/<str:slug>/invite/', views.invitation_send, name='invitation_send'),
+    path('project/<str:username>/<str:slug>/invite/<int:invitation_pk>/cancel/', views.invitation_cancel, name='invitation_cancel'),
+    path('invitation/<int:invitation_pk>/accept/', views.invitation_accept, name='invitation_accept'),
+    path('invitation/<int:invitation_pk>/decline/', views.invitation_decline, name='invitation_decline'),
 
-    path('project/<str:username>/<str:slug>/directions/', views.directions_list, name='directions_list'),
-    path('project/<str:username>/<str:slug>/directions/create/', views.create_direction, name='create_direction'),
-    path('project/<str:username>/<str:slug>/directions/<int:direction_pk>/update/', views.update_direction, name='update_direction'),
-    path('project/<str:username>/<str:slug>/directions/<int:direction_pk>/delete/', views.delete_direction, name='delete_direction'),
-    path('project/<str:username>/<str:slug>/directions/create/form/', views.create_direction_form, name='create_direction_form'),
-    path('project/<str:username>/<str:slug>/directions/<int:direction_pk>/edit/form/', views.edit_direction_form, name='edit_direction_form'),
+    path('project/<str:username>/<str:slug>/members/<int:user_pk>/remove/', views.member_remove, name='member_remove'),
+    path('project/<str:username>/<str:slug>/members/<int:user_pk>/update/role/', views.member_update_role, name='member_update_role'),
 ]

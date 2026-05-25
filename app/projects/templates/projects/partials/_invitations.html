@@ -8,10 +8,10 @@
                     <span class="text-muted small">от {{ inv.sender.username }} · {{ inv.created_at|date:"d.m.Y H:i" }}</span>
                 </div>
                 <div>
-                    <button hx-post="{% url 'projects:accept_invitation' inv.pk %}"
+                    <button hx-post="{% url 'projects:invitation_accept' inv.pk %}"
                             hx-target="#invitations-container" hx-swap="outerHTML"
                             class="btn btn-success btn-sm">Принять</button>
-                    <button hx-post="{% url 'projects:decline_invitation' inv.pk %}"
+                    <button hx-post="{% url 'projects:invitation_decline' inv.pk %}"
                             hx-target="#invitations-container" hx-swap="outerHTML"
                             class="btn btn-outline-danger btn-sm">Отклонить</button>
                 </div>

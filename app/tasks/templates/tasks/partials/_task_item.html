@@ -1,7 +1,7 @@
 <div class="card mb-2 task-container">
   <div class="card-body">
     <h6 class="card-title">
-      <a href="{% url 'tasks:detail_task' task_pk=task.pk %}" class="text-decoration-none">{{ task.title }}</a>
+      <a href="{% url 'tasks:task_detail' task_pk=task.pk %}" class="text-decoration-none">{{ task.title }}</a>
     </h6>
     <div class="mb-1">
       <span class="badge bg-{% if task.priority >= 4 %}danger{% elif task.priority == 3 %}warning{% else %}secondary{% endif %}">Приоритет: {{ task.priority }}</span>
@@ -30,7 +30,7 @@
 
     {% if show_take_button and user.is_authenticated and task.status == 'new' and not task.assignee %}
       <div class="mt-2">
-        <button hx-post="{% url 'tasks:take_task' task.pk %}"
+        <button hx-post="{% url 'tasks:task_take' task.pk %}"
                 hx-target="closest .task-container"
                 hx-swap="outerHTML"
                 class="btn btn-sm btn-success">Взять</button>
