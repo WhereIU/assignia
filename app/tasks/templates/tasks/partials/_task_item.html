@@ -8,6 +8,9 @@
       <span class="badge bg-info">Шанс риска: {{ task.risk_chance }}</span>
       <span class="badge bg-info">Последствия: {{ task.risk_impact }}</span>
       <span class="badge bg-primary">{{ task.get_status_display }}</span>
+      {% for direction in task.directions.all %}
+        <span class="badge bg-secondary">{{ direction.name }}</span>
+      {% endfor %}
     </div>
     {% if task.description %}
       <p class="card-text small text-muted">{{ task.description|truncatechars:100 }}</p>
@@ -15,13 +18,12 @@
     {% if task.deadline %}
       <small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>
     {% endif %}
-    {% if task.assignee %}
+
+    {% for assignment in task.assignments.all %}
         <div class="mt-1"><small>Исполнитель: 
-            <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none text-muted">
-                {{ task.assignee.username }}
-            </a>
+            <a href="{% url 'users:public_profile' username=assignment.user.username %}">{{ assignment.user.username }}</a>
         </small></div>
-    {% endif %}
+    {% endfor %}
     <div class="mt-1 text-muted small">
       <i class="bi bi-kanban"></i> {{ task.project.name }}
     </div>

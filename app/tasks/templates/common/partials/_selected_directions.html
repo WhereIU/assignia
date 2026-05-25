@@ -1,0 +1,14 @@
+{% for direction in task.directions.all %}
+    <span class="badge bg-secondary me-1 mb-1">
+        {{ direction.name }}
+        <button type="button"
+                hx-post="{% url 'tasks:remove_direction' task.pk %}"
+                hx-vals='{"direction_id": "{{ direction.id }}"}'
+                hx-target="#selected-directions"
+                hx-swap="innerHTML"
+                class="btn-close btn-close-white ms-1" aria-label="Удалить"
+                style="font-size: 0.5rem;"></button>
+    </span>
+{% empty %}
+    <span class="text-muted small">не выбраны</span>
+{% endfor %}

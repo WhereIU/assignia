@@ -19,18 +19,27 @@
       <span class="badge bg-info">Шанс риска: {{ task.risk_chance }}</span>
       <span class="badge bg-info">Последствия: {{ task.risk_impact }}</span>
       <span class="badge bg-primary">{{ task.get_status_display }}</span>
+      {% for direction in task.directions.all %}
+        <span class="badge bg-secondary">{{ direction.name }}</span>
+      {% endfor %}
     </div>
     <p class="card-text">{{ task.description }}</p>
     {% if task.deadline %}<small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>{% endif %}
+
     <div class="mt-2">
-      <i class="bi bi-person me-1"></i>
-      Исполнитель: {% if task.assignee %}
-        <a href="{% url 'users:public_profile' username=task.assignee.username %}" class="text-decoration-none">{{ task.assignee.username }}</a>
-      {% else %}не назначен{% endif %}
+      <i class="bi bi-people me-1"></i>
+      Исполнители:
+      {% if task.assignments.exists %}
+        {% for assignment in task.assignments.all %}
+          <a href="{% url 'users:public_profile' username=assignment.user.username %}" class="text-decoration-none me-1">{{ assignment.user.username }}</a>{% if not forloop.last %},{% endif %}
+        {% endfor %}
+      {% else %}
+        не назначены
+      {% endif %}
     </div>
 
     <div class="mt-3">
-      {% if task.status == 'new' and not task.assignee and user.is_authenticated and not is_privileged %}
+      {% if task.status == 'new' and not task.assignments.exists and user.is_authenticated and not is_privileged %}
         <button hx-post="{% url 'tasks:take_task' task.pk %}"
                 hx-target="#task-main-card"
                 hx-swap="outerHTML"

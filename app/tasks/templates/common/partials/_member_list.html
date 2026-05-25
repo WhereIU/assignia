@@ -1,8 +1,10 @@
 {% for member in members %}
-  <button type="button" class="list-group-item list-group-item-action"
-          onclick="this.closest('form').querySelector('input[name=assignee_id]').value='{{ member.user.pk }}'; 
-                   this.closest('form').querySelector('input[name=assignee_search]').value='{{ member.user.username }}';
-                   document.getElementById('assignee-list').innerHTML = '';">
-    {{ member.user.username }}
-  </button>
+    <button type="button" class="list-group-item list-group-item-action py-1"
+            hx-post="{% url 'tasks:add_assignee' task.pk %}"
+            hx-vals='{"user_id": "{{ member.user.pk }}"}'
+            hx-target="#selected-assignees"
+            hx-swap="innerHTML"
+            hx-on::after-request="this.value=''">
+        {{ member.user.username }}
+    </button>
 {% endfor %}

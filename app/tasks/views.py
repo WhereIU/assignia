@@ -5,10 +5,10 @@ from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.urls import reverse
 
-from projects.models import Project, ProjectMembership
+from projects.models import Project, ProjectMembership, Direction
 from users.models import User
 
-from .models import RequestMessage, Task, TaskRequest, Comment
+from .models import RequestMessage, Task, TaskRequest, Comment, TaskAssignment
 from .forms import TaskCreateForm
 
 
@@ -43,10 +43,11 @@ def can_handle_requests(user, project):
 
 @login_required
 def create_task(request, username, slug):
-    project = get_project_or_404(username, slug)
-    if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
+    if not membership:
         return HttpResponseForbidden("Вы не участник проекта")
-
+    
     if request.method == 'POST':
         form = TaskCreateForm(request.POST, project=project)
         if form.is_valid():
@@ -54,12 +55,13 @@ def create_task(request, username, slug):
             task.project = project
             task.creator = request.user
             task.save()
+            form.save_m2m()
             messages.success(request, f'Задача «{task.title}» создана!')
             return redirect('projects:detail_project', username=username, slug=slug)
     else:
         form = TaskCreateForm(project=project)
-
-    return render(request, 'tasks/task_create.html', {
+    
+    return render(request, 'tasks/create_task.html', {
         'form': form,
         'project': project,
     })
@@ -97,6 +99,7 @@ def edit_task(request, task_pk):
     project_members = ProjectMembership.objects.filter(project=task.project).select_related('user')
     return render(request, 'tasks/partials/_task_edit.html', {
         'task': task,
+        'project': task.project,
         'project_members': project_members,
     })
 
@@ -107,7 +110,6 @@ def save_task(request, task_pk):
     task = get_object_or_404(Task, pk=task_pk)
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
-
     task.title = request.POST.get('title', task.title)
     task.status = request.POST.get('status', task.status)
     task.priority = int(request.POST.get('priority', task.priority))
@@ -116,14 +118,20 @@ def save_task(request, task_pk):
     task.description = request.POST.get('description', task.description)
     deadline = request.POST.get('deadline')
     task.deadline = deadline if deadline else None
-    assignee_id = request.POST.get('assignee_id')
-    if assignee_id:
-        try:
-            task.assignee = User.objects.get(pk=assignee_id)
-        except User.DoesNotExist:
-            pass
+    
+    assignee_ids = request.POST.getlist('assignee_ids')
+    if assignee_ids:
+        task.assignments.exclude(user__pk__in=assignee_ids).delete()
+        for user_id in assignee_ids:
+            try:
+                user = User.objects.get(pk=user_id)
+                if ProjectMembership.objects.filter(user=user, project=task.project).exists():
+                    TaskAssignment.objects.get_or_create(task=task, user=user)
+            except User.DoesNotExist:
+                pass
     else:
-        task.assignee = None
+        task.assignments.all().delete()
+
     task.save()
     messages.success(request, 'Задача сохранена')
     return render(request, 'tasks/partials/_task_view.html', {
@@ -133,7 +141,6 @@ def save_task(request, task_pk):
     })
 
 
-@login_required
 def search_members(request, task_pk):
     task = get_object_or_404(Task, pk=task_pk)
     if not is_privileged(request.user, task.project):
@@ -142,7 +149,57 @@ def search_members(request, task_pk):
     members = ProjectMembership.objects.filter(project=task.project).select_related('user')
     if query:
         members = members.filter(user__username__icontains=query)[:10]
-    return render(request, 'common/partials/_member_list.html', {'members': members})
+    return render(request, 'common/partials/_member_list.html', {
+        'members': members,
+        'task': task,
+    })
+
+
+@login_required
+def search_directions(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    query = request.GET.get('direction_search', '').strip()
+    directions = task.project.directions.filter(is_deleted=False)
+    if query:
+        directions = directions.filter(name__icontains=query)[:15]
+    else:
+        directions = directions.all()[:15]
+    return render(request, 'common/partials/_direction_list.html', {
+        'directions': directions,
+        'task': task,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def add_direction(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    direction_id = request.POST.get('direction_id')
+    try:
+        direction = Direction.objects.get(pk=direction_id, project=task.project, is_deleted=False)
+        task.directions.add(direction)
+    except Direction.DoesNotExist:
+        return HttpResponse("Направление не найдено", status=404)
+    return render(request, 'common/partials/_selected_directions.html', {'task': task})
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_direction(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    direction_id = request.POST.get('direction_id')
+    try:
+        direction = Direction.objects.get(pk=direction_id, project=task.project)
+        task.directions.remove(direction)
+    except Direction.DoesNotExist:
+        pass
+    return render(request, 'common/partials/_selected_directions.html', {'task': task})
 
 
 @login_required
@@ -151,10 +208,10 @@ def take_task(request, task_pk):
     task = get_object_or_404(Task, pk=task_pk)
     if not ProjectMembership.objects.filter(user=request.user, project=task.project).exists():
         return HttpResponseForbidden("Вы не участник проекта")
-    if task.status != 'new' or task.assignee is not None:
+    if task.status != 'new' or task.assignments.exists():
         return HttpResponse("Задача уже занята или не новая", status=400)
 
-    task.assignee = request.user
+    TaskAssignment.objects.create(task=task, user=request.user)
     task.status = 'in_progress'
     task.save()
     return render(request, 'tasks/partials/_task_item.html', {
@@ -173,7 +230,7 @@ def delete_task(request, task_pk):
     if membership.role == 'participant':
         if task.creator != request.user:
             return HttpResponseForbidden("Вы не автор задачи")
-        if task.status not in ('new', 'pending') or task.assignee is not None:
+        if task.status not in ('new', 'pending') or task.assignments.exists():
             return HttpResponse("Нельзя удалить эту задачу", status=400)
     elif not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -255,29 +312,6 @@ def change_risk(request, task_pk):
 
 @login_required
 @require_http_methods(["POST"])
-def assign_user(request, task_pk):
-    task = get_object_or_404(Task, pk=task_pk)
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-    user_id = request.POST.get('user_id')
-    if not user_id:
-        task.assignee = None
-    else:
-        try:
-            user = User.objects.get(pk=user_id)
-            if not ProjectMembership.objects.filter(user=user, project=task.project).exists():
-                return HttpResponse("Пользователь не участник проекта", status=400)
-            task.assignee = user
-        except User.DoesNotExist:
-            return HttpResponse("Пользователь не найден", status=404)
-    if task.assignee and task.status == 'new':
-        task.status = 'in_progress'
-    task.save()
-    return render(request, 'tasks/partials/_task_item.html', {'task': task})
-
-
-@login_required
-@require_http_methods(["POST"])
 def add_comment(request, task_pk):
     task = get_object_or_404(Task, pk=task_pk)
     text = request.POST.get('text', '').strip()
@@ -300,8 +334,19 @@ def create_request(request, username, slug):
     description = request.POST.get('description', '').strip()
     if description:
         TaskRequest.objects.create(project=project, author=request.user, description=description)
-        return HttpResponse("<div class='alert alert-success'>Запрос отправлен</div>")
-    return HttpResponse("<div class='alert alert-danger'>Введите описание</div>", status=400)
+        messages.success(request, 'Запрос отправлен')
+    else:
+        messages.error(request, 'Введите описание')
+
+    if can_handle_requests(request.user, project):
+        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
+    else:
+        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
+    return render(request, 'requests/partials/_requests.html', {
+        'project': project,
+        'requests': requests_qs,
+        'is_tech_support': can_handle_requests(request.user, project),
+    })
 
 
 @login_required
@@ -435,3 +480,35 @@ def request_create_submit(request, username, slug):
         'is_tech_support': can_handle_requests(request.user, project),
     }
     return render(request, 'requests/partials/_requests.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def add_assignee(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    user_id = request.POST.get('user_id')
+    try:
+        user = User.objects.get(pk=user_id)
+        if not ProjectMembership.objects.filter(user=user, project=task.project).exists():
+            return HttpResponse("Пользователь не участник проекта", status=400)
+        TaskAssignment.objects.get_or_create(task=task, user=user)
+    except User.DoesNotExist:
+        return HttpResponse("Пользователь не найден", status=404)
+    return render(request, 'common/partials/_selected_assignees.html', {'task': task})
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_assignee(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    user_id = request.POST.get('user_id')
+    try:
+        user = User.objects.get(pk=user_id)
+        TaskAssignment.objects.filter(task=task, user=user).delete()
+    except User.DoesNotExist:
+        pass
+    return render(request, 'common/partials/_selected_assignees.html', {'task': task})

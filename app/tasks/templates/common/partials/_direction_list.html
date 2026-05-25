@@ -1,0 +1,12 @@
+{% for direction in directions %}
+    <button type="button" class="list-group-item list-group-item-action py-1"
+            hx-post="{% url 'tasks:add_direction' task.pk %}"
+            hx-vals='{"direction_id": "{{ direction.id }}"}'
+            hx-target="#selected-directions"
+            hx-swap="innerHTML"
+            hx-on::after-request="document.querySelector('input[name=direction_search]').value=''">
+        {{ direction.name }}
+    </button>
+{% empty %}
+    <div class="text-muted small px-2 py-1">Ничего не найдено</div>
+{% endfor %}

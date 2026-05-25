@@ -12,22 +12,22 @@ from .models import Notification
 def create_comment_notification(sender, instance, created, **kwargs):
     if not created:
         return
+    task = instance.task
+    task_url = reverse('tasks:detail_task', kwargs={'task_pk': task.pk})
 
-    task_pk = instance.task.pk
-    task_url = reverse('tasks:detail_task', kwargs={'task_pk': task_pk})
-
-    if instance.task.creator and instance.task.creator != instance.author:
+    if task.creator and task.creator != instance.author:
         Notification.objects.create(
-            recipient=instance.task.creator,
-            text=f'Новый комментарий от {instance.author.username} в задаче «{instance.task.title}»',
+            recipient=task.creator,
+            text=f'Новый комментарий от {instance.author.username} в задаче «{task.title}»',
             url=task_url
         )
-    if instance.task.assignee and instance.task.assignee != instance.author and instance.task.assignee != instance.task.creator:
-        Notification.objects.create(
-            recipient=instance.task.assignee,
-            text=f'Новый комментарий от {instance.author.username} в задаче «{instance.task.title}»',
-            url=task_url
-        )
+    for assignment in task.assignments.all():
+        if assignment.user != instance.author and assignment.user != task.creator:
+            Notification.objects.create(
+                recipient=assignment.user,
+                text=f'Новый комментарий от {instance.author.username} в задаче «{task.title}»',
+                url=task_url
+            )
 
 
 @receiver(post_save, sender=Invitation)

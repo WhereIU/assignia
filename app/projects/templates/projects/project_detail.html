@@ -26,6 +26,11 @@
                 hx-get="{% url 'projects:project_members' username=project.owner.username slug=project.slug %}"
                 hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'directions' %}active{% endif %}"
+                hx-get="{% url 'projects:directions_list' username=project.owner.username slug=project.slug %}"
+                hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
+            </li>
         </ul>
     </li>
 {% endblock %}
@@ -42,6 +47,7 @@
         <div id="members-container">
             {% include 'projects/partials/_members.html' with members=members can_manage=can_manage roles=roles %}
         </div>
+    {% elif tab == 'directions' %}
     {% endif %}
 </div>
 {% endblock %}

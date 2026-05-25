@@ -5,10 +5,17 @@ from .models import Task, TaskRequest, Comment
 
 @admin.register(Task)
 class TaskAdmin(admin.ModelAdmin):
-    list_display = ('title', 'project', 'status', 'priority', 'assignee', 'deadline')
+    list_display = ('title', 'project', 'status', 'priority', 'assignments_count', 'is_deleted')
     list_filter = ('status', 'priority', 'project', 'is_deleted')
     search_fields = ('title', 'description')
     actions = ['soft_delete', 'restore', 'mark_in_progress', 'mark_done']
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).prefetch_related('assignments')
+
+    def assignments_count(self, obj):
+        return obj.assignments.count()
+    assignments_count.short_description = 'Исполнителей'
 
 
     @admin.action(description='Удалить выбранные задачи (в корзину)')

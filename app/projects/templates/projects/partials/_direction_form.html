@@ -1,0 +1,17 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <form hx-post="{{ submit_url }}" hx-target="#tab-content" hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label class="form-label">Название</label>
+                <input type="text" name="name" class="form-control" value="{{ direction.name|default:'' }}" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Описание</label>
+                <textarea name="description" class="form-control" rows="2">{{ direction.description|default:'' }}</textarea>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('#direction-form-container').innerHTML=''">Отмена</button>
+        </form>
+    </div>
+</div>

@@ -1,3 +1,5 @@
+from urllib import request
+
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count, Q
@@ -33,6 +35,13 @@ def can_manage_member(actor, target_membership, project):
     if actor_role == 'admin':
         return target_membership.role in ('manager', 'tech_support', 'participant')
     return False
+
+
+def can_manage_directions(user, project):
+    if not user.is_authenticated:
+        return False
+    membership = ProjectMembership.objects.filter(user=user, project=project).first()
+    return membership and membership.role in ('admin', 'owner')
 
 
 def redirect_to_members(request, project):
@@ -95,11 +104,11 @@ def dashboard(request):
     q = request.GET.get('q', '')
     source = request.GET.get('source', 'assigned')
 
-    assigned_tasks = Task.objects.filter(assignee=request.user, is_deleted=False)
+    assigned_tasks = Task.objects.filter(assignments__user=request.user, is_deleted=False)
     available_tasks = Task.objects.filter(
         project__in=user_projects,
         status='new',
-        assignee__isnull=True,
+        assignments__isnull=True,
         is_deleted=False,
     )
 
@@ -257,8 +266,8 @@ def project_analytics_tab(request, username, slug):
     participants = User.objects.filter(
         projectmembership__project=project
     ).annotate(
-        assigned_count=Count('assigned_tasks', filter=Q(assigned_tasks__project=project)),
-        done_count=Count('assigned_tasks', filter=Q(assigned_tasks__project=project, assigned_tasks__status='done')),
+        assigned_count=Count('task_assignments', filter=Q(task_assignments__task__project=project)),
+        done_count=Count('task_assignments', filter=Q(task_assignments__task__project=project, task_assignments__task__status='done')),
     )
 
     context = {
@@ -391,3 +400,147 @@ def remove_member(request, username, slug, user_pk):
     target_membership.delete()
     messages.success(request, f'{removed_username} удалён из проекта')
     return redirect_to_members(request, project)
+
+
+@login_required
+def directions_list(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not can_manage_directions(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    directions = project.directions.filter(is_deleted=False).annotate(task_count=Count('tasks'))
+    return render(request, 'projects/partials/_directions.html', {
+        'project': project,
+        'directions': directions,
+        'can_manage': True,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def create_direction(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not can_manage_directions(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    if not name:
+        messages.error(request, 'Название направления обязательно')
+        return redirect_to_directions(request, project)
+
+    Direction.objects.create(project=project, name=name, description=description, created_by=request.user)
+    messages.success(request, f'Направление «{name}» создано')
+    return redirect_to_directions(request, project)
+
+
+@login_required
+@require_http_methods(["POST"])
+def update_direction(request, username, slug, direction_pk):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not can_manage_directions(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    if not name:
+        messages.error(request, 'Название направления обязательно')
+        return redirect_to_directions(request, project)
+
+    direction.name = name
+    direction.description = description
+    direction.save()
+    messages.success(request, 'Направление обновлено')
+    return redirect_to_directions(request, project)
+
+
+@login_required
+@require_http_methods(["POST"])
+def delete_direction(request, username, slug, direction_pk):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not can_manage_directions(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
+    direction.is_deleted = True
+    direction.save()
+    messages.success(request, f'Направление «{direction.name}» удалено')
+    return redirect_to_directions(request, project)
+
+
+def redirect_to_directions(request, project):
+    directions = project.directions.filter(is_deleted=False).annotate(task_count=Count('tasks'))
+    return render(request, 'projects/partials/_directions.html', {
+        'project': project,
+        'directions': directions,
+        'can_manage': True,
+    })
+
+
+@login_required
+def create_direction_form(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    return render(request, 'projects/partials/_direction_form.html', {
+        'project': project,
+        'submit_url': reverse('projects:create_direction', kwargs={'username': username, 'slug': slug}),
+    })
+
+
+@login_required
+def edit_direction_form(request, username, slug, direction_pk):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
+    return render(request, 'projects/partials/_direction_form.html', {
+        'project': project,
+        'direction': direction,
+        'submit_url': reverse('projects:update_direction', kwargs={'username': username, 'slug': slug, 'direction_pk': direction.pk}),
+    })
+
+
+
+@login_required
+def search_directions(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    query = request.GET.get('direction_search', '').strip()
+    directions = task.project.directions.filter(is_deleted=False)
+    if query:
+        directions = directions.filter(name__icontains=query)[:15]
+    else:
+        directions = directions.all()[:15]
+    return render(request, 'projects/partials/_direction_list.html', {
+        'directions': directions,
+        'task': task,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def add_direction_to_task(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    direction_id = request.POST.get('direction_id')
+    try:
+        direction = Direction.objects.get(pk=direction_id, project=task.project, is_deleted=False)
+        task.directions.add(direction)
+    except Direction.DoesNotExist:
+        return HttpResponse("Направление не найдено", status=404)
+    return render(request, 'projects/partials/_selected_directions.html', {'task': task})
+
+
+@login_required
+@require_http_methods(["POST"])
+def remove_direction_from_task(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    direction_id = request.POST.get('direction_id')
+    try:
+        direction = Direction.objects.get(pk=direction_id, project=task.project)
+        task.directions.remove(direction)
+    except Direction.DoesNotExist:
+        pass
+    return render(request, 'projects/partials/_selected_directions.html', {'task': task})
