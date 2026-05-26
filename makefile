@@ -27,3 +27,6 @@ save-images:
 
 load-images:
 	docker load -i assignia-images.tar
+
+deploy-ansible:
+	ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
