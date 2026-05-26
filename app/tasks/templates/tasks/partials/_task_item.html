@@ -11,6 +11,9 @@
       {% for direction in task.directions.all %}
         <span class="badge bg-secondary">{{ direction.name }}</span>
       {% endfor %}
+      {% for team in task.teams.all %}
+        <span class="badge bg-info">{{ team.name }}</span>
+      {% endfor %}
     </div>
     {% if task.description %}
       <p class="card-text small text-muted">{{ task.description|truncatechars:100 }}</p>

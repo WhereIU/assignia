@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
-from divisions.models import Direction
+from divisions.models import Direction, Team
 from projects.models import Project, ProjectMembership
 from users.models import User
 
@@ -275,7 +275,7 @@ def comment_add(request, task_pk):
     if text:
         Comment.objects.create(task=task, author=request.user, text=text)
     comments = task.comments.order_by('-created_at')
-    return render(request, 'common//partials/_comments.html', {'task': task, 'comments': comments})
+    return render(request, 'common/partials/_comments.html', {'task': task, 'comments': comments})
 
 
 @login_required
@@ -292,7 +292,7 @@ def assignee_add(request, task_pk):
         TaskAssignment.objects.get_or_create(task=task, user=user)
     except User.DoesNotExist:
         return HttpResponse("Пользователь не найден", status=404)
-    return render(request, 'common//partials/_selected_assignees.html', {'task': task})
+    return render(request, 'common/partials/_selected_assignees.html', {'task': task})
 
 
 @login_required
@@ -307,7 +307,7 @@ def assignee_remove(request, task_pk):
         TaskAssignment.objects.filter(task=task, user=user).delete()
     except User.DoesNotExist:
         pass
-    return render(request, 'common//partials/_selected_assignees.html', {'task': task})
+    return render(request, 'common/partials/_selected_assignees.html', {'task': task})
 
 
 @login_required
@@ -319,7 +319,7 @@ def member_search(request, task_pk):
     members = ProjectMembership.objects.filter(project=task.project).select_related('user')
     if query:
         members = members.filter(user__username__icontains=query)[:10]
-    return render(request, 'common//partials/_member_list.html', {'members': members, 'task': task})
+    return render(request, 'common/partials/_member_list.html', {'members': members, 'task': task})
 
 
 @login_required
@@ -333,7 +333,21 @@ def direction_search(request, task_pk):
         directions = directions.filter(name__icontains=query)[:15]
     else:
         directions = directions.all()[:15]
-    return render(request, 'common//partials/_direction_list.html', {'directions': directions, 'task': task})
+    return render(request, 'common/partials/_direction_list.html', {'directions': directions, 'task': task})
+
+
+@login_required
+def team_search(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    query = request.GET.get('team_search', '').strip()
+    teams = Team.objects.filter(direction__project=task.project, is_deleted=False).distinct()
+    if query:
+        teams = teams.filter(name__icontains=query)[:15]
+    else:
+        teams = teams.all()[:15]
+    return render(request, 'common/partials/_team_list.html', {'teams': teams, 'task': task})
 
 
 @login_required
@@ -348,7 +362,7 @@ def direction_add_to_task(request, task_pk):
         task.directions.add(direction)
     except Direction.DoesNotExist:
         return HttpResponse("Направление не найдено", status=404)
-    return render(request, 'common//partials/_selected_directions.html', {'task': task})
+    return render(request, 'common/partials/_selected_directions.html', {'task': task})
 
 
 @login_required
@@ -363,7 +377,7 @@ def direction_remove_from_task(request, task_pk):
         task.directions.remove(direction)
     except Direction.DoesNotExist:
         pass
-    return render(request, 'common//partials/_selected_directions.html', {'task': task})
+    return render(request, 'common/partials/_selected_directions.html', {'task': task})
 
 
 @login_required
@@ -502,3 +516,33 @@ def request_create_submit(request, username, slug):
         requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
     context = {'project': project, 'requests': requests_qs, 'is_tech_support': can_handle_requests(request.user, project)}
     return render(request, 'requests/partials/_requests.html', context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def team_add_to_task(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    team_id = request.POST.get('team_id')
+    try:
+        team = Team.objects.get(pk=team_id, direction__project=task.project, is_deleted=False)
+        task.teams.add(team)
+    except Team.DoesNotExist:
+        return HttpResponse("Команда не найдена", status=404)
+    return render(request, 'common/partials/_selected_teams.html', {'task': task})
+
+
+@login_required
+@require_http_methods(["POST"])
+def team_remove_from_task(request, task_pk):
+    task = get_object_or_404(Task, pk=task_pk)
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    team_id = request.POST.get('team_id')
+    try:
+        team = Team.objects.get(pk=team_id, direction__project=task.project)
+        task.teams.remove(team)
+    except Team.DoesNotExist:
+        pass
+    return render(request, 'common/partials/_selected_teams.html', {'task': task})

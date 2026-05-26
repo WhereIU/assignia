@@ -22,6 +22,9 @@
       {% for direction in task.directions.all %}
         <span class="badge bg-secondary">{{ direction.name }}</span>
       {% endfor %}
+      {% for team in task.teams.all %}
+        <span class="badge bg-info">{{ team.name }}</span>
+      {% endfor %}
     </div>
     <p class="card-text">{{ task.description }}</p>
     {% if task.deadline %}<small class="text-muted">Срок: {{ task.deadline|date:"d.m.Y H:i" }}</small>{% endif %}

@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from core.models import Notification
 from tasks.models import Task
 from users.models import User
+from tasks.views import is_privileged
 
 from .forms import ProjectCreateForm
 from .models import Invitation, Project, ProjectMembership
@@ -172,6 +173,7 @@ def project_detail(request, username, slug):
         'project': project,
         'tasks': tasks,
         'is_member': is_member,
+        'is_privileged': is_privileged(request.user, project) if request.user.is_authenticated else False,
     })
 
 
@@ -220,6 +222,18 @@ def members_tab(request, username, slug):
     if get_member_role(request.user, project) not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
     return redirect_to_members(request, project)
+
+
+@login_required
+def project_settings_tab(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    if not can_manage_member(request.user, None, project):
+        actor_role = get_member_role(request.user, project)
+        if actor_role not in ('admin', 'owner'):
+            return HttpResponseForbidden("Недостаточно прав")
+    return render(request, 'projects/partials/_project_settings.html', {
+        'project': project,
+    })
 
 
 @login_required
@@ -331,3 +345,37 @@ def member_update_role(request, username, slug, user_pk):
     target_membership.save()
     messages.success(request, f'Роль {target_membership.user.username} изменена на {new_role}')
     return redirect_to_members(request, project)
+
+
+@login_required
+def project_settings_form(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    actor_role = get_member_role(request.user, project)
+    if actor_role not in ('admin', 'owner'):
+        return HttpResponseForbidden("Недостаточно прав")
+    return render(request, 'projects/partials/_project_settings_form.html', {
+        'project': project,
+        'submit_url': reverse('projects:project_update', kwargs={'username': username, 'slug': slug}),
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def project_update(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    actor_role = get_member_role(request.user, project)
+    if actor_role not in ('admin', 'owner'):
+        return HttpResponseForbidden("Недостаточно прав")
+    name = request.POST.get('name', '').strip()
+    description = request.POST.get('description', '').strip()
+    is_public = request.POST.get('is_public') == 'on'
+    if not name:
+        messages.error(request, 'Название проекта не может быть пустым')
+        return redirect('projects:project_settings_tab', username=username, slug=slug)
+    project.name = name
+    project.description = description
+    if actor_role == 'owner':
+        project.is_public = is_public
+    project.save()
+    messages.success(request, 'Настройки проекта обновлены')
+    return redirect('projects:project_settings_tab', username=username, slug=slug)

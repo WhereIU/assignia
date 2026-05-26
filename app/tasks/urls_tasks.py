@@ -21,9 +21,12 @@ urlpatterns = [
     path('task/<int:task_pk>/assignees/remove/', views.assignee_remove, name='assignee_remove'),
     path('task/<int:task_pk>/directions/add/', views.direction_add_to_task, name='direction_add_to_task'),
     path('task/<int:task_pk>/directions/remove/', views.direction_remove_from_task, name='direction_remove_from_task'),
-
+    path('task/<int:task_pk>/teams/add/', views.team_add_to_task, name='team_add_to_task'),
+    path('task/<int:task_pk>/teams/remove/', views.team_remove_from_task, name='team_remove_from_task'),
+    
     path('task/<int:task_pk>/comment/add/', views.comment_add, name='comment_add'),
 
     path('task/<int:task_pk>/search-members/', views.member_search, name='member_search'),
     path('task/<int:task_pk>/search-directions/', views.direction_search, name='direction_search'),
+    path('task/<int:task_pk>/search-teams/', views.team_search, name='team_search'),
 ]

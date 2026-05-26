@@ -23,14 +23,21 @@
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'members' %}active{% endif %}"
-                hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
-                hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
+                    hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'directions' %}active{% endif %}"
-                hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}"
-                hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
+                    hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
             </li>
+            {% if is_privileged %}
+                <li class="nav-item">
+                    <a class="nav-link {% if tab == 'settings' %}active{% endif %}"
+                        hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
+                        hx-target="#tab-content" hx-swap="innerHTML" href="#">Настройки</a>
+                </li>
+            {% endif %}
         </ul>
     </li>
 {% endblock %}
@@ -40,14 +47,10 @@
     {% if tab == 'tasks' or not tab %}
         {% include 'tasks/partials/_tasks.html' with tasks=tasks %}
     {% elif tab == 'requests' %}
-        {% include 'requests/partials/_requests.html' with requests=requests %}
     {% elif tab == 'analytics' %}
-        {% include 'projects/partials/_analytics.html' with directions=directions participants=participants %}
     {% elif tab == 'members' %}
-        <div id="members-container">
-            {% include 'projects/partials/_members.html' with members=members can_manage=can_manage roles=roles %}
-        </div>
     {% elif tab == 'directions' %}
+    {% elif tab == 'settings' %}
     {% endif %}
 </div>
 {% endblock %}

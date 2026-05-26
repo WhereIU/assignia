@@ -77,6 +77,19 @@
               {% include 'common/partials/_selected_directions.html' with task=task %}
           </div>
       </div>
+      <div class="col-12">
+        <label class="form-label">Команды</label>
+        <input type="text" class="form-control form-control-sm" name="team_search" placeholder="Поиск команды..."
+              hx-get="{% url 'tasks:team_search' task.pk %}" 
+              hx-trigger="keyup changed delay:300ms" 
+              hx-target="#team-search-results" 
+              hx-swap="innerHTML"
+              value="">
+        <div id="team-search-results" class="list-group mt-1"></div>
+        <div id="selected-teams" class="mt-2">
+            {% include 'common/partials/_selected_teams.html' with task=task %}
+        </div>
+    </div>
     </div>
     <div class="mt-3 d-flex gap-2">
       <button type="submit" class="btn btn-success">Сохранить</button>

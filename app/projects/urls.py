@@ -11,9 +11,13 @@ urlpatterns = [
     path('new/project/create/', views.project_create, name='project_create'),
     path('project/<str:username>/<str:slug>/', views.project_detail, name='project_detail'),
     path('project/<str:username>/<str:slug>/join/', views.project_join, name='project_join'),
+    path('project/<str:username>/<str:slug>/update/', views.project_update, name='project_update'),
+
+    path('form/project/<str:username>/<str:slug>/settings/', views.project_settings_form, name='project_settings_form'),
 
     path('project/<str:username>/<str:slug>/members/', views.members_tab, name='members_tab'),
     path('project/<str:username>/<str:slug>/analytics/', views.analytics_tab, name='analytics_tab'),
+    path('project/<str:username>/<str:slug>/settings/', views.project_settings_tab, name='project_settings_tab'),
 
     path('project/<str:username>/<str:slug>/invite/', views.invitation_send, name='invitation_send'),
     path('project/<str:username>/<str:slug>/invite/<int:invitation_pk>/cancel/', views.invitation_cancel, name='invitation_cancel'),

@@ -1,0 +1,14 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <form hx-post="{{ submit_url }}" hx-target="#tab-content" hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label class="form-label">Название команды</label>
+                <input type="text" name="name" class="form-control" value="{{ team.name|default:'' }}" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    onclick="this.closest('#team-form-container').innerHTML=''">Отмена</button>
+        </form>
+    </div>
+</div>

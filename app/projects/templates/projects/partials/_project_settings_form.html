@@ -1,0 +1,23 @@
+<div class="card mb-3">
+    <div class="card-body">
+        <form hx-post="{{ submit_url }}" hx-target="#tab-content" hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label class="form-label">Название</label>
+                <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
+            </div>
+            <div class="mb-2">
+                <label class="form-label">Описание</label>
+                <textarea name="description" class="form-control" rows="3">{{ project.description }}</textarea>
+            </div>
+            {% if user == project.owner %}
+            <div class="form-check mb-2">
+                <input class="form-check-input" type="checkbox" name="is_public" id="is-public" {% if project.is_public %}checked{% endif %}>
+                <label class="form-check-label" for="is-public">Публичный проект</label>
+            </div>
+            {% endif %}
+            <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="this.closest('#settings-form-container').innerHTML=''">Отмена</button>
+        </form>
+    </div>
+</div>

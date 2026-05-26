@@ -1,0 +1,14 @@
+{% for team in task.teams.all %}
+    <span class="badge bg-secondary me-1 mb-1">
+        {{ team.name }}
+        <button type="button"
+                hx-post="{% url 'tasks:team_remove_from_task' task.pk %}"
+                hx-vals='{"team_id": "{{ team.id }}"}'
+                hx-target="#selected-teams"
+                hx-swap="innerHTML"
+                class="btn-close btn-close-white ms-1" aria-label="Удалить"
+                style="font-size: 0.5rem;"></button>
+    </span>
+{% empty %}
+    <span class="text-muted small">не назначены</span>
+{% endfor %}
