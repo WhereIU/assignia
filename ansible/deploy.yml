@@ -14,7 +14,10 @@
         - ../app
         - ../nginx
         - ../docker
-
+  
+    - name: Clean up orphan containers and networks
+      command: docker network prune -f
+  
     - name: Start services
       ansible.builtin.command:
         cmd: docker compose -f docker-compose.prod.yml up -d --build
