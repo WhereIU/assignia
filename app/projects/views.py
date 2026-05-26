@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q
+from django.db.models import Count, Q, Avg, Sum, F
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -9,7 +9,9 @@ from django.views.decorators.http import require_http_methods
 from core.models import Notification
 from tasks.models import Task
 from users.models import User
+from divisions.models import Team
 from tasks.views import is_privileged
+
 
 from .forms import ProjectCreateForm
 from .models import Invitation, Project, ProjectMembership
@@ -196,21 +198,32 @@ def analytics_tab(request, username, slug):
     if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
         return HttpResponseForbidden("Вы не участник проекта")
 
-    directions = project.directions.annotate(
-        total_tasks=Count('tasks'),
-        done_tasks=Count('tasks', filter=Q(tasks__status='done')),
-        in_progress_tasks=Count('tasks', filter=Q(tasks__status='in_progress')),
-        new_tasks=Count('tasks', filter=Q(tasks__status='new')),
+    task_filter = Q(tasks__project=project) & ~Q(tasks__status='cancelled')
+
+    teams = Team.objects.filter(direction__project=project).annotate(
+        total_tasks=Count('tasks', filter=task_filter),
+        new_tasks=Count('tasks', filter=task_filter & Q(tasks__status='new')),
+        pending_tasks=Count('tasks', filter=task_filter & Q(tasks__status='pending')),
+        in_progress_tasks=Count('tasks', filter=task_filter & Q(tasks__status='in_progress')),
+        done_tasks=Count('tasks', filter=task_filter & Q(tasks__status='done')),
+        avg_priority=Avg('tasks__priority', filter=task_filter),
+        total_risk=Sum(F('tasks__risk_chance') * F('tasks__risk_impact'), filter=task_filter),
     )
+
+    assign_filter = Q(task_assignments__task__project=project) & ~Q(task_assignments__task__status='cancelled')
 
     participants = User.objects.filter(
         projectmembership__project=project
     ).annotate(
-        assigned_count=Count('task_assignments', filter=Q(task_assignments__task__project=project)),
-        done_count=Count('task_assignments', filter=Q(task_assignments__task__project=project, task_assignments__task__status='done')),
+        assigned_count=Count('task_assignments', filter=assign_filter),
+        done_count=Count('task_assignments', filter=assign_filter & Q(task_assignments__task__status='done')),
+        performance_score=Sum(
+            (F('task_assignments__task__priority') * (1 + F('task_assignments__task__risk_chance') * F('task_assignments__task__risk_impact') / 10.0)),
+            filter=Q(task_assignments__task__project=project, task_assignments__task__status='done')
+        ),
     )
 
-    context = {'project': project, 'directions': directions, 'participants': participants}
+    context = {'project': project, 'teams': teams, 'participants': participants}
     if request.headers.get('HX-Request'):
         return render(request, 'projects/partials/_analytics.html', context)
     return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})

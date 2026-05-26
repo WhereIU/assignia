@@ -1,33 +1,45 @@
 <h2>Статистика проекта «{{ project.name }}»</h2>
 
-<h3>По направлениям</h3>
+<h3>По командам</h3>
 <table class="table table-striped">
-    <thead><tr><th>Направление</th><th>Всего задач</th><th>Новые</th><th>В работе</th><th>Выполнено</th></tr></thead>
+    <thead><tr>
+        <th>Команда</th><th>Направление</th><th>Всего задач</th><th>Новые</th><th>На рассмотрении</th><th>В работе</th><th>Выполнено</th>
+        <th>Средний приоритет</th><th>Суммарный риск</th>
+    </tr></thead>
     <tbody>
-    {% for d in directions %}
+    {% for team in teams %}
         <tr>
-            <td>{{ d.name }}</td>
-            <td>{{ d.total_tasks }}</td>
-            <td>{{ d.new_tasks }}</td>
-            <td>{{ d.in_progress_tasks }}</td>
-            <td>{{ d.done_tasks }}</td>
+            <td>{{ team.name }}</td>
+            <td>{{ team.direction.name }}</td>
+            <td>{{ team.total_tasks }}</td>
+            <td>{{ team.new_tasks }}</td>
+            <td>{{ team.pending_tasks }}</td>
+            <td>{{ team.in_progress_tasks }}</td>
+            <td>{{ team.done_tasks }}</td>
+            <td>{{ team.avg_priority|floatformat:1|default:"—" }}</td>
+            <td>{{ team.total_risk|default:"—" }}</td>
         </tr>
     {% empty %}
-        <tr><td colspan="5">Нет направлений</td></tr>
+        <tr><td colspan="9">Нет команд</td></tr>
     {% endfor %}
     </tbody>
 </table>
 
 <h3>По участникам</h3>
 <table class="table table-striped">
-    <thead><tr><th>Участник</th><th>Назначено задач</th><th>Выполнено</th></tr></thead>
+    <thead><tr>
+        <th>Участник</th><th>Назначено задач</th><th>Выполнено</th><th>Оценка успеваемости</th>
+    </tr></thead>
     <tbody>
     {% for p in participants %}
         <tr>
             <td><a href="{% url 'users:public_profile' username=p.username %}" class="text-decoration-none">{{ p.username }}</a></td>
             <td>{{ p.assigned_count }}</td>
             <td>{{ p.done_count }}</td>
+            <td>{{ p.performance_score|floatformat:1|default:"—" }}</td>
         </tr>
+    {% empty %}
+        <tr><td colspan="4">Нет участников</td></tr>
     {% endfor %}
     </tbody>
 </table>

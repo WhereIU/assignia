@@ -119,6 +119,18 @@ def direction_delete(request, direction_pk):
 
 @login_required
 @require_http_methods(["POST"])
+def direction_hard_delete(request, direction_pk):
+    direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=True)
+    project = direction.project
+    if not can_manage_directions(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+    direction.delete()
+    messages.success(request, f'Направление «{direction.name}» удалено безвозвратно')
+    return redirect_to_directions(request, project, show_deleted=True)
+
+
+@login_required
+@require_http_methods(["POST"])
 def direction_restore(request, direction_pk):
     direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=True)
     project = direction.project
