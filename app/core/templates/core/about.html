@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}О Assignia{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-3 fw-bold">Assignia</h1>
+    <p class="lead mb-4">Распределение задач становится прозрачным</p>
+    <hr class="my-4 w-25 mx-auto">
+    <p class="fs-5">Assignia помогает близким к аудитории командам планировать работу, учитывать риски и отслеживать прогресс в реальном времени.</p>
+</div>
+
+<div class="row text-center mt-5">
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="bi bi-people-fill fs-1 text-primary mb-3"></i>
+                <h5 class="card-title">Ролевая модель</h5>
+                <p class="card-text text-muted">Раздельная отвественность - система прав для участников.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="bi bi-graph-up-arrow fs-1 text-success mb-3"></i>
+                <h5 class="card-title">Аналитика</h5>
+                <p class="card-text text-muted">Статистика исполинтелей и базовый анализ продуктивности.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <i class="bi bi-shield-shaded fs-1 text-warning mb-3"></i>
+                <h5 class="card-title">Контроль рисков</h5>
+                <p class="card-text text-muted">Оценивайте шанс и последствия рисков по каждой задаче, принимайте взвешенные решения.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="text-center mt-4">
+    <p class="text-muted">Assignia — проект с открытым исходным кодом.</p>
+    <a href="https://github.com/WhereIU/assignia" target="_blank" class="btn btn-outline-dark btn-sm">
+        <i class="bi bi-github"></i> Исходный код на GitHub
+    </a>
+</div>
+{% endblock %}

@@ -17,3 +17,11 @@ def notifications_list(request):
     notifications = request.user.notifications.order_by('-created_at')
     notifications.filter(is_read=False).update(is_read=True)
     return render(request, 'core/notifications.html', {'notifications': notifications})
+
+
+def about(request):
+    return render(request, 'core/about.html')
+
+
+def tutorials(request):
+    return render(request, 'core/tutorials.html')
