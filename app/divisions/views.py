@@ -1,11 +1,12 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.db.models import Count
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from users.models import User
 from projects.models import Project, ProjectMembership
 
 from .models import Direction, Team
@@ -226,4 +227,83 @@ def team_edit_form(request, direction_pk, team_pk):
         'project': direction.project,
         'team': team,
         'submit_url': reverse('teams:team_update', kwargs={'team_pk': team_pk}),
+    })
+
+
+@login_required
+def team_members(request, team_pk):
+    team = get_object_or_404(Team, pk=team_pk)
+    direction = team.direction
+    if not can_manage_teams(request.user, direction):
+        return HttpResponseForbidden("Недостаточно прав")
+    members = team.members.all()
+    return render(request, 'teams/partials/_team_members.html', {
+        'team': team,
+        'members': members,
+        'direction': direction,
+        'project': direction.project,
+    })
+
+
+@login_required
+def team_member_search(request, team_pk):
+    team = get_object_or_404(Team, pk=team_pk)
+    direction = team.direction
+    if not can_manage_teams(request.user, direction):
+        return HttpResponseForbidden("Недостаточно прав")
+    query = request.GET.get('member_search', '').strip()
+    members = ProjectMembership.objects.filter(project=direction.project).select_related('user')
+    if query:
+        members = members.filter(user__username__icontains=query)[:10]
+    else:
+        members = members.all()[:10]
+    return render(request, 'teams/partials/_team_member_search_results.html', {
+        'members': members,
+        'team': team,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def team_member_add(request, team_pk):
+    team = get_object_or_404(Team, pk=team_pk)
+    direction = team.direction
+    if not can_manage_teams(request.user, direction):
+        return HttpResponseForbidden("Недостаточно прав")
+    user_id = request.POST.get('user_id')
+    try:
+        user = User.objects.get(pk=user_id)
+        if not ProjectMembership.objects.filter(user=user, project=direction.project).exists():
+            return HttpResponse("Пользователь не участник проекта", status=400)
+        team.members.add(user)
+    except User.DoesNotExist:
+        return HttpResponse("Пользователь не найден", status=404)
+    members = team.members.all()
+    return render(request, 'teams/partials/_team_members.html', {
+        'team': team,
+        'members': members,
+        'direction': direction,
+        'project': direction.project,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def team_member_remove(request, team_pk):
+    team = get_object_or_404(Team, pk=team_pk)
+    direction = team.direction
+    if not can_manage_teams(request.user, direction):
+        return HttpResponseForbidden("Недостаточно прав")
+    user_id = request.POST.get('user_id')
+    try:
+        user = User.objects.get(pk=user_id)
+        team.members.remove(user)
+    except User.DoesNotExist:
+        pass
+    members = team.members.all()
+    return render(request, 'teams/partials/_team_members.html', {
+        'team': team,
+        'members': members,
+        'direction': direction,
+        'project': direction.project,
     })

@@ -1,10 +1,9 @@
 {% for member in members %}
     <button type="button" class="list-group-item list-group-item-action py-1"
-            hx-post="{% url 'tasks:assignee_add' task.pk %}"
+            hx-post="{% url 'teams:team_member_add' team_pk=team.pk %}"
             hx-vals='{"user_id": "{{ member.user.pk }}"}'
-            hx-target="#selected-assignees"
-            hx-swap="innerHTML"
-            hx-on::after-request="this.value=''">
+            hx-target="#team-members-container"
+            hx-swap="outerHTML">
         {{ member.user.username }}
     </button>
 {% empty %}
