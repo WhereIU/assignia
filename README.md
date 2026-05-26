@@ -53,4 +53,4 @@ make deploy-ansible
 ## Необходимо добавить в github secrets под ansible ssh доступ к серверам, вывести новую версию в main
 ```
 
-MIT License — см. файл [LICENSE](LICENSE).
+MIT License — см. файл [LICENCE](LICENCE).
