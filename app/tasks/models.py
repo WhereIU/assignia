@@ -46,7 +46,7 @@ class TaskRequest(models.Model):
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='requests')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     description = models.TextField()
-    status = models.CharField(max_length=20, choices=[('pending', 'На рассмотрении'), ('reviewed', 'Рассмотрен'), ('converted', 'Преобразован в задачу')], default='pending')
+    status = models.CharField(max_length=20, choices=[('pending', 'На рассмотрении'), ('reviewed', 'Рассмотрен'), ('declined', 'Отклонён'), ('converted', 'Преобразован в задачу')], default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
 class RequestMessage(models.Model):

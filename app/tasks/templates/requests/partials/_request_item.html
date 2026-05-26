@@ -12,7 +12,7 @@
                 · {{ req.created_at|date:"d.m.Y H:i" }}
             </div>
         </div>
-        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% else %}secondary{% endif %} align-self-start">
+        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %} align-self-start">
             {{ req.get_status_display }}
         </span>
     </div>

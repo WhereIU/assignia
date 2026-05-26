@@ -14,12 +14,27 @@
         <div class="text-muted small mb-2">
             Автор: <a href="{% url 'users:public_profile' username=req.author.username %}" class="text-decoration-none text-muted">{{ req.author.username }}</a> · {{ req.created_at|date:"d.m.Y H:i" }}
         </div>
-        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% else %}secondary{% endif %}">
+        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %}">
             {{ req.get_status_display }}
         </span>
-        {% if is_tech_support and req.status != 'converted' %}
-            <a href="{% url 'requests:request_convert' request_pk=req.pk %}"
-               class="btn btn-outline-success btn-sm ms-2">Создать задачу</a>
+
+        {% if is_tech_support and req.status == 'pending' %}
+            <form method="post" action="{% url 'requests:request_convert' request_pk=req.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-success btn-sm ms-2">Создать задачу</button>
+            </form>
+            <form method="post" action="{% url 'requests:request_decline' request_pk=req.pk %}" class="d-inline">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm ms-2">Отклонить</button>
+            </form>
+        {% endif %}
+
+        {% if req.author == user and req.status == 'pending' %}
+            <form hx-post="{% url 'requests:request_delete' request_pk=req.pk %}"
+                  class="d-inline ms-2">
+                {% csrf_token %}
+                <button type="submit" class="btn btn-outline-danger btn-sm">Удалить запрос</button>
+            </form>
         {% endif %}
     </div>
 </div>
@@ -35,11 +50,4 @@
     <textarea class="form-control mb-2" name="text" rows="2" placeholder="Ваше сообщение..."></textarea>
     <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
 </form>
-{% if req.author == user and req.status == 'pending' %}
-  <form hx-post="{% url 'requests:request_delete' request_pk=req.pk %}"
-        class="d-inline ms-2">
-    {% csrf_token %}
-    <button type="submit" class="btn btn-outline-danger btn-sm">Удалить запрос</button>
-  </form>
-{% endif %}
 {% endblock %}

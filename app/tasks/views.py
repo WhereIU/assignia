@@ -9,6 +9,7 @@ from django.views.decorators.http import require_http_methods
 from divisions.models import Direction, Team
 from projects.models import Project, ProjectMembership
 from users.models import User
+from core.models import Notification
 
 from .forms import TaskCreateForm
 from .models import Comment, RequestMessage, Task, TaskAssignment, TaskRequest
@@ -468,6 +469,25 @@ def request_delete(request, request_pk):
     response = HttpResponse(status=204)
     response['HX-Redirect'] = redirect_url
     return response
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_decline(request, request_pk):
+    req = get_object_or_404(TaskRequest, pk=request_pk)
+    if not can_handle_requests(request.user, req.project):
+        return HttpResponseForbidden("Недостаточно прав")
+    if req.status != 'pending':
+        return HttpResponse("Запрос уже обработан", status=400)
+    req.status = 'declined'
+    req.save()
+    Notification.objects.create(
+        recipient=req.author,
+        text=f'Ваш запрос в проекте «{req.project.name}» отклонён',
+        url=reverse('requests:request_detail', kwargs={'request_pk': req.pk})
+    )
+    messages.success(request, 'Запрос отклонён')
+    return redirect('requests:request_detail', request_pk=req.pk)
 
 
 @login_required
