@@ -8,15 +8,15 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-COPY requirements-dev.txt .
+COPY requirements.txt requirements-dev.txt ./
 RUN pip install --no-cache-dir -r requirements-dev.txt
 
 ARG UID=1000
 ARG GID=1000
 RUN groupadd -g $GID assignia && useradd -m -u $UID -g $GID assignia
 
-RUN chmod 777 /app
+COPY ./app /app
+
 RUN chown -R assignia:assignia /app
 
 USER assignia
