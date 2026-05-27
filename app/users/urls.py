@@ -19,4 +19,6 @@ urlpatterns = [
     path('settings/account/password-display/', views.account_password_display, name='account_password_display'),
     path('settings/notifications/', views.notifications_settings, name='notifications_settings'),
     path('settings/email/', views.email_settings, name='email_settings'),
+
+    path('confirm/email/<str:token>/', views.confirm_email, name='confirm_email'),
 ]

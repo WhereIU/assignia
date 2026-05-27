@@ -7,12 +7,13 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.http import HttpResponse
 from django.urls import reverse
+from django.core.cache import cache
 
 from projects.models import Project
 
 from .forms import ProfileEditForm, UserCreationForm, AccountEmailForm, PasswordChangeForm
 from .models import User
-
+from .utils import send_email_confirmation
 
 class AssigniaLoginView(LoginView):
     template_name = 'users/login.html'
@@ -73,8 +74,9 @@ def account(request):
         if 'change_email' in request.POST:
             email_form = AccountEmailForm(request.POST, instance=request.user)
             if email_form.is_valid():
-                email_form.save()
-                messages.success(request, 'Email обновлён.')
+                new_email = email_form.cleaned_data['email']
+                send_email_confirmation(request.user, new_email)
+                messages.success(request, 'Письмо с подтверждением отправлено на новый email.')
                 return render(request, 'users/partials/_account_email_display.html', {'user': request.user})
             else:
                 return render(request, 'users/partials/_account_email_form.html', {'email_form': email_form})
@@ -93,6 +95,21 @@ def account(request):
         'email_form': email_form,
         'password_form': password_form,
     })
+
+
+def confirm_email(request, token):
+    cache_key = f'email_confirmation:{token}'
+    data = cache.get(cache_key)
+    if not data:
+        messages.error(request, 'Ссылка недействительна или истекла.')
+        return redirect('core:home')
+    
+    user = User.objects.get(pk=data['user_id'])
+    user.email = data['new_email']
+    user.save()
+    cache.delete(cache_key)
+    messages.success(request, 'Email успешно подтверждён.')
+    return redirect('users:account')
 
 
 @login_required
