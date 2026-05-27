@@ -17,6 +17,10 @@ Including another URLconf
 from django.urls import path, include
 from django.contrib import admin
 
+# dev
+from django.conf import settings
+from django.conf.urls.static import static
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('core.urls', namespace='core')),
@@ -26,4 +30,4 @@ urlpatterns = [
     path('requests/', include('tasks.urls_requests', namespace='requests')),
     path('divisions/', include('divisions.urls_directions', namespace='divisions')),
     path('teams/', include('divisions.urls_teams', namespace='teams')),
-]
+] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) #dev
