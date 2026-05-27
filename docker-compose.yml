@@ -20,6 +20,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      redis:
+            condition: service_started
     networks:
       - assignia-network
 
@@ -38,6 +40,11 @@ services:
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
     networks:
       - assignia-network
+
+  redis:
+      image: redis:7-alpine
+      networks:
+        - assignia-network
 
 networks:
   assignia-network:
