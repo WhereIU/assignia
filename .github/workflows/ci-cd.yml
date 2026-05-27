@@ -6,10 +6,24 @@ on:
   pull_request:
     branches: [ main, dev ]
 
+
+env:
+  SECRET_KEY: ${{ secrets.SECRET_KEY }}
+  DEBUG: "1"
+  DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
+  POSTGRES_DB: assignia_db
+  POSTGRES_USER: assignia_user
+  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+  SQL_HOST: db
+  SQL_PORT: 5432
+  DJANGO_SETTINGS_MODULE: config.settings.dev
+
+
 jobs:
   test:
     runs-on: ubuntu-latest
     environment: ci
+
     services:
       db:
         image: postgres:15
@@ -27,34 +41,39 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: '3.11'
+          python-version: "3.11"
+
       - name: Install dependencies
         run: |
           cd app
           pip install -r ../requirements-dev.txt
+
+      - name: Django check
+        run: cd app && python manage.py check
+
+      - name: Check migrations
+        run: cd app && python manage.py makemigrations --check
+
       - name: Run tests
-        env:
-          SECRET_KEY: ${{ secrets.SECRET_KEY }}
-          DEBUG: '1'
-          DJANGO_ALLOWED_HOSTS: localhost,127.0.0.1
-          POSTGRES_DB: assignia_db
-          POSTGRES_USER: assignia_user
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-          SQL_HOST: localhost
-          SQL_PORT: 5432
-          DATABASE: postgres
         run: cd app && pytest
+
 
   deploy:
     needs: test
     runs-on: ubuntu-latest
     environment: cd
     if: github.ref == 'refs/heads/main'
+
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
+
     steps:
       - uses: actions/checkout@v3
+
       - name: Run Ansible playbook
         uses: dawidd6/action-ansible-playbook@v2
         with:
