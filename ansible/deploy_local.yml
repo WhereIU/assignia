@@ -1,0 +1,26 @@
+- name: Deploy Assignia
+  hosts: assignia_server
+
+  tasks:
+    - name: Copy project files
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /opt/assignia/
+        force: yes
+      loop:
+        - ../docker-compose.prod.yml
+        - ../.env.prod
+        - ../requirements.txt
+        - ../app
+        - ../nginx
+        - ../docker
+
+    - name: Build docker images
+      command: docker compose -f docker-compose.prod.yml build
+      args:
+        chdir: /opt/assignia
+
+    - name: Start services
+      command: docker compose -f docker-compose.prod.yml up -d
+      args:
+        chdir: /opt/assignia

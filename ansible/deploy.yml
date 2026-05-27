@@ -1,24 +1,20 @@
----
 - name: Deploy Assignia
   hosts: assignia_server
+
   tasks:
-    - name: Copy project files
-      ansible.builtin.copy:
-        src: "{{ item }}"
-        dest: /opt/assignia/
-        force: yes
-      loop:
-        - ../docker-compose.prod.yml
-        - ../.env.prod
-        - ../requirements.txt
-        - ../app
-        - ../nginx
-        - ../docker
-  
-    - name: Clean up orphan containers and networks
-      command: docker network prune -f
-  
+    - name: Clone or update repository
+      ansible.builtin.git:
+        repo: "git@github.com:WhereIU/assignia.git"
+        dest: /opt/assignia
+        version: main
+        update: yes
+
+    - name: Build docker images
+      command: docker compose -f docker-compose.prod.yml build
+      args:
+        chdir: /opt/assignia
+
     - name: Start services
-      ansible.builtin.command:
-        cmd: docker compose -f docker-compose.prod.yml up -d --build
+      command: docker compose -f docker-compose.prod.yml up -d
+      args:
         chdir: /opt/assignia

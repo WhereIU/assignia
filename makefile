@@ -30,3 +30,6 @@ load-images:
 
 deploy-ansible:
 	ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
+
+deploy-local-ansible:
+	ansible-playbook -i ansible/hosts.ini ansible/deploy_local.yml
