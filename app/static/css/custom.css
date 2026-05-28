@@ -52,5 +52,5 @@ footer { flex-shrink: 0; margin-top: auto;}
     display: none;
 }
 .btn-close-white {filter: invert(1) brightness(100%);}
-.direction-checkboxes {max-height: 200px;overflow-y: auto;
-.selected-assignee .btn-close {font-size: 0.5rem;}}
+.direction-checkboxes {max-height: 200px;overflow-y: auto;}
+.selected-assignee .btn-close {font-size: 0.5rem;}
