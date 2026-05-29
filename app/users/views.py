@@ -73,10 +73,11 @@ def confirm_email(request, token):
     user = confirm_email_token(token)
     if not user:
         messages.error(request, "Ссылка недействительна или устарела.")
-        return redirect("core:home")
+        return redirect("users:register")
 
-    messages.success(request, "Email подтверждён. Теперь войдите в аккаунт.")
-    return redirect("users:login")
+    login(request, user)
+    messages.success(request, "Email подтверждён. Добро пожаловать.")
+    return redirect("core:home")
 
 
 def public_profile(request, username):
