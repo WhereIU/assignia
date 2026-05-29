@@ -58,7 +58,10 @@ def register(request):
                 request,
                 "Подтвердите email для активации аккаунта."
             )
-            request.session["login_prefill"] = {"username": user.username}
+            request.session["login_prefill"] = {
+                "username": user.username,
+                "password": form.cleaned_data.get("password1"),
+            }
 
             return redirect("users:login")
     else:

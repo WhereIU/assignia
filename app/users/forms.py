@@ -19,13 +19,16 @@ class LoginForm(AuthenticationForm):
             'maxlength': 25,
         })
     )
+
     password = forms.CharField(
         label='Пароль',
         widget=forms.PasswordInput(attrs={
             'class': 'form-control',
             'placeholder': 'Введите пароль',
+            'autocomplete': 'current-password',
         })
     )
+
     error_messages = {
         "invalid_login": "Неверный логин или пароль.",
         "inactive": "Подтвердите email перед входом.",
