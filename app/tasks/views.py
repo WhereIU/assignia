@@ -41,7 +41,7 @@ def can_handle_requests(user, project):
 
 @login_required
 def tasks_tab(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    project = get_project_or_404(username, slug)
     tasks = Task.objects.filter(project=project, is_deleted=False)
 
     status = request.GET.get('status', '')
@@ -62,40 +62,11 @@ def tasks_tab(request, username, slug):
 
     tasks = tasks.order_by('-priority', '-created_at')
 
-    filters = {
-        'status': status,
-        'priority': str(priority) if priority else '',
-        'risk': risk,
-        'q': q,
-    }
-
-    has_filters = bool(status or priority or risk or q)
-
-    if request.headers.get('HX-Request'):
-        if has_filters:
-            return render(request, 'tasks/partials/_task_list.html', {
-                'tasks': tasks,
-                'show_take_button': True,
-                'filters': filters,
-                'project': project,
-            })
-        else:
-            is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
-            return render(request, 'tasks/partials/_tasks_tab.html', {
-                'tasks': tasks,
-                'show_take_button': True,
-                'filters': filters,
-                'project': project,
-                'is_member': is_member,
-            })
-
-    is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
-    return render(request, 'projects/project_detail.html', {
-        'project': project,
+    return render(request, 'tasks/partials/_task_list.html', {
         'tasks': tasks,
-        'is_member': is_member,
-        'is_privileged': is_privileged(request.user, project),
-        'filters': filters,
+        'show_take_button': True,
+        'filters': {'status': status, 'priority': str(priority) if priority else '', 'risk': risk, 'q': q},
+        'target_id': 'tab-content',
     })
 
 
@@ -106,17 +77,25 @@ def task_create(request, username, slug):
         return HttpResponseForbidden("Вы не участник проекта")
 
     if request.method == 'POST':
-        form = TaskCreateForm(request.POST, project=project)
+        form = TaskCreateForm(request.POST)
         if form.is_valid():
             task = form.save(commit=False)
             task.project = project
             task.creator = request.user
             task.save()
-            form.save_m2m()
+            assignee_ids = request.POST.getlist('assignee_ids')
+            if assignee_ids:
+                for user_id in assignee_ids:
+                    try:
+                        user = User.objects.get(pk=user_id)
+                        if ProjectMembership.objects.filter(user=user, project=project).exists():
+                            TaskAssignment.objects.create(task=task, user=user)
+                    except User.DoesNotExist:
+                        pass
             messages.success(request, f'Задача «{task.title}» создана!')
             return redirect('projects:project_detail', username=username, slug=slug)
     else:
-        form = TaskCreateForm(project=project)
+        form = TaskCreateForm()
 
     return render(request, 'tasks/task_create.html', {'form': form, 'project': project})
 

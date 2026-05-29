@@ -1,32 +1,31 @@
 from django import forms
-
 from divisions.models import Direction, Team
-
 from .models import Task
-
 
 class TaskCreateForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['title', 'description', 'directions', 'teams', 'priority', 'risk_chance', 'risk_impact']
+        fields = ['title', 'description', 'priority', 'risk_chance', 'risk_impact']
         labels = {
-            'title': 'Название',
+            'title': 'Название задачи',
             'description': 'Описание',
-            'directions': 'Направления',
-            'teams': 'Команды',
-            'priority': 'Приоритет (1-5)',
-            'risk_chance': 'Шанс риска (1-5)',
-            'risk_impact': 'Последствия риска (1-5)',
+            'priority': 'Приоритет',
+            'risk_chance': 'Шанс риска',
+            'risk_impact': 'Последствия риска',
         }
         widgets = {
-            'description': forms.Textarea(attrs={'rows': 3}),
-            'directions': forms.CheckboxSelectMultiple,
-            'teams': forms.CheckboxSelectMultiple,
+            'title': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Кратко опишите задачу',
+                'maxlength': 300,
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Подробное описание задачи',
+                'maxlength': 1000,
+            }),
+            'priority': forms.Select(attrs={'class': 'form-select'}),
+            'risk_chance': forms.Select(attrs={'class': 'form-select'}),
+            'risk_impact': forms.Select(attrs={'class': 'form-select'}),
         }
-
-    def __init__(self, *args, **kwargs):
-        self.project = kwargs.pop('project', None)
-        super().__init__(*args, **kwargs)
-        if self.project:
-            self.fields['directions'].queryset = Direction.objects.filter(project=self.project, is_deleted=False)
-            self.fields['teams'].queryset = Team.objects.filter(direction__project=self.project, is_deleted=False)
