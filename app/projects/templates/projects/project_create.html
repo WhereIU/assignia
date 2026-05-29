@@ -1,16 +1,118 @@
 {% extends 'base.html' %}
 {% block title %}Создать проект{% endblock %}
+
+{% block navbar_left %}
+<ul class="navbar-nav me-auto align-items-center">
+    <li class="nav-item">
+        <span class="nav-link text-white-50">Новый проект</span>
+    </li>
+</ul>
+{% endblock %}
+
 {% block content %}
-<h1>Создать проект</h1>
-<form method="post">
-    {% csrf_token %}
-    {% if form.non_field_errors %}
-        <div class="alert alert-danger">
-            {{ form.non_field_errors }}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-3">Новый проект</h2>
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|striptags }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">До 50 символов.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.slug.id_for_label }}" class="form-label">{{ form.slug.label }}</label>
+                        {{ form.slug }}
+                        {% if form.slug.errors %}
+                            <div class="invalid-feedback d-block">{{ form.slug.errors|striptags }}</div>
+                        {% endif %}
+                        <div class="form-text">
+                            <span id="url-preview">{% if user %}{{ user.username }}/{% endif %}<span id="slug-preview">{% if form.slug.value %}{{ form.slug.value }}{% else %}my-new-project{% endif %}</span>/</span>
+                        </div>
+                        <small class="form-text text-muted">{{ form.slug.help_text }}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|striptags }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Краткое описание (до 500 символов).</small>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        {{ form.is_public }}
+                        <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                            {{ form.is_public.label }}
+                        </label>
+                        {% if form.is_public.errors %}
+                            <div class="invalid-feedback d-block">{{ form.is_public.errors|striptags }}</div>
+                        {% endif %}
+                        <div class="form-text">Публичный проект виден всем и доступен для вступления. Приватный — только приглашённым участникам.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Создать проект
+                        </button>
+                        <a href="{% url 'projects:dashboard' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
         </div>
-    {% endif %}
-    {{ form.as_p }}
-    <button type="submit" class="btn btn-success">Создать</button>
-    <a href="{% url 'projects:dashboard' %}" class="btn btn-outline-secondary">Отмена</a>
-</form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const nameInput = document.getElementById('id_name');
+    const slugInput = document.getElementById('id_slug');
+    const slugPreview = document.getElementById('slug-preview');
+    let userTypedSlug = false;
+
+    function slugify(text) {
+        return text.trim()
+            .toLowerCase()
+            .replace(/[^\w\s-]/g, '')
+            .replace(/[\s_]+/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-+|-+$/g, '');
+    }
+
+    function updatePreview(slug) {
+        if (slug === undefined || slug === '') {
+            slug = slugify(nameInput.value) || 'my-new-project';
+        }
+        slugPreview.textContent = slug;
+    }
+
+    nameInput.addEventListener('input', function() {
+        if (!userTypedSlug) {
+            updatePreview('');
+        }
+    });
+
+    slugInput.addEventListener('input', function() {
+        userTypedSlug = true;
+        updatePreview(this.value);
+    });
+
+    slugInput.addEventListener('change', function() {
+        if (!this.value.trim()) {
+            userTypedSlug = false;
+            updatePreview('');
+        }
+    });
+})();
+</script>
 {% endblock %}
