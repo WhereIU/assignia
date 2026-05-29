@@ -56,10 +56,10 @@
 {% endblock %}
 
 {% block content %}
-<div id="tab-content">
-    {% if tab == 'tasks' or not tab %}
-        {% include 'tasks/partials/_tasks_tab.html' with tasks=tasks show_take_button=True filters=filters project=project %}
-    {% endif %}
+<div id="tab-content"
+     hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
+     hx-trigger="load"
+     hx-swap="innerHTML">
 </div>
 {% endblock %}
 

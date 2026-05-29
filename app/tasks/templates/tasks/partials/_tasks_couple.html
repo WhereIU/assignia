@@ -1,6 +1,6 @@
 <div id="task-list-inner">
     <form hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
-        hx-target="#task-list-inner" hx-swap="innerHTML" class="mb-3 mt-0">
+          hx-target="#task-list-inner" hx-swap="innerHTML" class="mb-3 mt-0">
         <div class="row g-2 align-items-center">
             <div class="col-auto">
                 <select name="status" class="form-select form-select-sm">
@@ -38,5 +38,42 @@
         </div>
     </form>
 
-    {% include 'tasks/partials/_task_list.html' with tasks=tasks show_take_button=True %}
+    {% include 'tasks/partials/_task_list.html' with tasks=page_obj show_take_button=True %}
+
+    {% if page_obj.paginator.num_pages > 0 %}
+    <nav class="mt-3" aria-label="Пагинация задач">
+        <ul class="pagination pagination-sm justify-content-center">
+            {% if page_obj.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="#"
+                       hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.previous_page_number }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
+                       hx-target="#task-list-inner"
+                       hx-swap="innerHTML">&laquo;</a>
+                </li>
+            {% endif %}
+
+            {% for num in page_obj.paginator.page_range %}
+                {% if num == page_obj.number %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                    <li class="page-item">
+                        <a class="page-link" href="#"
+                           hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}?page={{ num }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
+                           hx-target="#task-list-inner"
+                           hx-swap="innerHTML">{{ num }}</a>
+                    </li>
+                {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="#"
+                       hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.next_page_number }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
+                       hx-target="#task-list-inner"
+                       hx-swap="innerHTML">&raquo;</a>
+                </li>
+            {% endif %}
+        </ul>
+    </nav>
+    {% endif %}
 </div>

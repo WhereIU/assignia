@@ -1,10 +1,11 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Avg, Sum, F
+from django.db.models import Count, Q, Avg, Sum, F, Case, IntegerField, When
 from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.core.paginator import Paginator
 
 from core.models import Notification
 from tasks.models import Task
@@ -84,6 +85,7 @@ def dashboard(request):
     risk_filter = request.GET.get('risk', '')
     q = request.GET.get('q', '')
     source = request.GET.get('source', 'assigned')
+    page = request.GET.get('page', 1)
 
     assigned_tasks = Task.objects.filter(assignments__user=request.user, is_deleted=False)
     available_tasks = Task.objects.filter(
@@ -111,6 +113,9 @@ def dashboard(request):
 
     assigned_tasks = assigned_tasks.order_by('-priority')
     available_tasks = available_tasks.order_by('-priority')
+
+    #paginator = Paginator(tasks, 10)
+    #page_obj = paginator.get_page(page)
 
     filters = {
         'status': status_filter,

@@ -5,6 +5,7 @@ from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.core.paginator import Paginator
 
 from divisions.models import Direction, Team
 from projects.models import Project, ProjectMembership
@@ -39,7 +40,6 @@ def can_handle_requests(user, project):
     return membership and membership.role in ('tech_support', 'manager', 'admin', 'owner')
 
 
-@login_required
 def tasks_tab(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     tasks = Task.objects.filter(project=project, is_deleted=False)
@@ -48,6 +48,7 @@ def tasks_tab(request, username, slug):
     priority = request.GET.get('priority', '')
     risk = request.GET.get('risk', '')
     q = request.GET.get('q', '')
+    page = request.GET.get('page', 1)
 
     if status:
         tasks = tasks.filter(status=status)
@@ -61,12 +62,29 @@ def tasks_tab(request, username, slug):
         tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
 
     tasks = tasks.annotate(
-        is_done=Case(
-            When(status='done', then=1),
+        is_available=Case(
+            When(assignments__isnull=True, then=1),
             default=0,
             output_field=IntegerField(),
+        ),
+        status_group=Case(
+            When(status='new', then=1),
+            When(status='pending', then=1),
+            When(status='in_progress', then=1),
+            When(status='done', then=2),
+            When(status='cancelled', then=2),
+            default=1,
+            output_field=IntegerField(),
         )
-    ).order_by('is_done', '-created_at')
+    ).order_by(
+        '-is_available',
+        'status_group',
+        '-priority',
+        '-created_at'
+    )
+
+    paginator = Paginator(tasks, 10)
+    page_obj = paginator.get_page(page)
 
     filters = {
         'status': status,
@@ -74,26 +92,24 @@ def tasks_tab(request, username, slug):
         'risk': risk,
         'q': q,
     }
+
     is_member = request.user.is_authenticated and ProjectMembership.objects.filter(
         user=request.user, project=project
     ).exists()
 
     if request.headers.get('HX-Target', '') == 'task-list-inner':
         return render(request, 'tasks/partials/_tasks_couple.html', {
-        'tasks': tasks,
-
-        'filters': filters,
-        'project': project,
-        'is_member': is_member,
+            'filters': filters,
+            'project': project,
+            'is_member': is_member,
+            'page_obj': page_obj,
         })
-    
-    return render(request, 'tasks/partials/_tasks_tab.html', {
-        'tasks': tasks,
 
+    return render(request, 'tasks/partials/_tasks_tab.html', {
         'filters': filters,
         'project': project,
         'is_member': is_member,
-
+        'page_obj': page_obj,
     })
 
 
