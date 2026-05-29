@@ -5,6 +5,7 @@
             {% csrf_token %}
             <div class="mb-2">
                 <label class="form-label">Новый email</label>
+                <br>
                 {{ email_form.email }}
                 {% if email_form.email.errors %}
                     <div class="invalid-feedback d-block">{{ email_form.email.errors|striptags }}</div>

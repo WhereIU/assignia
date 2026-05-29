@@ -15,10 +15,9 @@ urlpatterns = [
     path('settings/account/', views.account, name='account'),
     path('settings/account/form/email/', views.account_email_form, name='account_email_form'),
     path('settings/account/form/password/', views.account_password_form, name='account_password_form'),
-    path('settings/account/email-display/', views.account_email_display, name='account_email_display'),
-    path('settings/account/password-display/', views.account_password_display, name='account_password_display'),
-    path('settings/notifications/', views.notifications_settings, name='notifications_settings'),
-    path('settings/email/', views.email_settings, name='email_settings'),
+    path('settings/account/email/display/', views.account_email_display, name='account_email_display'),
+    path('settings/account/email/cancel/', views.cancel_pending_email, name='cancel_pending_email'),
+    path('settings/account/password/display/', views.account_password_display, name='account_password_display'),
 
-    path('confirm/email/<str:token>/', views.confirm_email, name='confirm_email'),
+    path('settings/account/email/confirm/<str:token>/', views.confirm_email, name='confirm_email'),
 ]

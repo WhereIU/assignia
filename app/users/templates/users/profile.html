@@ -4,8 +4,8 @@
 {% block settings_content %}
 <div class="card shadow-sm">
     <div class="card-body">
-        <div class="d-flex align-items-center mb-4">
-            <div class="me-3">
+        <div class="d-flex align-items-start mb-4">
+            <div class="me-3 flex-shrink-0">
                 {% if user.avatar %}
                     <img src="{{ user.avatar.url }}" alt="Аватар" class="rounded-circle" width="64" height="64">
                 {% else %}
@@ -22,10 +22,21 @@
             {% csrf_token %}
             {% for field in form %}
                 <div class="mb-3">
-                    <label class="form-label">{{ field.label }}</label>
+                    <label
+                        for="{{ field.id_for_label }}"
+                        class="form-label">
+                        {{ field.label }}
+                    </label>
                     {{ field }}
+                    {% if field.help_text %}
+                        <div class="form-text">
+                            {{ field.help_text }}
+                        </div>
+                    {% endif %}
                     {% if field.errors %}
-                        <div class="invalid-feedback d-block">{{ field.errors|striptags }}</div>
+                        <div class="invalid-feedback d-block">
+                            {{ field.errors|striptags }}
+                        </div>
                     {% endif %}
                 </div>
             {% endfor %}

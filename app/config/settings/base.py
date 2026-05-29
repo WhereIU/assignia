@@ -13,6 +13,9 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import environ
 import os
+import socket
+
+socket.has_ipv6 = False
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -152,7 +155,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # I18N
-LANGUAGE_CODE = "en-us"
+LANGUAGE_CODE = "ru"
 TIME_ZONE = "Europe/Stockholm"
 USE_I18N = True
 USE_TZ = True
@@ -181,7 +184,7 @@ if EMAIL_BACKEND_TYPE == "smtp":
 else:
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
     DEFAULT_FROM_EMAIL = "noreply@assignia.local"
-
+EMAIL_TIMEOUT = 10
 
 # LOGGING
 LOGGING = {

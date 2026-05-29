@@ -1,16 +1,31 @@
 <div class="card shadow-sm mb-3">
     <div class="card-body">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="d-flex justify-content-between align-items-start">
             <div>
                 <h5 class="mb-1">Email</h5>
-                <p class="text-muted mb-0">{{ user.email }}</p>
+                <p class="text-muted mb-1">{{ user.email }}</p>
+                {% if user.pending_email %}
+                    <div class="alert alert-warning py-2 px-3 mb-0 mt-2">
+                        Ожидает подтверждения: <strong>{{ user.pending_email }}</strong>
+                    </div>
+                {% endif %}
             </div>
-            <button class="btn btn-outline-primary btn-sm"
-                    hx-get="{% url 'users:account_email_form' %}"
-                    hx-target="#email-container"
-                    hx-swap="innerHTML">
-                Изменить
-            </button>
+            <div class="d-flex flex-column align-items-end gap-2">
+                <button class="btn btn-outline-primary btn-sm"
+                        hx-get="{% url 'users:account_email_form' %}"
+                        hx-target="#email-container"
+                        hx-swap="innerHTML">
+                    Изменить
+                </button>
+                {% if user.pending_email %}
+                    <button class="btn btn-sm btn-outline-danger"
+                            hx-post="{% url 'users:cancel_pending_email' %}"
+                            hx-target="#email-container"
+                            hx-swap="innerHTML">
+                        Отменить
+                    </button>
+                {% endif %}
+            </div>
         </div>
     </div>
 </div>

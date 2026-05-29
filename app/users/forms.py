@@ -1,47 +1,186 @@
 from django import forms
-from django.contrib.auth.forms import UserCreationForm, UserChangeForm, PasswordChangeForm as DjangoPasswordChangeForm
+from django.contrib.auth.forms import (
+    UserCreationForm as DjangoUserCreationForm,
+    UserChangeForm, 
+    PasswordChangeForm as DjangoPasswordChangeForm,  
+    AuthenticationForm
+    )
+from django.core.exceptions import ValidationError
 
 from .models import User
 
 
-class UserCreationForm(UserCreationForm):
-    class Meta(UserCreationForm.Meta):
+class LoginForm(AuthenticationForm):
+    username = forms.CharField(
+        label='Имя пользователя',
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Введите username',
+            'maxlength': 25,
+        })
+    )
+    password = forms.CharField(
+        label='Пароль',
+        widget=forms.PasswordInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Введите пароль',
+        })
+    )
+    error_messages = {
+        "invalid_login": "Неверный логин или пароль.",
+        "inactive": "Подтвердите email перед входом.",
+    }
+
+    def confirm_login_allowed(self, user):
+        if not user.is_active:
+            raise ValidationError(
+                "Подтвердите email перед входом.",
+                code="inactive",
+            )
+
+
+class UserCreationForm(DjangoUserCreationForm):
+    email = forms.EmailField(
+        max_length=40,
+        widget=forms.EmailInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'email@example.com',
+            'maxlength': 40,
+        })
+    )
+
+    class Meta(DjangoUserCreationForm.Meta):
         model = User
-        fields = ('username', 'email', 'first_name', 'last_name')
+        fields = (
+            'username',
+            'email',
+            'first_name',
+            'last_name',
+        )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.fields['username'].label = 'Имя пользователя'
+        self.fields['email'].label = 'Email'
+        self.fields['first_name'].label = 'Имя'
+        self.fields['last_name'].label = 'Фамилия'
+        self.fields['password1'].label = 'Пароль'
+        self.fields['password2'].label = 'Подтверждение пароля'
+
+        for field in self.fields.values():
+            field.widget.attrs['class'] = 'form-control'
+
+    def clean_username(self):
+        username = self.cleaned_data['username']
+        if User.objects.filter(username=username).exists():
+            raise forms.ValidationError(
+                'Пользователь с таким именем уже существует.'
+            )
+
+        return username
+
+    def clean_email(self):
+        email = self.cleaned_data['email'].strip().lower()
+        if User.objects.filter(email=email).exists():
+            raise forms.ValidationError(
+                'Пользователь с такой почтой уже существует.'
+            )
+
+        return email
+
 
 class ProfileEditForm(UserChangeForm):
     password = None
-    avatar = forms.ImageField(required=False, widget=forms.FileInput(attrs={'class': 'form-control'}))
+    avatar = forms.ImageField(
+        required=False,
+        widget=forms.FileInput(attrs={
+            'class': 'form-control'
+        })
+    )
+    bio = forms.CharField(
+        required=False,
+        max_length=100,
+        widget=forms.Textarea(attrs={
+            'class': 'form-control',
+            'rows': 7,
+            'maxlength': 100,
+            'placeholder': 'Расскажите о себе',
+            "style": "resize:none;",
+        })
+    )
 
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'bio', 'avatar')
+
+        fields = (
+            'first_name',
+            'last_name',
+            'bio',
+            'avatar',
+        )
+
         labels = {
             'first_name': 'Имя',
             'last_name': 'Фамилия',
             'bio': 'О себе',
             'avatar': 'Аватар',
         }
+
         widgets = {
-            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Имя'}),
-            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Фамилия'}),
-            'bio': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Расскажите о себе'}),
+            'first_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Имя',
+                'maxlength': 30,
+            }),
+
+            'last_name': forms.TextInput(attrs={
+                'class': 'form-control',
+                'placeholder': 'Фамилия',
+                'maxlength': 30,
+            }),
         }
-    
+
+
 class AccountEmailForm(forms.ModelForm):
+    email = forms.EmailField(
+    max_length=40,
+    widget=forms.EmailInput(attrs={
+        "class": "form-control",
+        "placeholder": "email@example.com",
+        "maxlength": 40,
+        })
+    )
+
     class Meta:
         model = User
         fields = ('email',)
         labels = {'email': 'Email'}
-        widgets = {
-            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': 'email@example.com'}),
-        }
+
 
     def clean_email(self):
-        email = self.cleaned_data['email']
+        email = self.cleaned_data['email'].strip().lower()
+        if email == self.instance.email:
+            raise forms.ValidationError(
+                'Это уже ваш текущий email.'
+            )
+        if email == self.instance.pending_email:
+            raise forms.ValidationError(
+                'Этот email уже ожидает подтверждения.'
+            )
+
         if User.objects.filter(email=email).exclude(pk=self.instance.pk).exists():
-            raise forms.ValidationError('Этот email уже используется.')
+            raise forms.ValidationError(
+                'Этот email уже используется.'
+            )
+
+        if User.objects.filter(pending_email=email).exclude(pk=self.instance.pk).exists():
+            raise forms.ValidationError(
+                'Этот email уже ожидает подтверждения другим пользователем.'
+            )
+
         return email
+
 
 class PasswordChangeForm(DjangoPasswordChangeForm):
     old_password_label = 'Старый пароль'
