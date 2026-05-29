@@ -4,7 +4,7 @@ from django.utils.text import slugify
 
 class Project(models.Model):
     name = models.CharField(max_length=50)
-    slug = models.SlugField(max_length=50, blank=True)
+    slug = models.SlugField(max_length=50)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_projects')
     is_public = models.BooleanField(default=False)

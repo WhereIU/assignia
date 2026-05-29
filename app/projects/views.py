@@ -119,27 +119,31 @@ def dashboard(request):
         'q': q,
     }
 
-    tasks = assigned_tasks if source == 'assigned' else available_tasks
-    show_take_button = source != 'assigned'
-    invitations = Invitation.objects.filter(recipient=request.user, status='pending')
-    context = {
-        'tasks': tasks,
-        'show_take_button': show_take_button,
-        'filters': filters,
-        'source': source,
-        'target_id': 'dashboard-content',
-        'invitations': invitations,
-    }
-
     if request.headers.get('HX-Request'):
-        return render(request, 'projects/partials/_dashboard_tabs.html', context)
+        tasks = assigned_tasks if source == 'assigned' else available_tasks
+        if any([status_filter, priority_filter, risk_filter, q]):
+            return render(request, 'tasks/partials/_task_list.html', {
+                'tasks': tasks,
+                'show_take_button': source != 'assigned',
+                'filters': filters,
+                'source': source,
+            })
+        return render(request, 'projects/partials/_dashboard_tabs.html', {
+            'tasks': tasks,
+            'show_take_button': source != 'assigned',
+            'filters': filters,
+            'source': source,
+        })
 
+    invitations = Invitation.objects.filter(recipient=request.user, status='pending')
     return render(request, 'projects/dashboard.html', {
-        **context,
         'user_projects': user_projects,
         'assigned_tasks': assigned_tasks,
         'available_tasks': available_tasks,
+        'filters': filters,
+        'invitations': invitations,
     })
+
 
 
 @login_required
@@ -163,20 +167,54 @@ def project_detail(request, username, slug):
     if not project.is_public:
         if not request.user.is_authenticated:
             return redirect('users:login')
-        if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
+        membership = ProjectMembership.objects.filter(user=request.user, project=project).first()
+        if not membership:
             return HttpResponseForbidden("Вы не участник проекта")
 
     tasks = Task.objects.filter(project=project, is_deleted=False).order_by('-priority')
     is_member = request.user.is_authenticated and ProjectMembership.objects.filter(
         user=request.user, project=project
     ).exists()
+    is_privileged = request.user.is_authenticated and get_member_role(request.user, project) in ('manager', 'admin', 'owner')
+    filters = {'status': '', 'priority': '', 'risk': '', 'q': ''}
+    if request.headers.get('HX-Request'):
+        if any(request.GET.get(p) for p in ('status', 'priority', 'risk', 'q')):
+            status = request.GET.get('status', '')
+            priority = request.GET.get('priority', '')
+            risk = request.GET.get('risk', '')
+            q = request.GET.get('q', '')
+            if status:
+                tasks = tasks.filter(status=status)
+            if priority:
+                tasks = tasks.filter(priority=int(priority))
+            if risk == 'high':
+                tasks = tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
+            elif risk == 'low':
+                tasks = tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
+            if q:
+                tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
+            filters = {'status': status, 'priority': priority, 'risk': risk, 'q': q}
+            return render(request, 'tasks/partials/_task_list.html', {
+                'tasks': tasks,
+                'show_take_button': True,
+                'filters': filters,
+            })
+
+        return render(request, 'tasks/partials/_tasks_tab.html', {
+            'tasks': tasks,
+            'project': project,
+            'is_member': is_member,
+            'filters': filters,
+        })
 
     return render(request, 'projects/project_detail.html', {
         'project': project,
         'tasks': tasks,
         'is_member': is_member,
-        'is_privileged': is_privileged(request.user, project) if request.user.is_authenticated else False,
+        'is_privileged': is_privileged,
+        'filters': filters,
     })
+
 
 
 @login_required
@@ -225,7 +263,7 @@ def analytics_tab(request, username, slug):
 
     context = {'project': project, 'teams': teams, 'participants': participants}
     if request.headers.get('HX-Request'):
-        return render(request, 'projects/partials/_analytics.html', context)
+        return render(request, 'projects/partials/_analytics_tab.html', context)
     return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})
 
 

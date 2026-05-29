@@ -41,7 +41,7 @@ def can_handle_requests(user, project):
 
 @login_required
 def tasks_tab(request, username, slug):
-    project = get_project_or_404(username, slug)
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
     tasks = Task.objects.filter(project=project, is_deleted=False)
 
     status = request.GET.get('status', '')
@@ -62,11 +62,40 @@ def tasks_tab(request, username, slug):
 
     tasks = tasks.order_by('-priority', '-created_at')
 
-    return render(request, 'tasks/partials/_task_list.html', {
+    filters = {
+        'status': status,
+        'priority': str(priority) if priority else '',
+        'risk': risk,
+        'q': q,
+    }
+
+    has_filters = bool(status or priority or risk or q)
+
+    if request.headers.get('HX-Request'):
+        if has_filters:
+            return render(request, 'tasks/partials/_task_list.html', {
+                'tasks': tasks,
+                'show_take_button': True,
+                'filters': filters,
+                'project': project,
+            })
+        else:
+            is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
+            return render(request, 'tasks/partials/_tasks_tab.html', {
+                'tasks': tasks,
+                'show_take_button': True,
+                'filters': filters,
+                'project': project,
+                'is_member': is_member,
+            })
+
+    is_member = ProjectMembership.objects.filter(user=request.user, project=project).exists()
+    return render(request, 'projects/project_detail.html', {
+        'project': project,
         'tasks': tasks,
-        'show_take_button': True,
-        'filters': {'status': status, 'priority': str(priority) if priority else '', 'risk': risk, 'q': q},
-        'target_id': 'tab-content',
+        'is_member': is_member,
+        'is_privileged': is_privileged(request.user, project),
+        'filters': filters,
     })
 
 

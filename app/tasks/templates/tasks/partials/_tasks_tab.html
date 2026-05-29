@@ -1,0 +1,12 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>Задачи проекта</h2>
+    {% if user.is_authenticated and is_member %}
+        <a href="{% url 'tasks:task_create' username=project.owner.username slug=project.slug %}" class="btn btn-success btn-sm">
+            <i class="bi bi-plus-lg"></i> Новая задача
+        </a>
+    {% endif %}
+</div>
+
+<div id="task-list-inner">
+    {% include 'tasks/partials/_task_list.html' with tasks=tasks show_take_button=True %}
+</div>

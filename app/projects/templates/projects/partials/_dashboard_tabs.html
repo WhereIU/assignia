@@ -16,5 +16,7 @@
         </li>
     </ul>
 
-    {% include 'tasks/partials/_task_list.html' with tasks=tasks show_take_button=show_take_button filters=filters source=source target_id='dashboard-content' %}
+    <div id="task-list-inner">
+        {% include 'tasks/partials/_task_list.html' with tasks=tasks show_take_button=show_take_button filters=filters source=source %}
+    </div>
 </div>

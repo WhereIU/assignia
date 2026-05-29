@@ -9,34 +9,48 @@
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'tasks' or not tab %}active{% endif %}"
                     hx-get="{% url 'tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
+                    hx-target="#tab-content" hx-swap="innerHTML"
+                    hx-include="#task-list-inner" href="#">Задачи</a>
             </li>
+
+            {% if user.is_authenticated %}
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'requests' %}active{% endif %}"
                     hx-get="{% url 'requests:requests_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
             </li>
+            {% endif %}
+
+            {% if is_member %}
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'analytics' %}active{% endif %}"
                     hx-get="{% url 'projects:analytics_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
             </li>
+            {% endif %}
+
+            {% if is_privileged %}
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'members' %}active{% endif %}"
                     hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
+            {% endif %}
+
+            {% if is_privileged %}
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'directions' %}active{% endif %}"
                     hx-get="{% url 'directions:directions_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
             </li>
+            {% endif %}
+
             {% if is_privileged %}
-                <li class="nav-item">
-                    <a class="nav-link {% if tab == 'settings' %}active{% endif %}"
-                        hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
-                        hx-target="#tab-content" hx-swap="innerHTML" href="#">Настройки</a>
-                </li>
+            <li class="nav-item">
+                <a class="nav-link {% if tab == 'settings' %}active{% endif %}"
+                    hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
+                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Настройки</a>
+            </li>
             {% endif %}
         </ul>
     </li>
@@ -45,12 +59,7 @@
 {% block content %}
 <div id="tab-content">
     {% if tab == 'tasks' or not tab %}
-        {% include 'tasks/partials/_tasks.html' with tasks=tasks %}
-    {% elif tab == 'requests' %}
-    {% elif tab == 'analytics' %}
-    {% elif tab == 'members' %}
-    {% elif tab == 'directions' %}
-    {% elif tab == 'settings' %}
+        {% include 'tasks/partials/_tasks_tab.html' with tasks=tasks project=project is_member=is_member filters=filters %}
     {% endif %}
 </div>
 {% endblock %}
