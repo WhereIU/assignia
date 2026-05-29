@@ -74,12 +74,26 @@ def tasks_tab(request, username, slug):
         'risk': risk,
         'q': q,
     }
+    is_member = request.user.is_authenticated and ProjectMembership.objects.filter(
+        user=request.user, project=project
+    ).exists()
 
-    return render(request, 'tasks/partials/_tasks_tab.html', {
+    if request.headers.get('HX-Target', '') == 'task-list-inner':
+        return render(request, 'tasks/partials/_tasks_couple.html', {
         'tasks': tasks,
-        'show_take_button': True,
+
         'filters': filters,
         'project': project,
+        'is_member': is_member,
+        })
+    
+    return render(request, 'tasks/partials/_tasks_tab.html', {
+        'tasks': tasks,
+
+        'filters': filters,
+        'project': project,
+        'is_member': is_member,
+
     })
 
 
