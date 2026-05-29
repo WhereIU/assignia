@@ -27,12 +27,12 @@
         {% include 'projects/partials/_invitations.html' %}
     </div>
 {% endif %}
-
-<div id="task-list-inner">
-    {% if source == 'assigned' or source is None %}
-        {% include 'projects/partials/_dashboard_tab.html' with tasks=assigned_tasks show_take_button=False filters=filters source='assigned' %}
-    {% else %}
-        {% include 'projects/partials/_dashboard_tab.html' with tasks=available_tasks show_take_button=True filters=filters source='available' %}
-    {% endif %}
+<div id="tab-content"> 
+    <div id="task-list-inner"
+        hx-target="#task-list-inner"
+        hx-get="{% url 'projects:dashboard' %}"
+        hx-trigger="load"
+        hx-swap="innerHTML">
+    </div>
 </div>
 {% endblock %}

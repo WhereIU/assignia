@@ -80,6 +80,7 @@ def dashboard(request):
     memberships = ProjectMembership.objects.filter(user=request.user).select_related('project')
     user_projects = [m.project for m in memberships]
 
+
     status_filter = request.GET.get('status', '')
     priority_filter = request.GET.get('priority', '')
     risk_filter = request.GET.get('risk', '')
@@ -87,35 +88,28 @@ def dashboard(request):
     source = request.GET.get('source', 'assigned')
     page = request.GET.get('page', 1)
 
-    assigned_tasks = Task.objects.filter(assignments__user=request.user, is_deleted=False)
-    available_tasks = Task.objects.filter(
-        project__in=user_projects,
-        status='new',
-        assignments__isnull=True,
-        is_deleted=False,
-    )
+    if source == 'assigned':
+        tasks = Task.objects.filter(assignments__user=request.user, is_deleted=False)
+    else:
+        tasks = Task.objects.filter(
+            project__in=user_projects,
+            status='new',
+            assignments__isnull=True,
+            is_deleted=False,
+        )
 
     if status_filter:
-        assigned_tasks = assigned_tasks.filter(status=status_filter)
-        available_tasks = available_tasks.filter(status=status_filter)
+        tasks = tasks.filter(status=status_filter)
     if priority_filter:
-        assigned_tasks = assigned_tasks.filter(priority=int(priority_filter))
-        available_tasks = available_tasks.filter(priority=int(priority_filter))
+        tasks = tasks.filter(priority=int(priority_filter))
     if risk_filter == 'high':
-        assigned_tasks = assigned_tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
-        available_tasks = available_tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
+        tasks = tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
     elif risk_filter == 'low':
-        assigned_tasks = assigned_tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
-        available_tasks = available_tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
+        tasks = tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
     if q:
-        assigned_tasks = assigned_tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
-        available_tasks = available_tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
+        tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
 
-    assigned_tasks = assigned_tasks.order_by('-priority')
-    available_tasks = available_tasks.order_by('-priority')
-
-    #paginator = Paginator(tasks, 10)
-    #page_obj = paginator.get_page(page)
+    tasks = tasks.order_by('-priority')
 
     filters = {
         'status': status_filter,
@@ -124,10 +118,11 @@ def dashboard(request):
         'q': q,
     }
 
-    if request.headers.get('HX-Request'):
-        tasks = assigned_tasks if source == 'assigned' else available_tasks
+    if request.headers.get('HX-Target', '') == 'task-list-inner':
+        paginator = Paginator(tasks, 10)
+        page_obj = paginator.get_page(page)
         return render(request, 'projects/partials/_dashboard_tab.html', {
-            'tasks': tasks,
+            'page_obj': page_obj,
             'show_take_button': source != 'assigned',
             'filters': filters,
             'source': source,
@@ -136,8 +131,6 @@ def dashboard(request):
     invitations = Invitation.objects.filter(recipient=request.user, status='pending')
     return render(request, 'projects/dashboard.html', {
         'user_projects': user_projects,
-        'assigned_tasks': assigned_tasks,
-        'available_tasks': available_tasks,
         'filters': filters,
         'invitations': invitations,
     })
