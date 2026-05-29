@@ -1,6 +1,6 @@
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Case, IntegerField, When
 from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -41,7 +41,7 @@ def can_handle_requests(user, project):
 
 @login_required
 def tasks_tab(request, username, slug):
-    project = get_project_or_404(username, slug)
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
     tasks = Task.objects.filter(project=project, is_deleted=False)
 
     status = request.GET.get('status', '')
@@ -60,13 +60,26 @@ def tasks_tab(request, username, slug):
     if q:
         tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
 
-    tasks = tasks.order_by('-priority', '-created_at')
+    tasks = tasks.annotate(
+        is_done=Case(
+            When(status='done', then=1),
+            default=0,
+            output_field=IntegerField(),
+        )
+    ).order_by('is_done', '-created_at')
 
-    return render(request, 'tasks/partials/_task_list.html', {
+    filters = {
+        'status': status,
+        'priority': str(priority) if priority else '',
+        'risk': risk,
+        'q': q,
+    }
+
+    return render(request, 'tasks/partials/_tasks_tab.html', {
         'tasks': tasks,
         'show_take_button': True,
-        'filters': {'status': status, 'priority': str(priority) if priority else '', 'risk': risk, 'q': q},
-        'target_id': 'tab-content',
+        'filters': filters,
+        'project': project,
     })
 
 
