@@ -1,0 +1,4 @@
+<div id="task-list-inner">
+    {% include 'tasks/partials/_task_filters.html' with filters=filters source=source %}
+    {% include 'tasks/partials/_task_list.html' with tasks=tasks show_take_button=show_take_button %}
+</div>

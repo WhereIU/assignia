@@ -121,14 +121,7 @@ def dashboard(request):
 
     if request.headers.get('HX-Request'):
         tasks = assigned_tasks if source == 'assigned' else available_tasks
-        if any([status_filter, priority_filter, risk_filter, q]):
-            return render(request, 'tasks/partials/_task_list.html', {
-                'tasks': tasks,
-                'show_take_button': source != 'assigned',
-                'filters': filters,
-                'source': source,
-            })
-        return render(request, 'projects/partials/_dashboard_tabs.html', {
+        return render(request, 'projects/partials/_dashboard_tab.html', {
             'tasks': tasks,
             'show_take_button': source != 'assigned',
             'filters': filters,
@@ -143,7 +136,6 @@ def dashboard(request):
         'filters': filters,
         'invitations': invitations,
     })
-
 
 
 @login_required

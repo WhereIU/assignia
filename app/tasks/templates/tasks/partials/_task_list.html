@@ -1,5 +1,3 @@
-{% include 'tasks/partials/_task_filters.html' with filters=filters source=source %}
-
 {% for task in tasks %}
     {% include 'tasks/partials/_task_item.html' with task=task show_take_button=show_take_button %}
 {% empty %}
