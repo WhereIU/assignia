@@ -15,42 +15,58 @@
 
 | Категория | Стек |
 |-----------|------|
-| Бэкенд | Python 3.10.12, Django 3.2.12, PostgreSQL |
+| Бэкенд | Python 3.11, Django 3.2.12, PostgreSQL 15 |
 | Фронтенд | Bootstrap 5, HTMX, JavaScript |
-| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible |
-| Безопасность | HTTPS, CSRF-защита |
+| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible, Redis 7 |
+| Безопасность | HTTPS, CSRF-защита, XSS-защита, SQL-защита |
 
 ## Запуск 
 
 ```bash
+1. Начало пользования
 # Переход в рабочее пространство
 git clone https://github.com/WhereIU/assignia.git
 cd assignia
+## или другой репозиторий
 
-# Конфигурирование для локальной разработки при модификации 
+2.1 Запуск разработки
+# Конфигурирование для локальной разработки 
 cp .env.example .env 
 ## Конфигурация .env
 
-# Конфигурирование для продакшена
-cp .env.example .env.prod
-## Конфигурация .env.prod
-
-# Установка
+# Установка разработки
 make install
 
 # Запуск для разработки
 make run
 
-# запуск продакшена локально
+2.2 Запуск продакшен
+# Конфигурирование для продакшена
+cp .env.example .env.prod
+## Конфигурация .env.prod
+
+# Установка продакшена 
+make install-prod
+
+# Запуск продакшена локально
 make run-prod
 
-# Запуск на серверах через ansible
-## Настройка ansible/hosts.ini
-## Замена nginx сертификата
+3.0 Подготовка к деплою
+## Замена nginx сертификатов
+## Настройка подключения к серверам по ssh
+
+3.1 Локальный деплой
+## Настройка серверов ansible/hosts.ini
 make deploy-ansible
 
-# Новые версии через github CI/CD
-## Необходимо добавить в github secrets под ansible ssh доступ к серверам, вывести новую версию в main
+3.2 Автоматический деплой
+# Новые версии в github ветку main активируют CI/CD
+## Для полноценной работы необходимо добавить в github секретах два окружения ci и cd:
+## В ci добавляются секреты: SECRET_KEY (тестовый ключ джанго), 
+## POSTGRES_DB, POSTGRES_USER, SQL_HOST, POSTGRES_PASSWORD (для тестовой бд по умолчанию),
+## ALLOWED_HOSTS (разрешенные хосты для тестов в джанго). 
+## В cd окружении добавляются секреты: ENV_FILE_PROD (заполненный по .env.example примеру в вид продакшена .env.prod),
+## SSH_PRIVATE_KEY, SSH_USER, ANSIBLE_HOSTS (для подключения к удалённым серверам). 
 ```
 
 MIT License — см. файл [LICENCE](LICENCE).
