@@ -2,12 +2,32 @@
   hosts: assignia_server
 
   tasks:
+    # Copy method
+    - name: Copy project files to server
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /opt/assignia/
+      loop:
+        - ../docker-compose.prod.yml
+        - ../app
+        - ../nginx
+        - ../docker
+      when: deploy_method == "copy"
+
+    - name: Create .env.prod from secret
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'ENV_FILE_CONTENT') }}"
+        dest: /opt/assignia/.env.prod
+      when: deploy_method == "copy" and lookup('env', 'ENV_FILE_CONTENT') != ""
+
+    # Git method
     - name: Clone or update repository
       ansible.builtin.git:
         repo: "git@github.com:WhereIU/assignia.git"
         dest: /opt/assignia
         version: main
         update: yes
+      when: deploy_method == "git"
 
     - name: Build docker images
       command: docker compose -f docker-compose.prod.yml build
