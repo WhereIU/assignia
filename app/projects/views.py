@@ -138,8 +138,8 @@ def members_tab(request, username, slug):
     actor_role = get_member_role(request.user, project)
     pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
 
-    if request.headers.get('HX-Target', '') == 'members-list-inner':
-        return render(request, 'projects/partials/_members_list.html', {
+    if request.headers.get('HX-Target', '') == 'members-container':
+        return render(request, 'projects/partials/_project_members_list.html', {
             'project': project,
             'members': page_obj,
             'actor_role': actor_role,
@@ -147,7 +147,7 @@ def members_tab(request, username, slug):
             'search_query': search_query,
         })
 
-    return render(request, 'projects/partials/_members_tab.html', {
+    return render(request, 'projects/partials/_project_members_tab.html', {
         'project': project,
         'members': page_obj,
         'actor_role': actor_role,
@@ -172,58 +172,74 @@ def project_settings_tab(request, username, slug):
 @login_required
 @require_http_methods(["POST"])
 def invitation_send(request, username, slug):
-    project = get_object_or_404(
-        Project,
-        owner__username=username,
-        slug=slug,
-    )
-
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
     if get_member_role(request.user, project) not in ("owner", "admin"):
         return HttpResponseForbidden("Недостаточно прав")
 
     recipient_username = request.POST.get("username", "").strip()
-
     if not recipient_username:
         messages.error(request, "Укажите имя пользователя")
-        return redirect_to_members(request, project)
+        return render(request, 'projects/partials/_invitation_form.html', {
+            'project': project,
+            'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
+        })
 
     try:
         recipient = User.objects.get(username=recipient_username)
     except User.DoesNotExist:
         messages.error(request, "Пользователь не найден")
-        return redirect_to_members(request, project)
+        return render(request, 'projects/partials/_invitation_form.html', {
+            'project': project,
+            'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
+        })
 
     if recipient == request.user:
         messages.error(request, "Нельзя пригласить самого себя")
-        return redirect_to_members(request, project)
+        return render(request, 'projects/partials/_invitation_form.html', {
+            'project': project,
+            'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
+        })
 
-    if ProjectMembership.objects.filter(
-        project=project,
-        user=recipient,
-    ).exists():
+    if ProjectMembership.objects.filter(project=project, user=recipient).exists():
         messages.error(request, "Пользователь уже состоит в проекте")
-        return redirect_to_members(request, project)
+        return render(request, 'projects/partials/_invitation_form.html', {
+            'project': project,
+            'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
+        })
 
-    if Invitation.objects.filter(
-        project=project,
-        recipient=recipient,
-        status="pending",
-    ).exists():
+    if Invitation.objects.filter(project=project, recipient=recipient, status="pending").exists():
         messages.error(request, "Приглашение уже отправлено")
-        return redirect_to_members(request, project)
+        return render(request, 'projects/partials/_invitation_form.html', {
+            'project': project,
+            'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
+        })
 
-    Invitation.objects.create(
-        project=project,
-        sender=request.user,
-        recipient=recipient,
-    )
+    Invitation.objects.create(project=project, sender=request.user, recipient=recipient)
+    messages.success(request, f"Приглашение отправлено {recipient.username}")
 
-    messages.success(
-        request,
-        f"Приглашение отправлено пользователю {recipient.username}",
-    )
+    members = ProjectMembership.objects.filter(project=project).select_related('user')
+    search_query = request.GET.get('search', '')
+    if search_query:
+        members = members.filter(user__username__icontains=search_query)
+    paginator = Paginator(members, 10)
+    page = request.GET.get('page', 1)
+    page_obj = paginator.get_page(page)
 
-    return redirect_to_members(request, project)
+    pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
+    actor_role = get_member_role(request.user, project)
+
+    response = render(request, 'projects/partials/_project_members_tab.html', {
+        'project': project,
+        'members': page_obj,
+        'actor_role': actor_role,
+        'pending_invitations': pending_invitations,
+        'page_obj': page_obj,
+        'search_query': search_query,
+    })
+
+    response['HX-Retarget'] = '#tab-content'
+    response['HX-Reswap'] = 'innerHTML'
+    return response
 
 
 @login_required
@@ -237,7 +253,13 @@ def invitation_cancel(request, username, slug, invitation_pk):
     notification_url = reverse('projects:invitation_accept', kwargs={'invitation_pk': invitation.pk})
     Notification.objects.filter(recipient=invitation.recipient, url=notification_url).delete()
     messages.success(request, f'Приглашение {invitation.recipient.username} отменено')
-    return redirect_to_members(request, project)
+    
+    pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
+    return render(request, 'projects/partials/_invitations_pending.html', {
+        'pending_invitations': pending_invitations,
+        'project': project,
+        'actor_role': get_member_role(request.user, project),
+    })
 
 
 @login_required
@@ -381,9 +403,18 @@ def redirect_to_members(request, project):
         member_list.append(m)
     actor_role = get_member_role(request.user, project)
     pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
-    return render(request, 'projects/partials/_members.html', {
+    return render(request, 'projects/partials/_project_members_list.html', {
         'project': project,
         'members': member_list,
         'actor_role': actor_role,
         'pending_invitations': pending_invitations,
+    })
+
+
+@login_required
+def invitation_form(request, username, slug):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    return render(request, 'projects/partials/_invitation_form.html', {
+        'project': project,
+        'submit_url': reverse('projects:invitation_send', kwargs={'username': username, 'slug': slug}),
     })

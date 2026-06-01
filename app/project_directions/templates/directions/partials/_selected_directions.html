@@ -2,7 +2,7 @@
     <span class="badge bg-secondary me-1 mb-1">
         {{ direction.name }}
         <button type="button"
-                hx-post="{% url 'tasks:direction_remove_from_task' task.pk %}"
+                hx-post="{% url 'project_tasks:direction_remove_from_task' task.pk %}"
                 hx-vals='{"direction_id": "{{ direction.id }}"}'
                 hx-target="#selected-directions"
                 hx-swap="innerHTML"

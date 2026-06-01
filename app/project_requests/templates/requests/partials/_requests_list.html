@@ -1,0 +1,12 @@
+<div class="position-relative">
+    <div id="request-form-container"></div>
+    {% if requests %}
+        <div class="list-group">
+            {% for req in requests %}
+                {% include 'requests/partials/_request_item.html' with req=req project=project %}
+            {% endfor %}
+        </div>
+    {% else %}
+        <p>Нет запросов.</p>
+    {% endif %}
+</div>

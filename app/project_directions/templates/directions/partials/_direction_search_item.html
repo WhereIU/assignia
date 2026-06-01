@@ -1,0 +1,8 @@
+<button type="button" class="list-group-item list-group-item-action py-1"
+        hx-post="{% url 'project_tasks:direction_add_to_task' task.pk %}"
+        hx-vals='{"direction_id": "{{ direction.id }}"}'
+        hx-target="#selected-directions"
+        hx-swap="innerHTML"
+        hx-on::after-request="document.querySelector('input[name=direction_search]').value=''">
+    {{ direction.name }}
+</button>

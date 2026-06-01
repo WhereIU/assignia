@@ -21,7 +21,7 @@ def team_tab(request, direction_pk):
         return HttpResponseForbidden("Недостаточно прав")
     show_deleted = request.GET.get('show_deleted') == '1'
     teams = direction.teams.filter(is_deleted=show_deleted)
-    return render(request, 'teams/partials/_teams.html', {
+    return render(request, 'teams/partials/_teams_tab.html', {
         'direction': direction,
         'project': project,
         'teams': teams,
@@ -169,10 +169,10 @@ def team_member_remove(request, team_pk):
 @login_required
 def team_create_form(request, direction_pk):
     direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=False)
-    return render(request, 'teams/partials/_team_form.html', {
+    return render(request, 'teams/partials/_team_create_edit_form.html', {
         'direction': direction,
         'project': direction.project,
-        'submit_url': reverse('teams:team_create', kwargs={'direction_pk': direction_pk}),
+        'submit_url': reverse('project_teams:team_create', kwargs={'direction_pk': direction_pk}),
     })
 
 
@@ -180,11 +180,11 @@ def team_create_form(request, direction_pk):
 def team_edit_form(request, direction_pk, team_pk):
     direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=False)
     team = get_object_or_404(Team, pk=team_pk, direction=direction)
-    return render(request, 'teams/partials/_team_form.html', {
+    return render(request, 'teams/partials/_team_create_edit_form.html', {
         'direction': direction,
         'project': direction.project,
         'team': team,
-        'submit_url': reverse('teams:team_update', kwargs={'team_pk': team_pk}),
+        'submit_url': reverse('project_teams:team_update', kwargs={'team_pk': team_pk}),
     })
 
 
@@ -195,7 +195,7 @@ def can_manage_teams(user, direction):
 def redirect_to_teams(request, direction):
     show_deleted = request.GET.get('show_deleted') == '1'
     teams = direction.teams.filter(is_deleted=show_deleted)
-    return render(request, 'teams/partials/_teams.html', {
+    return render(request, 'teams/partials/_teams_tab.html', {
         'direction': direction,
         'project': direction.project,
         'teams': teams,

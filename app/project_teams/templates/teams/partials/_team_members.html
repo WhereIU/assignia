@@ -2,16 +2,16 @@
 
 <div id="team-members-container">
     <a href="#" class="btn btn-outline-secondary btn-sm mt-2"
-        hx-get="{% url 'teams:teams_tab' direction_pk=direction.pk %}"
+        hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
         hx-target="#tab-content" hx-swap="innerHTML">
         Назад к списку команд
     </a>
-    <form hx-post="{% url 'teams:team_member_add' team_pk=team.pk %}"
+    <form hx-post="{% url 'project_teams:team_member_add' team_pk=team.pk %}"
           hx-target="#team-members-container" hx-swap="outerHTML" class="mb-2">
         {% csrf_token %}
         <div class="input-group input-group-sm">
             <input type="text" class="form-control" name="member_search" placeholder="Поиск участника..."
-                   hx-get="{% url 'teams:team_member_search' team_pk=team.pk %}"
+                   hx-get="{% url 'project_teams:team_member_search' team_pk=team.pk %}"
                    hx-trigger="keyup changed delay:300ms"
                    hx-target="#member-search-results"
                    hx-swap="innerHTML"
@@ -24,7 +24,7 @@
         {% for member in members %}
             <li class="list-group-item d-flex justify-content-between align-items-center py-1">
                 <a href="{% url 'users:public_profile' username=member.username %}">{{ member.username }}</a>
-                <button hx-post="{% url 'teams:team_member_remove' team_pk=team.pk %}"
+                <button hx-post="{% url 'project_teams:team_member_remove' team_pk=team.pk %}"
                         hx-vals='{"user_id": "{{ member.pk }}"}'
                         hx-target="#team-members-container" hx-swap="outerHTML"
                         class="btn btn-outline-danger btn-sm">Удалить</button>

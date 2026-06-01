@@ -3,7 +3,7 @@
 
 {% block project_navbar_tabs %}
     <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
-    <li class="nav-item"><span class="nav-link text-white-50">{{ task.title }}</span></li>
+    <li class="nav-item"><span class="nav-link text-white-50">{{ task.name }}</span></li>
 {% endblock %}
 
 {% block content %}
@@ -13,11 +13,11 @@
 
 <h3>Комментарии</h3>
 <div id="comments-list">
-  {% include 'common/partials/_comments.html' with comments=comments %}
+  {% include 'partials/_comments.html' with comments=comments %}
 </div>
 
 {% if user.is_authenticated %}
-<form hx-post="{% url 'tasks:comment_add' task.pk %}"
+<form hx-post="{% url 'project_tasks:comment_add' task.pk %}"
       hx-target="#comments-list"
       hx-swap="innerHTML"
       hx-on::after-request="this.reset()">

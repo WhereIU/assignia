@@ -7,47 +7,8 @@
 {% endblock %}
 
 {% block content %}
-<div class="card mb-3">
-    <div class="card-body">
-        <h5>Запрос #{{ req.pk }}</h5>
-        <p>{{ req.description }}</p>
-        <div class="text-muted small mb-2">
-            Автор: <a href="{% url 'users:public_profile' username=req.author.username %}" class="text-decoration-none text-muted">{{ req.author.username }}</a> · {{ req.created_at|date:"d.m.Y H:i" }}
-        </div>
-        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %}">
-            {{ req.get_status_display }}
-        </span>
+{% include 'requests/partials/_request_card.html' with req=req is_teach_support=is_tech_support %}
 
-        {% if is_tech_support and req.status == 'pending' %}
-            <form method="post" action="{% url 'requests:request_convert' request_pk=req.pk %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-success btn-sm ms-2">Создать задачу</button>
-            </form>
-            <form method="post" action="{% url 'requests:request_decline' request_pk=req.pk %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm ms-2">Отклонить</button>
-            </form>
-        {% endif %}
+{% include 'requests/partials/_request_messages.html' with messages_list=messages_list %}
 
-        {% if req.author == user and req.status == 'pending' %}
-            <form hx-post="{% url 'requests:request_delete' request_pk=req.pk %}"
-                  class="d-inline ms-2">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Удалить запрос</button>
-            </form>
-        {% endif %}
-    </div>
-</div>
-
-<h6>Обсуждение</h6>
-<div id="messages-container">
-    {% include 'requests/partials/_request_messages.html' with messages_list=messages_list %}
-</div>
-
-<form hx-post="{% url 'requests:request_message_add' request_pk=req.pk %}"
-      hx-target="#messages-container" hx-swap="innerHTML" hx-on::after-request="this.reset()">
-    {% csrf_token %}
-    <textarea class="form-control mb-2" name="text" rows="2" placeholder="Ваше сообщение..."></textarea>
-    <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
-</form>
 {% endblock %}

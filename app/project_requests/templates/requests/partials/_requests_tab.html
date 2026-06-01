@@ -1,0 +1,12 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>
+        {% if is_tech_support %}Запросы проекта{% else %}Мои запросы{% endif %}
+    </h2>
+    <button class="btn btn-success btn-sm"
+            hx-get="{% url 'project_requests:request_create_form' username=project.owner.username slug=project.slug %}"
+            hx-target="#request-form-container" hx-swap="innerHTML">
+        <i class="bi bi-plus-lg"></i> Создать запрос
+    </button>
+</div>
+
+{% include 'requests/partials/_requests_list.html' with requests=requests project=project %}

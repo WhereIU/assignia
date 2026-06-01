@@ -1,0 +1,27 @@
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h5>Команды направления «{{ direction.name }}»</h5>
+    <div>
+        {% if not show_deleted %}
+            <button class="btn btn-outline-secondary btn-sm"
+                    hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted=1"
+                    hx-target="#tab-content" hx-swap="innerHTML">
+                Показать удалённые
+            </button>
+        {% else %}
+            <button class="btn btn-outline-secondary btn-sm"
+                    hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+                    hx-target="#tab-content" hx-swap="innerHTML">
+                Скрыть удалённые
+            </button>
+        {% endif %}
+        <button class="btn btn-success btn-sm ms-2"
+                hx-get="{% url 'project_teams:team_create_form' direction_pk=direction.pk %}"
+                hx-target="#team-form-container" hx-swap="innerHTML">
+            <i class="bi bi-plus-lg"></i> Добавить команду
+        </button>
+    </div>
+</div>
+
+<div id="team-form-container"></div>
+
+{% include 'teams/partials/_teams_list.html' with teams=teams show_deleted=show_deleted %}

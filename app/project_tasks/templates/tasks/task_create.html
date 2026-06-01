@@ -27,8 +27,8 @@
                     {% csrf_token %}
 
                     <div class="mb-3">
-                        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.title.label }}</label>
-                        {{ form.title }}
+                        <label for="{{ form.title.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
                     </div>
                     <div class="mb-3">
                         <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>

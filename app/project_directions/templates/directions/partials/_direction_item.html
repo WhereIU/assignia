@@ -1,0 +1,40 @@
+<tr>
+    <td>{{ d.name }}</td>
+    <td class="text-muted small">{{ d.description|default:"—" }}</td>
+    <td>{{ d.task_count }}</td>
+    {% if can_manage %}
+    <td>
+        <div class="d-flex gap-1">
+            {% if not show_deleted %}
+                <button class="btn btn-outline-secondary btn-sm"
+                        hx-get="{% url 'project_directions:direction_edit_form' username=project.owner.username slug=project.slug direction_pk=d.pk %}"
+                        hx-target="#direction-form-container" hx-swap="innerHTML">
+                    <i class="bi bi-pencil"></i>
+                </button>
+                <button class="btn btn-outline-danger btn-sm"
+                        hx-post="{% url 'project_directions:direction_delete' direction_pk=d.pk %}"
+                        hx-target="#tab-content" hx-swap="innerHTML">
+                    <i class="bi bi-trash"></i>
+                </button>
+                <button class="btn btn-outline-primary btn-sm"
+                        hx-get="{% url 'project_teams:teams_tab' direction_pk=d.pk %}"
+                        hx-target="#tab-content" hx-swap="innerHTML">
+                    <i class="bi bi-people"></i> Команды
+                </button>
+            {% else %}
+                <button class="btn btn-outline-success btn-sm"
+                        hx-post="{% url 'project_directions:direction_restore' direction_pk=d.pk %}"
+                        hx-target="#tab-content" hx-swap="innerHTML">
+                    <i class="bi bi-arrow-counterclockwise"></i> Восстановить
+                </button>
+                <button class="btn btn-outline-dark btn-sm"
+                        hx-post="{% url 'project_directions:direction_hard_delete' direction_pk=d.pk %}"
+                        hx-target="#tab-content" hx-swap="innerHTML"
+                        hx-confirm="Удалить направление навсегда? Это действие необратимо.">
+                    <i class="bi bi-x-octagon"></i> Удалить навсегда
+                </button>
+            {% endif %}
+        </div>
+    </td>
+    {% endif %}
+</tr>

@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Count, Avg, Sum, F
 from django.http import HttpResponseForbidden
 
-from project_tasks.views import Project, ProjectMembership
+from projects.models import Project, ProjectMembership
 from project_teams.models import Team
 from users.models import User
 
@@ -41,5 +41,5 @@ def analytics_tab(request, username, slug):
 
     context = {'project': project, 'teams': teams, 'participants': participants}
     if request.headers.get('HX-Request'):
-        return render(request, 'project_analytics/partials/_analytics_tab.html', context)
+        return render(request, 'analytics/partials/_analytics_tab.html', context)
     return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})

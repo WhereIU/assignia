@@ -1,0 +1,18 @@
+
+<div class="table-responsive">
+    <table class="table table-striped">
+        <thead><tr>
+            <th>Название</th><th>Описание</th><th>Задач</th>
+            {% if can_manage %}<th>Действия</th>{% endif %}
+        </tr></thead>
+        <tbody>
+            {% for d in directions %}
+              {% include 'directions/partials/_direction_item.html' with d=d show_deleted=show_deleted can_manage=can_manage %}
+            {% empty %}
+                <tr><td colspan="4">Нет направлений</td></tr>
+            {% endfor %}
+          </tbody>
+    </table>
+</div>
+
+  

@@ -96,9 +96,9 @@ def direction_restore(request, direction_pk):
 @login_required
 def direction_create_form(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
-    return render(request, 'directions/partials/_direction_form.html', {
+    return render(request, 'directions/partials/_direction_create_form.html', {
         'project': project,
-        'submit_url': reverse('directions:direction_create', kwargs={'username': username, 'slug': slug}),
+        'submit_url': reverse('project_directions:direction_create', kwargs={'username': username, 'slug': slug}),
     })
 
 
@@ -106,10 +106,10 @@ def direction_create_form(request, username, slug):
 def direction_edit_form(request, username, slug, direction_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
-    return render(request, 'directions/partials/_direction_form.html', {
+    return render(request, 'directions/partials/_direction_create_form.html', {
         'project': project,
         'direction': direction,
-        'submit_url': reverse('directions:direction_update', kwargs={'direction_pk': direction.pk}),
+        'submit_url': reverse('project_directions:direction_update', kwargs={'direction_pk': direction.pk}),
     })
 
 
@@ -122,7 +122,7 @@ def can_manage_directions(user, project):
 
 def redirect_to_directions(request, project, show_deleted=False):
     directions = project.directions.filter(is_deleted=show_deleted).annotate(task_count=Count('tasks'))
-    return render(request, 'directions/partials/_directions.html', {
+    return render(request, 'directions/partials/_directions_tab.html', {
         'project': project,
         'directions': directions,
         'can_manage': True,

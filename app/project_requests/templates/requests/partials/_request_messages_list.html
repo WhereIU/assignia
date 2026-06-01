@@ -1,0 +1,5 @@
+{% for msg in messages_list %}
+    {% include 'requests/partials/_request_message_item.html' with msg=msg %}
+{% empty %}
+<p class="text-muted">Пока нет сообщений.</p>
+{% endfor %}

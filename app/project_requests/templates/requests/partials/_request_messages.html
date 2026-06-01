@@ -1,13 +1,13 @@
-{% for msg in messages_list %}
-<div class="border rounded p-2 mb-2">
-    <strong>
-        <a href="{% url 'users:public_profile' username=msg.author.username %}" class="text-decoration-none text-reset">
-            {{ msg.author.username }}
-        </a>
-    </strong>
-    <small class="text-muted">{{ msg.created_at|date:"d.m H:i" }}</small>
-    <p class="mb-0">{{ msg.text }}</p>
+<div class="messages-div">
+    <h6>Обсуждение</h6>
+    <div id="messages-container">
+        {% include 'requests/partials/_request_messages_list.html' with messages_list=messages_list %}
+    </div>
+
+    <form hx-post="{% url 'project_requests:request_message_add' request_pk=req.pk %}"
+        hx-target="#messages-container" hx-swap="innerHTML" hx-on::after-request="this.reset()">
+        {% csrf_token %}
+        <textarea class="form-control mb-2" name="text" rows="2" placeholder="Ваше сообщение..."></textarea>
+        <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
+    </form>
 </div>
-{% empty %}
-<p class="text-muted">Пока нет сообщений.</p>
-{% endfor %}

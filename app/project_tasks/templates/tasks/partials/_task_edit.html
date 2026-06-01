@@ -4,12 +4,12 @@
     <button type="button" class="btn-close" aria-label="Закрыть"
             onclick="document.getElementById('task-edit-overlay'); this.closest('#task-edit-overlay').innerHTML='';"></button>
   </div>
-  <form hx-post="{% url 'tasks:task_save' task.pk %}" hx-target="#task-main-card" hx-swap="outerHTML">
+  <form hx-post="{% url 'project_tasks:task_save' task.pk %}" hx-target="#task-main-card" hx-swap="outerHTML">
     {% csrf_token %}
     <div class="row g-3">
         <div class="col-12">
           <label class="form-label fw-bold">Название</label>
-          <input type="text" name="title" class="form-control" value="{{ task.title }}">
+          <input type="text" name="name" class="form-control" value="{{ task.name }}">
         </div>
         <div class="col-md-4">
           <label class="form-label">Статус</label>
@@ -50,14 +50,14 @@
         <div class="col-12">
             <label class="form-label">Исполнители</label>
             <input type="text" class="form-control" name="assignee_search" placeholder="Поиск участника..."
-                  hx-get="{% url 'tasks:member_search' task.pk %}"
+                  hx-get="{% url 'project_tasks:member_search' task.pk %}"
                   hx-trigger="keyup changed delay:300ms"
                   hx-target="#assignee-search-results"
                   hx-swap="innerHTML"
                   value="">
             <div id="assignee-search-results" class="list-group mt-1"></div>
             <div id="selected-assignees" class="mt-2">
-                {% include 'common/partials/_selected_assignees.html' with task=task %}
+                {% include 'tasks/partials/_selected_assignees.html' with task=task %}
             </div>
         </div>
       <div class="col-12">
@@ -67,27 +67,27 @@
       <div class="col-12">
           <label class="form-label">Направления</label>
           <input type="text" class="form-control" name="direction_search" placeholder="Поиск направления..."
-                hx-get="{% url 'tasks:direction_search' task.pk %}"
+                hx-get="{% url 'project_tasks:direction_search' task.pk %}"
                 hx-trigger="keyup changed delay:300ms"
                 hx-target="#direction-search-results"
                 hx-swap="innerHTML"
                 value="">
           <div id="direction-search-results" class="list-group mt-1"></div>
           <div id="selected-directions" class="mt-2">
-              {% include 'common/partials/_selected_directions.html' with task=task %}
+              {% include 'directions/partials/_selected_directions.html' with task=task %}
           </div>
       </div>
       <div class="col-12">
         <label class="form-label">Команды</label>
         <input type="text" class="form-control form-control-sm" name="team_search" placeholder="Поиск команды..."
-              hx-get="{% url 'tasks:team_search' task.pk %}" 
+              hx-get="{% url 'project_tasks:team_search' task.pk %}" 
               hx-trigger="keyup changed delay:300ms" 
               hx-target="#team-search-results" 
               hx-swap="innerHTML"
               value="">
         <div id="team-search-results" class="list-group mt-1"></div>
         <div id="selected-teams" class="mt-2">
-            {% include 'common/partials/_selected_teams.html' with task=task %}
+            {% include 'teams/partials/_selected_teams.html' with task=task %}
         </div>
     </div>
     </div>

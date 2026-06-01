@@ -1,0 +1,77 @@
+<tr>
+    <td>
+        <a href="{% url 'users:public_profile' username=m.user.username %}">
+            {{ m.user.username }}
+        </a>
+    </td>
+    <td>
+        {% if actor_role == 'owner' and m.role != 'owner' %}
+            <form
+                hx-post="{% url 'projects:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                hx-target="#members-container"
+                hx-swap="outerHTML">
+                {% csrf_token %}
+                <select
+                    name="role"
+                    class="form-select form-select-sm"
+                    onchange="this.form.requestSubmit()">
+                    {% for key, value in membership_roles %}
+                        {% if key != 'owner' %}
+                            <option
+                                value="{{ key }}"
+                                {% if m.role == key %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </form>
+        {% elif actor_role == 'admin' and m.role != 'owner' and m.role != 'admin' %}
+            <form
+                hx-post="{% url 'projects:change_member_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                hx-target="closest tr"
+                hx-swap="outerHTML">
+                {% csrf_token %}
+                <select
+                    name="role"
+                    class="form-select form-select-sm"
+                    onchange="this.form.requestSubmit()">
+                    {% for key, value in membership_roles %}
+                        {% if key != 'owner' and key != 'admin' %}
+                            <option
+                                value="{{ key }}"
+                                {% if m.role == key %}selected{% endif %}>
+                                {{ value }}
+                            </option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </form>
+        {% else %}
+            {{ m.get_role_display }}
+        {% endif %}
+    </td>
+    {% if actor_role == 'owner' or actor_role == 'admin' %}
+        <td>
+            {% if m.role != 'owner' and m.user != request.user %}
+                {% if actor_role == 'owner' %}
+                    <button
+                    class="btn btn-outline-danger btn-sm"
+                    hx-post="{% url 'projects:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                    hx-target="closest tr"
+                    hx-swap="delete">
+                        Удалить
+                    </button>
+                {% elif actor_role == 'admin' and m.role != 'admin' %}
+                    <button
+                        class="btn btn-outline-danger btn-sm"
+                        hx-post="{% url 'projects:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                        hx-target="closest tr"
+                        hx-swap="delete">
+                        Удалить
+                    </button>
+                {% endif %}
+            {% endif %}
+        </td>
+    {% endif %}
+</tr>
