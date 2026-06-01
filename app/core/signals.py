@@ -2,13 +2,13 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 from django.urls import reverse
 
-from tasks.models import Comment
+from project_tasks.models import TaskComment
 from projects.models import Invitation
 
 from .models import Notification
 
 
-@receiver(post_save, sender=Comment)
+@receiver(post_save, sender=TaskComment)
 def create_comment_notification(sender, instance, created, **kwargs):
     if not created:
         return

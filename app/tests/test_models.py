@@ -2,7 +2,7 @@ import pytest
 
 from users.models import User
 from projects.models import Project, ProjectMembership
-from tasks.models import Task, TaskRequest, Comment
+from project_tasks.models import Task, TaskRequest, Comment
 from core.models import Notification
 
 

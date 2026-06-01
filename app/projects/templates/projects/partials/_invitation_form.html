@@ -1,0 +1,13 @@
+<form hx-post="{% url 'projects:invitation_send' username=project.owner.username slug=project.slug %}"
+    hx-target="#pending-invitations-wrapper"
+    hx-swap="outerHTML">
+    {% csrf_token %}
+    <div class="col-auto">
+        <input type="text" name="username" class="form-control form-control-sm" placeholder="Имя пользователя">
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-success btn-sm">Пригласить</button>
+        <button type="button" class="btn btn-outline-secondary btn-sm"
+                onclick="this.closest('#invitation-form-container').innerHTML = ''">Отмена</button>
+    </div>
+</form>

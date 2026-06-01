@@ -16,7 +16,7 @@ class LoginForm(AuthenticationForm):
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'Введите username',
-            'maxlength': 25,
+            'maxlength': 32,
         })
     )
 
@@ -44,11 +44,11 @@ class LoginForm(AuthenticationForm):
 
 class UserCreationForm(DjangoUserCreationForm):
     email = forms.EmailField(
-        max_length=40,
+        max_length=128,
         widget=forms.EmailInput(attrs={
             'class': 'form-control',
             'placeholder': 'email@example.com',
-            'maxlength': 40,
+            'maxlength': 128,
         })
     )
 
@@ -107,7 +107,7 @@ class ProfileEditForm(UserChangeForm):
         widget=forms.Textarea(attrs={
             'class': 'form-control',
             'rows': 7,
-            'maxlength': 100,
+            'maxlength': 150,
             'placeholder': 'Расскажите о себе',
             "style": "resize:none;",
         })
@@ -134,24 +134,24 @@ class ProfileEditForm(UserChangeForm):
             'first_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Имя',
-                'maxlength': 30,
+                'maxlength': 32,
             }),
 
             'last_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Фамилия',
-                'maxlength': 30,
+                'maxlength': 32,
             }),
         }
 
 
 class AccountEmailForm(forms.ModelForm):
     email = forms.EmailField(
-    max_length=40,
+    max_length=128,
     widget=forms.EmailInput(attrs={
         "class": "form-control",
         "placeholder": "email@example.com",
-        "maxlength": 40,
+        "maxlength": 128,
         })
     )
 

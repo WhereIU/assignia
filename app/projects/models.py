@@ -2,9 +2,10 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 
+
 class Project(models.Model):
-    name = models.CharField(max_length=50)
-    slug = models.SlugField(max_length=50)
+    name = models.CharField(max_length=64)
+    slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_projects')
     is_public = models.BooleanField(default=False)
@@ -36,8 +37,8 @@ class ProjectMembership(models.Model):
     ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='participant')
-    team = models.ForeignKey('divisions.Team', on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.CharField(max_length=32, choices=ROLE_CHOICES, default='participant')
+    team = models.ForeignKey('project_teams.Team', on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
         unique_together = ('user', 'project')
@@ -55,7 +56,7 @@ class Invitation(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invitations')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_invitations')
-    status = models.CharField(max_length=10, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='pending')
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):

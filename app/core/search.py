@@ -1,5 +1,7 @@
 import re
+
 from django.db.models import Q
+
 
 def parse_search_query(query: str):
     """Parses a search query with qualifiers."""

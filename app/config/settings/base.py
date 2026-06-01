@@ -61,12 +61,14 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-
     "core",
     "users",
     "projects",
-    "tasks",
-    "divisions",
+    "project_tasks",
+    "project_requests",
+    "project_directions",
+    "project_teams",
+    "project_analytics",
 ]
 
 # MIDDLEWARE
@@ -78,7 +80,6 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-
     "core.middleware.HtmxMessagesMiddleware",
 ]
 
@@ -98,7 +99,6 @@ TEMPLATES = [
                 "django.template.context_processors.request",
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
-
                 "core.context_processors.notifications_count",
                 "projects.context_processors.membership_roles",
             ],
@@ -143,7 +143,7 @@ SESSION_ENGINE = "django.contrib.sessions.backends.db"
 AUTH_USER_MODEL = "users.User"
 
 LOGIN_URL = "users:login"
-LOGIN_REDIRECT_URL = "projects:dashboard"
+LOGIN_REDIRECT_URL = "core:dashboard"
 LOGOUT_REDIRECT_URL = "core:home"
 
 # PASSWORDS

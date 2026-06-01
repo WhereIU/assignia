@@ -1,57 +1,18 @@
-from django.contrib import messages
-from django.contrib.auth.decorators import login_required
-from django.db.models import Count, Q, Avg, Sum, F, Case, IntegerField, When
-from django.http import HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
+from django.http import HttpResponseForbidden
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.db.models import Q
 from django.core.paginator import Paginator
 
 from core.models import Notification
-from tasks.models import Task
+from project_tasks.models import Task
 from users.models import User
-from divisions.models import Team
-from tasks.views import is_privileged
-
 
 from .forms import ProjectCreateForm
 from .models import Invitation, Project, ProjectMembership
-
-
-def get_member_role(user, project):
-    if not user.is_authenticated:
-        return None
-    membership = ProjectMembership.objects.filter(user=user, project=project).first()
-    return membership.role if membership else None
-
-
-def can_manage_member(actor, target_membership, project):
-    if not actor.is_authenticated:
-        return False
-    actor_role = get_member_role(actor, project)
-    if not actor_role:
-        return False
-    if actor_role == 'owner':
-        return True
-    if actor_role == 'admin':
-        return target_membership.role in ('manager', 'tech_support', 'participant')
-    return False
-
-
-def redirect_to_members(request, project):
-    members = ProjectMembership.objects.filter(project=project).select_related('user')
-    member_list = []
-    for m in members:
-        m.can_manage = can_manage_member(request.user, m, project)
-        member_list.append(m)
-    actor_role = get_member_role(request.user, project)
-    pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
-    return render(request, 'projects/partials/_members.html', {
-        'project': project,
-        'members': member_list,
-        'actor_role': actor_role,
-        'pending_invitations': pending_invitations,
-    })
 
 
 def available_projects(request):
@@ -72,67 +33,6 @@ def available_projects(request):
     return render(request, 'projects/available_projects.html', {
         'projects': projects,
         'query': query,
-    })
-
-
-@login_required
-def dashboard(request):
-    memberships = ProjectMembership.objects.filter(user=request.user).select_related('project')
-    user_projects = [m.project for m in memberships]
-
-
-    status_filter = request.GET.get('status', '')
-    priority_filter = request.GET.get('priority', '')
-    risk_filter = request.GET.get('risk', '')
-    q = request.GET.get('q', '')
-    source = request.GET.get('source', 'assigned')
-    page = request.GET.get('page', 1)
-
-    if source == 'assigned':
-        tasks = Task.objects.filter(assignments__user=request.user, is_deleted=False)
-    else:
-        tasks = Task.objects.filter(
-            project__in=user_projects,
-            status='new',
-            assignments__isnull=True,
-            is_deleted=False,
-        )
-
-    if status_filter:
-        tasks = tasks.filter(status=status_filter)
-    if priority_filter:
-        tasks = tasks.filter(priority=int(priority_filter))
-    if risk_filter == 'high':
-        tasks = tasks.filter(Q(risk_chance__gte=4) | Q(risk_impact__gte=4))
-    elif risk_filter == 'low':
-        tasks = tasks.filter(risk_chance__lte=3, risk_impact__lte=3)
-    if q:
-        tasks = tasks.filter(Q(title__icontains=q) | Q(description__icontains=q))
-
-    tasks = tasks.order_by('-priority')
-
-    filters = {
-        'status': status_filter,
-        'priority': str(priority_filter) if priority_filter else '',
-        'risk': risk_filter,
-        'q': q,
-    }
-
-    if request.headers.get('HX-Target', '') == 'task-list-inner':
-        paginator = Paginator(tasks, 10)
-        page_obj = paginator.get_page(page)
-        return render(request, 'projects/partials/_dashboard_tab.html', {
-            'page_obj': page_obj,
-            'show_take_button': source != 'assigned',
-            'filters': filters,
-            'source': source,
-        })
-
-    invitations = Invitation.objects.filter(recipient=request.user, status='pending')
-    return render(request, 'projects/dashboard.html', {
-        'user_projects': user_projects,
-        'filters': filters,
-        'invitations': invitations,
     })
 
 
@@ -206,7 +106,6 @@ def project_detail(request, username, slug):
     })
 
 
-
 @login_required
 def project_join(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
@@ -221,48 +120,41 @@ def project_join(request, username, slug):
 
 
 @login_required
-def analytics_tab(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
-        return HttpResponseForbidden("Вы не участник проекта")
-
-    task_filter = Q(tasks__project=project) & ~Q(tasks__status='cancelled')
-
-    teams = Team.objects.filter(direction__project=project).annotate(
-        total_tasks=Count('tasks', filter=task_filter),
-        new_tasks=Count('tasks', filter=task_filter & Q(tasks__status='new')),
-        pending_tasks=Count('tasks', filter=task_filter & Q(tasks__status='pending')),
-        in_progress_tasks=Count('tasks', filter=task_filter & Q(tasks__status='in_progress')),
-        done_tasks=Count('tasks', filter=task_filter & Q(tasks__status='done')),
-        avg_priority=Avg('tasks__priority', filter=task_filter),
-        total_risk=Sum(F('tasks__risk_chance') * F('tasks__risk_impact'), filter=task_filter),
-    )
-
-    assign_filter = Q(task_assignments__task__project=project) & ~Q(task_assignments__task__status='cancelled')
-
-    participants = User.objects.filter(
-        projectmembership__project=project
-    ).annotate(
-        assigned_count=Count('task_assignments', filter=assign_filter),
-        done_count=Count('task_assignments', filter=assign_filter & Q(task_assignments__task__status='done')),
-        performance_score=Sum(
-            (F('task_assignments__task__priority') * (1 + F('task_assignments__task__risk_chance') * F('task_assignments__task__risk_impact') / 10.0)),
-            filter=Q(task_assignments__task__project=project, task_assignments__task__status='done')
-        ),
-    )
-
-    context = {'project': project, 'teams': teams, 'participants': participants}
-    if request.headers.get('HX-Request'):
-        return render(request, 'projects/partials/_analytics_tab.html', context)
-    return render(request, 'projects/project_detail.html', {**context, 'tab': 'analytics'})
-
-
-@login_required
 def members_tab(request, username, slug):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     if get_member_role(request.user, project) not in ('admin', 'owner'):
         return HttpResponseForbidden("Недостаточно прав")
-    return redirect_to_members(request, project)
+
+    members = ProjectMembership.objects.filter(project=project).select_related('user')
+    search_query = request.GET.get('search', '').strip()
+    page = request.GET.get('page', 1)
+
+    if search_query:
+        members = members.filter(user__username__icontains=search_query)
+
+    paginator = Paginator(members, 10)
+    page_obj = paginator.get_page(page)
+
+    actor_role = get_member_role(request.user, project)
+    pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
+
+    if request.headers.get('HX-Target', '') == 'members-list-inner':
+        return render(request, 'projects/partials/_members_list.html', {
+            'project': project,
+            'members': page_obj,
+            'actor_role': actor_role,
+            'page_obj': page_obj,
+            'search_query': search_query,
+        })
+
+    return render(request, 'projects/partials/_members_tab.html', {
+        'project': project,
+        'members': page_obj,
+        'actor_role': actor_role,
+        'pending_invitations': pending_invitations,
+        'page_obj': page_obj,
+        'search_query': search_query,
+    })
 
 
 @login_required
@@ -278,24 +170,59 @@ def project_settings_tab(request, username, slug):
 
 
 @login_required
+@require_http_methods(["POST"])
 def invitation_send(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    if get_member_role(request.user, project) not in ('admin', 'owner'):
+    project = get_object_or_404(
+        Project,
+        owner__username=username,
+        slug=slug,
+    )
+
+    if get_member_role(request.user, project) not in ("owner", "admin"):
         return HttpResponseForbidden("Недостаточно прав")
-    recipient_username = request.POST.get('username', '').strip()
+
+    recipient_username = request.POST.get("username", "").strip()
+
+    if not recipient_username:
+        messages.error(request, "Укажите имя пользователя")
+        return redirect_to_members(request, project)
+
     try:
         recipient = User.objects.get(username=recipient_username)
     except User.DoesNotExist:
-        messages.error(request, 'Пользователь не найден')
+        messages.error(request, "Пользователь не найден")
         return redirect_to_members(request, project)
-    if ProjectMembership.objects.filter(user=recipient, project=project).exists():
-        messages.error(request, f'{recipient.username} уже участник')
+
+    if recipient == request.user:
+        messages.error(request, "Нельзя пригласить самого себя")
         return redirect_to_members(request, project)
-    if Invitation.objects.filter(project=project, recipient=recipient, status='pending').exists():
-        messages.error(request, 'Приглашение уже отправлено')
+
+    if ProjectMembership.objects.filter(
+        project=project,
+        user=recipient,
+    ).exists():
+        messages.error(request, "Пользователь уже состоит в проекте")
         return redirect_to_members(request, project)
-    Invitation.objects.create(project=project, sender=request.user, recipient=recipient)
-    messages.success(request, f'Приглашение отправлено {recipient.username}')
+
+    if Invitation.objects.filter(
+        project=project,
+        recipient=recipient,
+        status="pending",
+    ).exists():
+        messages.error(request, "Приглашение уже отправлено")
+        return redirect_to_members(request, project)
+
+    Invitation.objects.create(
+        project=project,
+        sender=request.user,
+        recipient=recipient,
+    )
+
+    messages.success(
+        request,
+        f"Приглашение отправлено пользователю {recipient.username}",
+    )
+
     return redirect_to_members(request, project)
 
 
@@ -342,26 +269,6 @@ def invitation_decline(request, invitation_pk):
 
 @login_required
 @require_http_methods(["POST"])
-def member_remove(request, username, slug, user_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    actor_role = get_member_role(request.user, project)
-    if actor_role not in ('admin', 'owner'):
-        return HttpResponseForbidden("Недостаточно прав")
-    target_membership = get_object_or_404(ProjectMembership, user__pk=user_pk, project=project)
-    if target_membership.role == 'owner':
-        messages.error(request, 'Нельзя удалить владельца')
-        return redirect_to_members(request, project)
-    if actor_role == 'admin' and target_membership.role == 'admin':
-        messages.error(request, 'Недостаточно прав')
-        return redirect_to_members(request, project)
-    removed_username = target_membership.user.username
-    target_membership.delete()
-    messages.success(request, f'{removed_username} удалён из проекта')
-    return redirect_to_members(request, project)
-
-
-@login_required
-@require_http_methods(["POST"])
 def member_update_role(request, username, slug, user_pk):
     project = get_object_or_404(Project, owner__username=username, slug=slug)
     actor_role = get_member_role(request.user, project)
@@ -385,6 +292,26 @@ def member_update_role(request, username, slug, user_pk):
     target_membership.role = new_role
     target_membership.save()
     messages.success(request, f'Роль {target_membership.user.username} изменена на {new_role}')
+    return redirect_to_members(request, project)
+
+
+@login_required
+@require_http_methods(["POST"])
+def member_remove(request, username, slug, user_pk):
+    project = get_object_or_404(Project, owner__username=username, slug=slug)
+    actor_role = get_member_role(request.user, project)
+    if actor_role not in ('admin', 'owner'):
+        return HttpResponseForbidden("Недостаточно прав")
+    target_membership = get_object_or_404(ProjectMembership, user__pk=user_pk, project=project)
+    if target_membership.role == 'owner':
+        messages.error(request, 'Нельзя удалить владельца')
+        return redirect_to_members(request, project)
+    if actor_role == 'admin' and target_membership.role == 'admin':
+        messages.error(request, 'Недостаточно прав')
+        return redirect_to_members(request, project)
+    removed_username = target_membership.user.username
+    target_membership.delete()
+    messages.success(request, f'{removed_username} удалён из проекта')
     return redirect_to_members(request, project)
 
 
@@ -420,3 +347,43 @@ def project_update(request, username, slug):
     project.save()
     messages.success(request, 'Настройки проекта обновлены')
     return redirect('projects:project_settings_tab', username=username, slug=slug)
+
+
+def get_member_role(user, project):
+    if not user.is_authenticated:
+        return None
+    membership = ProjectMembership.objects.filter(user=user, project=project).first()
+    return membership.role if membership else None
+
+
+def require_project_roles(user, project, *roles):
+    return get_member_role(user, project) in roles
+
+
+def can_manage_member(actor, target_membership, project):
+    if not actor.is_authenticated:
+        return False
+    actor_role = get_member_role(actor, project)
+    if not actor_role:
+        return False
+    if actor_role == 'owner':
+        return True
+    if actor_role == 'admin':
+        return target_membership.role in ('manager', 'tech_support', 'hr_analyst', 'participant')
+    return False
+
+
+def redirect_to_members(request, project):
+    members = ProjectMembership.objects.filter(project=project).select_related('user')
+    member_list = []
+    for m in members:
+        m.can_manage = can_manage_member(request.user, m, project)
+        member_list.append(m)
+    actor_role = get_member_role(request.user, project)
+    pending_invitations = Invitation.objects.filter(project=project, status='pending').select_related('recipient')
+    return render(request, 'projects/partials/_members.html', {
+        'project': project,
+        'members': member_list,
+        'actor_role': actor_role,
+        'pending_invitations': pending_invitations,
+    })

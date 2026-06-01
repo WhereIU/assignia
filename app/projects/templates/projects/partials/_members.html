@@ -1,75 +1,51 @@
-<div class="card" id="members-container">
-    <div class="card-body">
-        <h5>Участники</h5>
+{% include 'partials/_messages.html' %}
 
-        {% if actor_role == 'owner' or actor_role == 'admin' %}
-        <form hx-post="{% url 'projects:invitation_send' username=project.owner.username slug=project.slug %}"
-              hx-target="#members-container" hx-swap="outerHTML" class="row g-2 mb-3">
-            {% csrf_token %}
-            <div class="col-auto">
-                <input type="text" name="username" class="form-control form-control-sm" placeholder="Имя пользователя">
-            </div>
-            <div class="col-auto">
-                <button type="submit" class="btn btn-success btn-sm">Пригласить</button>
+<div class="card">
+    <div class="card-body">
+
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h5 class="mb-0">Участники</h5>
+
+            {% if actor_role == 'owner' or actor_role == 'admin' %}
+                <button
+                    class="btn btn-success btn-sm"
+                    hx-get="{% url 'projects:invitation_form' username=project.owner.username slug=project.slug %}"
+                    hx-target="#invite-form-container"
+                    hx-swap="innerHTML">
+                    Пригласить
+                </button>
+            {% endif %}
+        </div>
+
+        <div id="invite-form-container"></div>
+
+        <form
+            class="mb-3"
+            hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
+            hx-target="#members-list-wrapper"
+            hx-swap="innerHTML">
+
+            <div class="input-group">
+                <input
+                    type="text"
+                    name="search"
+                    class="form-control"
+                    value="{{ search_query }}"
+                    placeholder="Поиск участников">
+
+                <button class="btn btn-outline-secondary">
+                    Найти
+                </button>
             </div>
         </form>
-        {% endif %}
 
-        {% if pending_invitations %}
-        <h6>Активные приглашения</h6>
-        <ul class="list-group mb-3">
-            {% for inv in pending_invitations %}
-            <li class="list-group-item d-flex justify-content-between align-items-center">
-                {{ inv.recipient.username }}
-                {% if actor_role %}
-                <button hx-post="{% url 'projects:invitation_cancel' username=project.owner.username slug=project.slug invitation_pk=inv.pk %}"
-                        hx-target="#members-container" hx-swap="outerHTML"
-                        class="btn btn-outline-danger btn-sm">Отменить</button>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ul>
-        {% endif %}
+        <div id="pending-invitations-wrapper">
+            {% include 'projects/partials/_pending_invitations.html' %}
+        </div>
 
-        <table class="table table-striped">
-            <thead><tr>
-                <th>Пользователь</th><th>Роль</th>
-                {% if actor_role %}<th>Действия</th>{% endif %}
-            </tr></thead>
-            <tbody>
-            {% for m in members %}
-                <tr>
-                    <td><a href="{% url 'users:public_profile' username=m.user.username %}">{{ m.user.username }}</a></td>
-                    <td>
-                        {% if m.can_manage and m.role != 'owner' %}
-                        <form hx-post="{% url 'projects:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
-                              hx-target="#members-container" hx-swap="outerHTML" class="d-inline">
-                            {% csrf_token %}
-                            <select name="role" class="form-select form-select-sm" onchange="this.form.requestSubmit()">
-                                {% for key, value in membership_roles %}
-                                    {% if key != 'owner' %}
-                                        <option value="{{ key }}" {% if m.role == key %}selected{% endif %}>{{ value }}</option>
-                                    {% endif %}
-                                {% endfor %}
-                            </select>
-                            <noscript><button type="submit" class="btn btn-sm btn-outline-secondary">OK</button></noscript>
-                        </form>
-                        {% else %}
-                            {{ m.get_role_display }}
-                        {% endif %}
-                    </td>
-                    {% if actor_role %}
-                    <td>
-                        {% if m.can_manage and m.role != 'owner' and m.user != user %}
-                            <button hx-post="{% url 'projects:member_remove' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
-                                    hx-target="#members-container" hx-swap="outerHTML"
-                                    class="btn btn-outline-danger btn-sm">Удалить</button>
-                        {% endif %}
-                    </td>
-                    {% endif %}
-                </tr>
-            {% endfor %}
-            </tbody>
-        </table>
+        <div id="members-list-wrapper">
+            {% include 'projects/partials/_members_list.html' %}
+        </div>
+
     </div>
 </div>

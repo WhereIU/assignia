@@ -8,11 +8,11 @@ class ProjectCreateForm(forms.ModelForm):
     slug = forms.CharField(
         required=False,
         label='URL проекта',
-        max_length=50,
+        max_length=64,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'my-new-project',
-            'maxlength': 50,
+            'maxlength': 64,
             'id': 'id_slug',
         }),
         help_text='Оставьте пустым для автоматической генерации из названия.',
@@ -30,7 +30,7 @@ class ProjectCreateForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Мой новый проект',
-                'maxlength': 50,
+                'maxlength': 64,
                 'id': 'id_name',
             }),
             'description': forms.Textarea(attrs={
