@@ -2,6 +2,8 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 
+from common.constants import ProjectRole, InvitationStatus
+
 
 class Project(models.Model):
     name = models.CharField(max_length=64)
@@ -27,17 +29,13 @@ class Project(models.Model):
         return self.name
 
 class ProjectMembership(models.Model):
-    ROLE_CHOICES = [
-        ('owner', 'Владелец'),
-        ('admin', 'Администратор'),
-        ('manager', 'Менеджер'),
-        ('tech_support', 'Техподдержка'),
-        ('hr_analyst', 'Кадровый аналитик'),
-        ('participant', 'Участник'),
-    ]
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    role = models.CharField(max_length=32, choices=ROLE_CHOICES, default='participant')
+    role = models.CharField(
+        max_length=32,
+        choices=ProjectRole.choices,
+        default=ProjectRole.PARTICIPANT,
+    )
     team = models.ForeignKey('project_teams.Team', on_delete=models.SET_NULL, null=True, blank=True)
 
     class Meta:
@@ -47,17 +45,11 @@ class ProjectMembership(models.Model):
         return f"{self.user.username} в {self.project.name} как {self.get_role_display()}"
 
 class Invitation(models.Model):
-    STATUS_CHOICES = [
-        ('pending', 'Ожидает'),
-        ('accepted', 'Принято'),
-        ('declined', 'Отклонено'),
-        ('cancelled', 'Отменено'),
-    ]
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invitations')
     sender = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='sent_invitations')
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_invitations')
-    status = models.CharField(max_length=16, choices=STATUS_CHOICES, default='pending')
+    status = models.CharField(max_length=16, choices=InvitationStatus.choices, default=InvitationStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return f"{self.sender.username} → {self.recipient.username} ({self.project.name})"
+        return f"{self.sender.username} -> {self.recipient.username} ({self.project.name})"
