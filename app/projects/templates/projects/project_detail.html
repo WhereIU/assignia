@@ -1,58 +1,84 @@
 {% extends 'projects/project_base.html' %}
 {% load static %}
 
-{% block title %}{{ project.owner }}/{{ project.name }}{% endblock %}
+{% block title %}{{ project.owner.username }}/{% firstof project.name "Проект" %}{% endblock %}
 
 {% block project_navbar_tabs %}
-    <li class="nav-item ms-3">
-        <ul class="nav nav-tabs" id="projectTabs">
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'tasks' or not tab %}active{% endif %}"
-                    hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Задачи</a>
-            </li>
-
-            {% if user.is_authenticated %}
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'requests' %}active{% endif %}"
-                    hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Мои запросы</a>
-            </li>
-            {% endif %}
-
-            {% if is_member %}
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'analytics' %}active{% endif %}"
-                    hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Аналитика</a>
-            </li>
-            {% endif %}
-
-            {% if is_privileged %}
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'members' %}active{% endif %}"
-                    hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
-            </li>
-            {% endif %}
-
-            {% if is_privileged %}
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'directions' %}active{% endif %}"
-                    hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Направления</a>
-            </li>
-            {% endif %}
-
-            {% if is_privileged %}
-            <li class="nav-item">
-                <a class="nav-link {% if tab == 'settings' %}active{% endif %}"
-                    hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
-                    hx-target="#tab-content" hx-swap="innerHTML" href="#">Настройки</a>
-            </li>
-            {% endif %}
-        </ul>
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'tasks' or not tab %}active{% endif %}"
+           hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-list-task me-1"></i>Задачи
+        </a>
     </li>
+
+    {% if user.is_authenticated %}
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'requests' %}active{% endif %}"
+           hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-envelope-paper me-1"></i>Мои запросы
+        </a>
+    </li>
+    {% endif %}
+
+    {% if is_member %}
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'analytics' %}active{% endif %}"
+           hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-bar-chart-line me-1"></i>Аналитика
+        </a>
+    </li>
+    {% endif %}
+
+    {% if is_privileged %}
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'members' %}active{% endif %}"
+           hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-people me-1"></i>Участники
+        </a>
+    </li>
+    {% endif %}
+
+    {% if is_privileged %}
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'directions' %}active{% endif %}"
+           hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-compass me-1"></i>Направления
+        </a>
+    </li>
+    {% endif %}
+
+    {% if is_privileged %}
+    <li class="nav-item">
+        <a class="nav-link project-tab-link {% if tab == 'settings' %}active{% endif %}"
+           hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
+           hx-target="#tab-content" 
+           hx-swap="innerHTML"
+           hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
+           href="#">
+           <i class="bi bi-gear me-1"></i>Настройки
+        </a>
+    </li>
+    {% endif %}
 {% endblock %}
 
 {% block content %}
@@ -60,9 +86,12 @@
      hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
      hx-trigger="load"
      hx-swap="innerHTML">
+     <div class="text-center my-5 text-muted">
+         <div class="spinner-border spinner-border-sm me-2" role="status"></div> Загрузка проекта...
+     </div>
 </div>
 {% endblock %}
 
 {% block extra_js %}
-<script src="{% static 'js/project_tabs.js' %}"></script>
+
 {% endblock %}
