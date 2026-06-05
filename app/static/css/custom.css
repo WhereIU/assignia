@@ -8,9 +8,9 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
     top: 70px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 1000;
+    z-index: 1050;
     max-width: 400px;
-    width: 100%;
+    width: 90%;
 }
 
 .content-wrapper { flex: 1 0 auto; }
@@ -25,6 +25,7 @@ footer {
 .navbar .nav-tabs .nav-link {
     border: none;
     color: rgba(255,255,255,.75);
+    white-space: nowrap;
 }
 
 .navbar .nav-tabs .nav-link.active {
@@ -33,7 +34,13 @@ footer {
     background: transparent;
 }
 
-.search-hint-wrapper { position: relative; }
+.navbar .dropdown-menu {
+    position: absolute !important;
+    margin-top: 0.5rem !important;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.25) !important;
+    z-index: 1100 !important;
+}
+
 
 .search-hint-wrapper .search-hints {
     display: none;
@@ -41,6 +48,7 @@ footer {
     top: 100%;
     right: 0;
     min-width: 300px;
+    max-width: 100vw;
     z-index: 900;
     background: #fff;
     border: 1px solid #dee2e6;
@@ -52,6 +60,15 @@ footer {
     line-height: 1.6;
 }
 
+@media (max-width: 576px) {
+    .search-hint-wrapper .search-hints {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        min-width: auto;
+    }
+}
+
 .search-hint-wrapper:focus-within .search-hints { display: block; }
 
 .search-hints code {
@@ -61,7 +78,7 @@ footer {
     font-size: .8rem;
 }
 
-.request-form-overlay {
+.request-form-overlay, .task-edit-overlay {
     position: absolute;
     top: 0;
     left: 0;
@@ -74,16 +91,20 @@ footer {
     box-shadow: 0 8px 20px rgba(0,0,0,.15);
 }
 
+@media (max-width: 768px) {
+    .request-form-overlay, .task-edit-overlay {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        overflow-y: auto;
+        border-radius: 12px;
+    }
+}
+
 .task-edit-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    z-index: 100;
-    background: #fff;
-    border-radius: .5rem;
-    padding: 1.5rem;
-    box-shadow: 0 8px 20px rgba(0,0,0,.2);
+    border-color: #dee2e6;
     display: none;
 }
 
@@ -115,7 +136,7 @@ footer {
     word-break: break-word;
     overflow-wrap: break-word;
     line-height: 1.35;
-    max-height: 20%;
+    max-height: 200px;
     overflow-y: auto;
     border-radius: 10px;
     background: rgba(255, 0, 0, 0.03);
@@ -123,7 +144,6 @@ footer {
 }
 
 .profile-bio::-webkit-scrollbar { width: 6px; }
-
 .profile-bio::-webkit-scrollbar-thumb {
     border-radius: 999px;
     background: rgba(255,255,255,.15);

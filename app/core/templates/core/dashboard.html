@@ -1,32 +1,27 @@
 {% extends 'base.html' %}
 {% block title %}Дашборд{% endblock %}
+
+{% block navbar_toggler %}
+<button class="navbar-toggler btn btn-dark btn-sm border-0 p-2 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#projectNav" aria-controls="projectNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon" style="width: 1.25rem; height: 1.25rem;"></span>
+</button>
+{% endblock %}
+
 {% block navbar_left %}
-<div id="dashboard-tabs" hx-swap-oob="innerHTML"></div>
-    <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-                <a class="nav-link {% if source == 'assigned' %}active{% endif %}"
-                hx-get="{% url 'core:dashboard' %}?source=assigned"
-                hx-target="#task-list-inner"
-                hx-swap="innerHTML"
-                href="#">Мои задачи</a>
-            </li>
-            <li class="nav-item">
-                <a class="nav-link {% if source == 'available' %}active{% endif %}"
-                hx-get="{% url 'core:dashboard' %}?source=available"
-                hx-target="#task-list-inner"
-                hx-swap="innerHTML"
-                href="#">Доступные задачи</a>
-            </li>
-    </ul>
+<div class="w-100 mt-2 mt-lg-0" id="dashboard-navbar-nav">
+    {% include 'core/partials/_dashboard_navbar.html' %}
 </div>
 {% endblock %}
+
 {% block content %}
-<h1>Дашборд</h1>
+<h1 class="mb-4">Дашборд</h1>
+
 {% if invitations %}
     <div id="invitations-container">
         {% include 'projects/partials/_invitations.html' %}
     </div>
 {% endif %}
+
 <div id="tab-content"> 
     <div id="task-list-inner"
         hx-target="#task-list-inner"

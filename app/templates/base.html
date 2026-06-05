@@ -14,8 +14,10 @@
 </head>
 <body>
     <div id="toast-container"></div>
+    
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
+            
             <div class="d-flex align-items-center">
                 <div class="dropdown me-2">
                     <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
@@ -28,29 +30,29 @@
                         <li><a class="dropdown-item" href="{% url 'core:tutorials' %}"><i class="bi bi-book me-2"></i>Туториалы</a></li>
                     </ul>
                 </div>
-                <a class="navbar-brand me-3" href="{% url 'core:home' %}">Assignia</a>
+                <a class="navbar-brand me-2 me-md-3" href="{% url 'core:home' %}">Assignia</a>
             </div>
-
-            <div class="collapse navbar-collapse" id="mainNav">
+            <div class="d-flex align-items-center ms-auto order-lg-last">
+                {% include 'partials/_navbar_right.html' %}
+                {% block navbar_toggler %}{% endblock %}
+            </div>
+            <div class="collapse navbar-collapse order-lg-2" id="projectNav">
                 {% block navbar_left %}
-                <ul class="navbar-nav me-auto"></ul>
                 {% endblock %}
             </div>
-
-            {% include 'partials/_navbar_right.html' %}
         </div>
     </nav>
 
     <div class="content-wrapper">
-        <div class="container mt-4">
+        <div class="container mt-3 mt-md-4">
             {% block content %}{% endblock %}
         </div>
     </div>
 
     <footer class="bg-light text-muted py-3 border-top mt-auto">
         <div class="container d-flex justify-content-between align-items-center">
-            <span>© {% now "Y" %} Assignia</span>
-            <a href="https://github.com/WhereIU/assignia" class="text-decoration-none text-muted" target="_blank">
+            <span class="small">© {% now "Y" %} Assignia</span>
+            <a href="https://github.com/WhereIU/assignia" class="text-decoration-none text-muted small" target="_blank">
                 <i class="bi bi-github"></i> GitHub
             </a>
         </div>

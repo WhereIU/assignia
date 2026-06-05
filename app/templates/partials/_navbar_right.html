@@ -1,45 +1,45 @@
-<ul class="navbar-nav ms-auto align-items-center">
-    <li class="nav-item me-2">
-        <div class="dropdown">
-            <button class="btn btn-dark btn-sm" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
-                <i class="bi bi-search"></i>
-            </button>
-            <div class="dropdown-menu dropdown-menu-end p-3" style="min-width: 350px;">
-                {% include 'partials/_search_bar.html' %}
-            </div>
+<div class="d-flex align-items-center gap-1 gap-sm-2">
+    <div class="dropdown">
+        <button class="btn btn-dark btn-sm p-2" type="button" data-bs-toggle="dropdown" data-bs-auto-close="outside" aria-expanded="false">
+            <i class="bi bi-search fs-6"></i>
+        </button>
+        <div class="dropdown-menu dropdown-menu-end p-3" style="width: 320px; max-width: 85vw;">
+            {% include 'partials/_search_bar.html' %}
         </div>
-    </li>
+    </div>
 
     {% if user.is_authenticated %}
-        <li class="nav-item me-2">
-            <a class="btn btn-outline-light btn-sm" href="{% url 'projects:project_create' %}" title="Создать проект">
-                <i class="bi bi-plus-circle"></i>
+        <div>
+            <a class="btn btn-dark btn-sm p-2" href="{% url 'projects:project_create' %}" title="Создать проект">
+                <i class="bi bi-plus-circle fs-6"></i>
             </a>
-        </li>
-        <li class="nav-item me-2">
-            <a class="nav-link position-relative" href="{% url 'core:notifications' %}">
-                <i class="bi bi-bell"></i>
+        </div>
+        
+        <div>
+            <a class="btn btn-dark btn-sm p-2 position-relative" href="{% url 'core:notifications' %}">
+                <i class="bi bi-bell fs-6"></i>
                 {% if unread_notifications_count %}
-                    <span class="position-absolute top-25 start-100 translate-middle badge rounded-pill bg-danger">
+                    <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size: 0.6rem; padding: 0.25em 0.4em;">
                         {{ unread_notifications_count }}
                     </span>
                 {% endif %}
             </a>
-        </li>
-        <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" role="button" data-bs-toggle="dropdown">
-                <i class="bi bi-person-circle fs-5 me-1"></i>
-                {{ user.username }}
-            </a>
+        </div>
+        
+        <div class="dropdown">
+            <button class="btn btn-dark btn-sm dropdown-toggle d-flex align-items-center gap-1 p-2" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                <i class="bi bi-person-circle fs-6"></i>
+                <span class="d-none d-sm-inline-block text-truncate" style="max-width: 90px;">{{ user.username }}</span>
+            </button>
             <ul class="dropdown-menu dropdown-menu-end">
                 <li><a class="dropdown-item" href="{% url 'users:profile' %}">Настройки профиля</a></li>
                 <li><a class="dropdown-item" href="{% url 'users:public_profile' username=user.username %}">Мой профиль</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="{% url 'users:logout' %}">Выйти</a></li>
+                <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}">Выйти</a></li>
             </ul>
-        </li>
+        </div>
     {% else %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'users:login' %}">Войти</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'users:register' %}">Регистрация</a></li>
+        <a class="btn btn-sm btn-link text-light text-decoration-none px-2" href="{% url 'users:login' %}">Войти</a>
+        <a class="btn btn-sm btn-outline-light px-2" href="{% url 'users:register' %}">Регистрация</a>
     {% endif %}
-</ul>
+</div>
