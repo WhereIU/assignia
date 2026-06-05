@@ -29,7 +29,7 @@ def update_direction(*, direction: Direction, name: str, description: str) -> Di
 
 
 def soft_delete_direction(*, direction: Direction) -> Direction:
-    """Mark a direction as soft-deleted."""
+    """Mark direction as soft-deleted."""
     direction.is_deleted = True
     direction.save(update_fields=["is_deleted"])
     return direction

@@ -50,7 +50,7 @@ def send_email_confirmation(user, new_email=None):
 
 
 def confirm_email_token(token):
-    """Validate the token and activate."""
+    """Validate token and activate."""
     data = cache.get(f"email_confirmation:{token}")
     if not data:
         return None

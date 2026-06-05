@@ -28,7 +28,7 @@ from .services import (
 def _render_teams_tab(
     request: HttpRequest, direction, *, show_deleted: bool = False
 ) -> HttpResponse:
-    """Render the full teams tab for a direction."""
+    """Render teams tab for direction."""
     teams = get_teams_by_direction(direction, is_deleted=show_deleted)
     return render(
         request,
@@ -200,7 +200,7 @@ def team_member_remove(request: HttpRequest, team_pk: int) -> HttpResponse:
         user = User.objects.get(pk=user_id)
         remove_member_from_team(team=team, user=user)
     except User.DoesNotExist:
-        pass  # already not a member, fine
+        pass
 
     members = get_team_members(team)
     return render(

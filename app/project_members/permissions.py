@@ -96,7 +96,7 @@ def can_delete_task_or_error(user, task) -> Optional[str]:
 
 
 def is_privileged(user, project) -> bool:
-    """Check whether user has a== privileged role."""
+    """Check whether user has privileged role."""
     return get_member_role(user, project) in PRIVILEGED_ROLES
 
 

@@ -26,7 +26,7 @@ from .services import (
 
 
 def _get_requests_queryset(project, user):
-    """Return the appropriate request queryset based on user permissions."""
+    """Return appropriate request queryset based on user permissions."""
     if can_handle_requests(user, project):
         return get_requests_for_project(project)
     return get_requests_by_author(project, author=user)
@@ -38,7 +38,7 @@ def _render_requests_tab(
     *,
     template: str = "requests/partials/_requests_tab.html",
 ) -> HttpResponse:
-    """Render the requests tab partial with project and request list."""
+    """Render requests tab partial with project and request list."""
     context = {
         "project": project,
         "requests": _get_requests_queryset(project, request.user),
@@ -72,7 +72,7 @@ def request_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
 def request_create(
     request: HttpRequest, username: str, slug: str
 ) -> HttpResponse:
-    """Handle creation of a new request."""
+    """Handle creation of new request."""
     project = get_project(username=username, slug=slug)
 
     if not can_access_project(request.user, project):
@@ -90,7 +90,7 @@ def request_create(
 
 @login_required
 def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Detail view of a single request."""
+    """Detail view of request."""
     req = get_request_by_pk(pk=request_pk)
 
     if req.author != request.user and not can_handle_requests(
@@ -112,7 +112,7 @@ def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
 
 @login_required
 def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Convert a request into a task."""
+    """Convert request into task."""
     req = get_request_by_pk(pk=request_pk)
 
     if not can_handle_requests(request.user, req.project):
@@ -126,7 +126,7 @@ def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Delete a request (only by author and only if pending)."""
+    """Delete request ."""
     req = get_request_by_pk(pk=request_pk)
 
     if req.author != request.user:
@@ -149,7 +149,7 @@ def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Decline a pending request (tech support+)."""
+    """Decline pending request."""
     req = get_request_by_pk(pk=request_pk)
 
     if not can_handle_requests(request.user, req.project):
@@ -165,7 +165,7 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Add a comment to a request, optionally changing status to reviewed."""
+    """Add comment to request, optionally changing status to reviewed."""
     req = get_request_by_pk(pk=request_pk)
 
     if req.author != request.user and not can_handle_requests(
@@ -215,7 +215,7 @@ def request_create_form(
 def request_create_submit(
     request: HttpRequest, username: str, slug: str
 ) -> HttpResponse:
-    """Handle request creation from the dedicated form."""
+    """Handle request creation from dedicated form."""
     project = get_project(username=username, slug=slug)
 
     if not can_access_project(request.user, project):

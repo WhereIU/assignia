@@ -18,7 +18,7 @@ if TYPE_CHECKING:
 def create_request(
     *, project: Project, author: User, description: str
 ) -> TaskRequest:
-    """Create a new request."""
+    """Create new request."""
     return TaskRequest.objects.create(
         project=project,
         author=author,
@@ -32,7 +32,7 @@ def add_comment(*, req: TaskRequest, author: User, text: str) -> RequestComment:
 
 
 def decline_request(*, req: TaskRequest) -> TaskRequest:
-    """Mark a request as declined and notify the author."""
+    """Mark request as declined and notify author."""
     req.status = RequestStatus.DECLINED
     req.save(update_fields=["status"])
 
@@ -47,10 +47,9 @@ def decline_request(*, req: TaskRequest) -> TaskRequest:
 @transaction.atomic
 def convert_request_to_task(*, req: TaskRequest, actor: User) -> Task:
     """
-    Convert a request into a new task and mark the request as converted.
-    TODO: Replace direct Task creation with tasks.services call once available.
+    Convert request into new task and mark the request as converted.
     """
-    from project_tasks.models import Task  # local import to avoid circular deps
+    from project_tasks.models import Task
 
     task = Task.objects.create(
         project=req.project,
@@ -65,7 +64,7 @@ def convert_request_to_task(*, req: TaskRequest, actor: User) -> Task:
 def update_request_status(
     *, req: TaskRequest, status: RequestStatus
 ) -> TaskRequest:
-    """Update the status of a request."""
+    """Update status of request."""
     req.status = status
     req.save(update_fields=["status"])
     return req

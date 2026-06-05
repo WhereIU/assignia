@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 
 
 def create_project(*, form: ProjectCreateForm, user: User) -> Project:
-    """Save a new project from form. The owner is the given user."""
+    """Save new project from form."""
     project = form.save(commit=False)
     project.owner = user
     project.save()
@@ -35,7 +35,7 @@ def update_project(
 def send_project_invitation(
     *, sender: User, recipient: User, project: Project
 ) -> Invitation:
-    """Send an invitation after validation; raises ValidationError on failure."""
+    """Send invitation after validation; raises ValidationError on failure."""
     if recipient == sender:
         raise ValidationError("Нельзя пригласить самого себя")
     if is_project_member(recipient, project):
@@ -50,13 +50,13 @@ def send_project_invitation(
 
 
 def cancel_invitation(*, invitation: Invitation) -> None:
-    """Cancel a pending invitation."""
+    """Cancel pending invitation."""
     invitation.status = InvitationStatus.CANCELLED
     invitation.save(update_fields=["status"])
 
 
 def accept_invitation(*, invitation: Invitation, user: User) -> None:
-    """Accept an invitation: create membership if not already member, mark accepted."""
+    """Accept invitation: create membership if not already member, mark accepted."""
     if not is_project_member(user, invitation.project):
         create_membership(user=user, project=invitation.project)
     invitation.status = InvitationStatus.ACCEPTED
@@ -64,6 +64,6 @@ def accept_invitation(*, invitation: Invitation, user: User) -> None:
 
 
 def decline_invitation(*, invitation: Invitation) -> None:
-    """Decline an invitation."""
+    """Decline invitation."""
     invitation.status = InvitationStatus.DECLINED
     invitation.save(update_fields=["status"])

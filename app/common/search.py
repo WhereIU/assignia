@@ -86,7 +86,7 @@ def parse_search_query(query: str) -> Dict[str, Any]:
 def _build_text_search_q(
     free_text: str, search_fields: List[str], field_map: Dict[str, str]
 ) -> Q:
-    """Build Q object for search across given fields."""
+    """Build Q object for search across fields."""
     if not free_text:
         return Q()
     q = Q()

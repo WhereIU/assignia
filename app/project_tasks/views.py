@@ -18,7 +18,6 @@ from projects.selectors import get_project
 
 from .constants import TaskStatus, PriorityLevel, RiskLevel
 from .forms import TaskCreateForm
-from .models import Task
 from .selectors import (
     get_task_by_pk,
     get_task_comments,
@@ -46,7 +45,7 @@ from .services import (
 
 @login_required
 def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render the tasks tab with filters and pagination."""
+    """Render tasks tab."""
     project = get_project(username=username, slug=slug)
     tasks = get_tasks_by_project(project)
     filters = get_page_filters(request)
@@ -79,7 +78,7 @@ def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
 
 @login_required
 def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Create a new task in the project."""
+    """Create new task in project."""
     project = get_project(username=username, slug=slug)
 
     if not is_project_member(request.user, project):
@@ -111,7 +110,7 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
 
 
 def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Render the task detail page."""
+    """Render task detail page."""
     task = get_task_by_pk(pk=task_pk)
     project = task.project
 
@@ -135,7 +134,7 @@ def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Take a task for execution."""
+    """Take task for execution."""
     task = get_task_by_pk(pk=task_pk)
 
     if not is_project_member(request.user, task.project):
@@ -176,7 +175,7 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Save changes to a task."""
+    """Save changes to task."""
     task = get_task_by_pk(pk=task_pk)
 
     if not is_privileged(request.user, task.project):
@@ -307,7 +306,7 @@ def task_update_risk(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Add a comment to a task."""
+    """Add comment to task."""
     task = get_task_by_pk(pk=task_pk)
     text = request.POST.get("text", "").strip()
     if text:
@@ -323,7 +322,7 @@ def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Add an assignee to a task."""
+    """Add assignee to task."""
     task = get_task_by_pk(pk=task_pk)
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -342,7 +341,7 @@ def task_assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_assignee_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Remove an assignee from a task."""
+    """Remove assignee from task."""
     task = get_task_by_pk(pk=task_pk)
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")

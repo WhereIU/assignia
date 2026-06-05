@@ -21,7 +21,7 @@ def create_task(
     creator: User,
     assignee_ids: Optional[List[int]] = None,
 ) -> Task:
-    """Save a new task from form and sync assignees."""
+    """Save new task from form and sync assignees."""
     task = form.save(commit=False)
     task.project = project
     task.creator = creator
@@ -71,21 +71,21 @@ def restore_task(*, task: Task) -> Task:
 
 
 def update_task_status(*, task: Task, status: TaskStatus) -> Task:
-    """Update the status of task."""
+    """Update status of task."""
     task.status = status
     task.save(update_fields=["status"])
     return task
 
 
 def update_task_priority(*, task: Task, priority: int) -> Task:
-    """Update the priority of a task."""
+    """Update priority of task."""
     task.priority = priority
     task.save(update_fields=["priority"])
     return task
 
 
 def update_task_risk(*, task: Task, chance: int, impact: int) -> Task:
-    """Update risk chance and impact of a task."""
+    """Update risk chance and impact of task."""
     task.risk_chance = chance
     task.risk_impact = impact
     task.save(update_fields=["risk_chance", "risk_impact"])
@@ -101,13 +101,13 @@ def take_task(*, task: Task, user: User) -> Task:
 
 
 def add_task_comment(*, task: Task, author: User, text: str) -> TaskComment:
-    """Add a comment to a task."""
+    """Add comment to task."""
     return TaskComment.objects.create(task=task, author=author, text=text)
 
 
 def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
-    """Assign a user to a task.
-    Returns an error message on failure, or None on success."""
+    """Assign user to task.
+    Returns error message on failure, or None on success."""
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
@@ -121,7 +121,7 @@ def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
 
 
 def remove_user_from_task(*, task: Task, user_id: int) -> None:
-    """Remove a user from task's assignees."""
+    """Remove user from task's assignees."""
     try:
         user = User.objects.get(pk=user_id)
     except User.DoesNotExist:
@@ -130,7 +130,7 @@ def remove_user_from_task(*, task: Task, user_id: int) -> None:
 
 
 def add_direction_to_task(*, task: Task, direction_id: int) -> Optional[str]:
-    """Add a direction to a task.
+    """Add direction to task.
     Returns error message on failure, or None on success."""
     directions = get_directions_by_project(task.project, is_deleted=False)
     try:
@@ -142,7 +142,7 @@ def add_direction_to_task(*, task: Task, direction_id: int) -> Optional[str]:
 
 
 def remove_direction_from_task(*, task: Task, direction_id: int) -> None:
-    """Remove a direction from a task."""
+    """Remove direction from task."""
     directions = get_directions_by_project(task.project, is_deleted=False)
     try:
         direction = directions.get(pk=direction_id)
@@ -152,7 +152,7 @@ def remove_direction_from_task(*, task: Task, direction_id: int) -> None:
 
 
 def add_team_to_task(*, task: Task, team_id: int) -> Optional[str]:
-    """Add a team to a task.
+    """Add team to task.
     Returns error message on failure, or None on success."""
     teams = get_teams_by_project(task.project, is_deleted=False)
     try:
@@ -164,7 +164,7 @@ def add_team_to_task(*, task: Task, team_id: int) -> Optional[str]:
 
 
 def remove_team_from_task(*, task: Task, team_id: int) -> None:
-    """Remove a team from a task."""
+    """Remove team from task."""
     teams = get_teams_by_project(task.project, is_deleted=False)
     try:
         team = teams.get(pk=team_id)
@@ -200,7 +200,6 @@ def apply_tasks_filters(
             Q(name__icontains=query) | Q(description__icontains=query)
         )
 
-    # Annotate availability and status grouping, then order
     active_statuses = [TaskStatus.NEW, TaskStatus.PENDING, TaskStatus.IN_PROGRESS]
     queryset = queryset.annotate(
         is_available=Case(

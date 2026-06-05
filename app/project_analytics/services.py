@@ -5,7 +5,7 @@ from .selectors import get_teams_analytics, get_participants_analytics
 
 
 def get_analytics_data(project: Project) -> Dict[str, Any]:
-    """Collect and return analytics context for given project."""
+    """Collect and return analytics context for project."""
     return {
         'project': project,
         'teams': get_teams_analytics(project),
