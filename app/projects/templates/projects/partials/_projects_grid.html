@@ -1,0 +1,13 @@
+<div class="row">
+    {% for project in projects %}
+        <div class="col-12 col-sm-6 col-lg-4 mb-4">
+            {% include 'projects/partials/_project_card.html' with project=project %}
+        </div>
+    {% empty %}
+        <div class="col-12 text-center text-muted my-5">
+            <i class="bi bi-folder-x display-4-custom d-block mb-2"></i> <p class="mb-0">{% if query %}Ничего не найдено по запросу «{{ query }}».{% else %}Нет доступных проектов.{% endif %}</p>
+        </div>
+    {% endfor %}
+</div>
+
+{% include 'partials/_paginator.html' with page_obj=projects hx_target='#projects-container' hx_include='#projects-search-form' %}

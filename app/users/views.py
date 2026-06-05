@@ -5,8 +5,9 @@ from django.views.decorators.http import require_POST
 from django.contrib.auth.views import LoginView, LogoutView
 from django.shortcuts import redirect, render
 from django.urls import reverse_lazy
+from django.core.paginator import Paginator
 
-from projects.selectors import get_public_projects_by_user, get_contributed_projects
+from projects.selectors import get_all_public_projects_of_user
 
 from .forms import (
     LoginForm,
@@ -79,17 +80,23 @@ def confirm_email(request, token):
 
 def public_profile(request, username):
     profile_user = get_user_by_username(username)
-    owned_projects = get_public_projects_by_user(profile_user)
-    contributed_projects = get_contributed_projects(profile_user)
-    return render(
-        request,
-        "users/public_profile.html",
-        {
-            "profile_user": profile_user,
-            "owned_projects": owned_projects,
-            "contributed_projects": contributed_projects,
-        },
-    )
+    
+    projects_queryset = get_all_public_projects_of_user(profile_user)
+    
+    paginator = Paginator(projects_queryset, 6)
+    page_number = request.GET.get("page", 1)
+    projects = paginator.get_page(page_number)
+    
+    if request.headers.get("HX-Request"):
+        return render(request, "projects/partials/_profile_projects.html", {
+            "projects": projects,
+            "profile_user": profile_user
+        })
+
+    return render(request, "users/public_profile.html", {
+        "profile_user": profile_user,
+        "projects": projects,
+    })
 
 
 @login_required

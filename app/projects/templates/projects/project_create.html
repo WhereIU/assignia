@@ -1,4 +1,5 @@
 {% extends 'base.html' %}
+{% load static %}
 {% block title %}Создать проект{% endblock %}
 
 {% block navbar_left %}
@@ -33,8 +34,11 @@
                         {% if form.slug.errors %}
                             <div class="invalid-feedback d-block">{{ form.slug.errors|striptags }}</div>
                         {% endif %}
-                        <div class="form-text">
-                            <span id="url-preview">{% if user %}{{ user.username }}/{% endif %}<span id="slug-preview">{% if form.slug.value %}{{ form.slug.value }}{% else %}my-new-project{% endif %}</span>/</span>
+                        <div class="form-text mt-2">
+                            <span class="badge bg-light text-dark p-2 border border-secondary-subtle">
+                                <i class="bi bi-link-45deg me-1 text-muted"></i>
+                                {% if request.user %}{{ request.user.username }}{% else %}user{% endif %}/<span id="slug-preview" class="fw-bold text-primary">{% if form.slug.value %}{{ form.slug.value }}{% else %}my-new-project{% endif %}</span>/
+                            </span>
                         </div>
                         <small class="form-text text-muted">{{ form.slug.help_text }}</small>
                     </div>
@@ -48,9 +52,9 @@
                         <small class="form-text text-muted">Краткое описание (до 500 символов).</small>
                     </div>
 
-                    <div class="form-check mb-3">
+                    <div class="form-check mb-4">
                         {{ form.is_public }}
-                        <label class="form-check-label" for="{{ form.is_public.id_for_label }}">
+                        <label class="form-check-label fw-semibold" for="{{ form.is_public.id_for_label }}">
                             {{ form.is_public.label }}
                         </label>
                         {% if form.is_public.errors %}
@@ -73,47 +77,5 @@
 {% endblock %}
 
 {% block extra_js %}
-<script>
-// Slug generator
-(function() {
-    const nameInput = document.getElementById('id_name');
-    const slugInput = document.getElementById('id_slug');
-    const slugPreview = document.getElementById('slug-preview');
-    let userTypedSlug = false;
-
-    function slugify(text) {
-        return text.trim()
-            .toLowerCase()
-            .replace(/[^\w\s-]/g, '')
-            .replace(/[\s_]+/g, '-')
-            .replace(/-+/g, '-')
-            .replace(/^-+|-+$/g, '');
-    }
-
-    function updatePreview(slug) {
-        if (slug === undefined || slug === '') {
-            slug = slugify(nameInput.value) || 'my-new-project';
-        }
-        slugPreview.textContent = slug;
-    }
-
-    nameInput.addEventListener('input', function() {
-        if (!userTypedSlug) {
-            updatePreview('');
-        }
-    });
-
-    slugInput.addEventListener('input', function() {
-        userTypedSlug = true;
-        updatePreview(this.value);
-    });
-
-    slugInput.addEventListener('change', function() {
-        if (!this.value.trim()) {
-            userTypedSlug = false;
-            updatePreview('');
-        }
-    });
-})();
-</script>
+    <script src="{% static 'js/slug_generator.js' %}"></script>
 {% endblock %}

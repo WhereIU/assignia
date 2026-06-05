@@ -48,11 +48,29 @@ if TYPE_CHECKING:
 
 def available_projects(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
-    projects = get_available_projects(request.user, query=query)
+    
+    projects_queryset = get_available_projects(request.user, query=query)
+    
+    page_number = request.GET.get("page", 1)
+    paginator = Paginator(projects_queryset, 6)
+    page_obj = paginator.get_page(page_number)
+    
+    context = {
+        "projects": page_obj, 
+        "query": query
+    }
+    
+    if request.headers.get("HX-Request"):
+        return render(
+            request, 
+            "projects/partials/_projects_grid.html", 
+            context
+        )
+        
     return render(
-        request,
-        "projects/available_projects.html",
-        {"projects": projects, "query": query},
+        request, 
+        "projects/available_projects.html", 
+        context
     )
 
 

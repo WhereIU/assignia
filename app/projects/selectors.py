@@ -2,6 +2,7 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.shortcuts import get_object_or_404
+from django.db.models import Q
 
 from project_members.selectors import get_project_ids_for_user
 
@@ -58,17 +59,30 @@ def get_available_projects(user: User, query: str = "") -> QuerySet[Project]:
     """
     Return available projects for user.
     """
-    projects = Project.objects.filter(is_public=True)
     if user.is_authenticated:
         private_ids = get_project_ids_for_user(user)
-        projects = projects | Project.objects.filter(pk__in=private_ids)
-        projects = projects.distinct()
+        projects = Project.objects.filter(Q(is_public=True) | Q(pk__in=private_ids))
+    else:
+        projects = Project.objects.filter(is_public=True)
+        
     if query:
         from common.search import apply_project_search_filters, parse_search_query
-
         filters = parse_search_query(query)
         projects = apply_project_search_filters(projects, filters)
-    return projects.order_by("-created_at")
+        
+    return projects.distinct().order_by("-created_at")
+
+
+def get_all_public_projects_of_user(user: User) -> QuerySet[Project]:
+    """
+    Return all public projects of user
+    """
+    user_project_ids = get_project_ids_for_user(user)
+    
+    return Project.objects.filter(
+        Q(owner=user) | Q(pk__in=user_project_ids),
+        is_public=True
+    ).distinct().order_by("-created_at")
 
 
 def get_pending_invitations(project: Project) -> QuerySet[Invitation]:
