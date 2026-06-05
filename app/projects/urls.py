@@ -14,8 +14,7 @@ urlpatterns = [
     path('project/<str:username>/<str:slug>/update/', views.project_update, name='project_update'),
 
     path('form/project/<str:username>/<str:slug>/settings/', views.project_settings_form, name='project_settings_form'),
-
-    path('project/<str:username>/<str:slug>/members/', views.members_tab, name='members_tab'),
+    
     path('project/<str:username>/<str:slug>/settings/', views.project_settings_tab, name='project_settings_tab'),
 
     path('project/<str:username>/<str:slug>/invite/', views.invitation_send, name='invitation_send'),
@@ -25,6 +24,4 @@ urlpatterns = [
     
     path('invitation/<str:username>/<str:slug>/', views.invitation_form, name="invitation_form"),
 
-    path('project/<str:username>/<str:slug>/members/<int:user_pk>/remove/', views.member_remove, name='member_remove'),
-    path('project/<str:username>/<str:slug>/members/<int:user_pk>/update/role/', views.member_update_role, name='member_update_role'),
 ]

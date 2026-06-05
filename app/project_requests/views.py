@@ -1,177 +1,229 @@
-from django.shortcuts import get_object_or_404, redirect, render
-from django.urls import reverse
-from django.http import HttpResponse, HttpResponseForbidden
-from django.views.decorators.http import require_http_methods
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.shortcuts import redirect, render
+from django.urls import reverse
+from django.views.decorators.http import require_http_methods
 
-from project_tasks.views import check_project_access, get_project_or_404
-from project_tasks.models import Task
-from projects.models import ProjectMembership
-from core.models import Notification
+from project_members.permissions import can_handle_requests, can_access_project
+from projects.selectors import get_project
 
-from .models import RequestComment, TaskRequest
+from .constants import RequestStatus
+from .selectors import (
+    get_requests_for_project,
+    get_request_by_pk,
+    get_request_comments,
+    get_requests_by_author,
+)
+from .services import (
+    add_comment,
+    convert_request_to_task,
+    create_request,
+    decline_request,
+    delete_request,
+    update_request_status,
+)
 
 
-def can_handle_requests(user, project):
-    if not user.is_authenticated:
-        return False
-    membership = ProjectMembership.objects.filter(user=user, project=project).first()
-    return membership and membership.role in ('tech_support', 'manager', 'admin', 'owner')
+def _get_requests_queryset(project, user):
+    """Return the appropriate request queryset based on user permissions."""
+    if can_handle_requests(user, project):
+        return get_requests_for_project(project)
+    return get_requests_by_author(project, author=user)
+
+
+def _render_requests_tab(
+    request: HttpRequest,
+    project,
+    *,
+    template: str = "requests/partials/_requests_tab.html",
+) -> HttpResponse:
+    """Render the requests tab partial with project and request list."""
+    context = {
+        "project": project,
+        "requests": _get_requests_queryset(project, request.user),
+        "is_tech_support": can_handle_requests(request.user, project),
+    }
+    return render(request, template, context)
 
 
 @login_required
-def request_tab(request, username, slug):
-    project = get_project_or_404(username, slug)
-    if not project.is_public and not ProjectMembership.objects.filter(user=request.user, project=project).exists():
+def request_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Main requests tab view."""
+    project = get_project(username=username, slug=slug)
+
+    if not can_access_project(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
 
-    if can_handle_requests(request.user, project):
-        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
-    else:
-        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
+    if request.headers.get("HX-Request"):
+        return _render_requests_tab(request, project)
 
-    context = {'project': project, 'requests': requests_qs, 'is_tech_support': can_handle_requests(request.user, project)}
-    if request.headers.get('HX-Request'):
-        return render(request, 'requests/partials/_requests_tab.html', context)
-    return render(request, 'projects/project_detail.html', {**context, 'tab': 'requests'})
-
-
-@login_required
-def request_create(request, username, slug):
-    project = get_project_or_404(username, slug)
-    if not check_project_access(request.user, project):
-        return HttpResponseForbidden("Вы не можете оставлять запросы в этом проекте")
-    description = request.POST.get('description', '').strip()
-    if description:
-        TaskRequest.objects.create(project=project, author=request.user, description=description)
-        messages.success(request, 'Запрос отправлен')
-    else:
-        messages.error(request, 'Введите описание')
-    if can_handle_requests(request.user, project):
-        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
-    else:
-        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
-    return render(request, 'requests/partials/_requests_tab.html', {
-        'project': project,
-        'requests': requests_qs,
-        'is_tech_support': can_handle_requests(request.user, project),
-    })
-
-
-@login_required
-def request_detail(request, request_pk):
-    req = get_object_or_404(TaskRequest, pk=request_pk)
-    project = req.project
-    if req.author != request.user and not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Нет доступа к этому запросу")
-    messages_list = req.messages.order_by('created_at')
-    return render(request, 'requests/request_detail.html', {
-        'project': project,
-        'req': req,
-        'messages_list': messages_list,
-        'is_tech_support': can_handle_requests(request.user, project),
-    })
-
-
-#@require_http_methods(["POST"])
-@login_required
-def request_convert(request, request_pk):
-    req = get_object_or_404(TaskRequest, pk=request_pk)
-    project = req.project
-    if not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
-    task = Task.objects.create(
-        project=project,
-        name=f"Запрос от {req.author.username}: {req.description[:50]}",
-        description=req.description,
-        creator=request.user,
-        priority=2,
-    )
-    req.status = 'converted'
-    req.save()
-    messages.success(request, f'Задача «{task.name}» создана!')
-    return redirect('project_tasks:task_detail', task_pk=task.pk)
+    context = {
+        "project": project,
+        "requests": _get_requests_queryset(project, request.user),
+        "is_tech_support": can_handle_requests(request.user, project),
+        "tab": "requests",
+    }
+    return render(request, "projects/project_detail.html", context)
 
 
 @login_required
 @require_http_methods(["POST"])
-def request_delete(request, request_pk):
-    req = get_object_or_404(TaskRequest, pk=request_pk)
+def request_create(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Handle creation of a new request."""
+    project = get_project(username=username, slug=slug)
+
+    if not can_access_project(request.user, project):
+        return HttpResponseForbidden("Нет доступа")
+
+    description = request.POST.get("description", "").strip()
+    if not description:
+        messages.error(request, "Введите описание")
+        return _render_requests_tab(request, project)
+
+    create_request(project=project, author=request.user, description=description)
+    messages.success(request, "Запрос отправлен")
+    return _render_requests_tab(request, project)
+
+
+@login_required
+def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
+    """Detail view of a single request."""
+    req = get_request_by_pk(pk=request_pk)
+
+    if req.author != request.user and not can_handle_requests(
+        request.user, req.project
+    ):
+        return HttpResponseForbidden("Нет доступа")
+
+    return render(
+        request,
+        "requests/request_detail.html",
+        {
+            "project": req.project,
+            "req": req,
+            "messages_list": get_request_comments(req),
+            "is_tech_support": can_handle_requests(request.user, req.project),
+        },
+    )
+
+
+@login_required
+def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
+    """Convert a request into a task."""
+    req = get_request_by_pk(pk=request_pk)
+
+    if not can_handle_requests(request.user, req.project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    task = convert_request_to_task(req=req, actor=request.user)
+    messages.success(request, f"Задача «{task.name}» создана!")
+    return redirect("project_tasks:task_detail", task_pk=task.pk)
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
+    """Delete a request (only by author and only if pending)."""
+    req = get_request_by_pk(pk=request_pk)
+
     if req.author != request.user:
         return HttpResponseForbidden("Вы не автор запроса")
-    if req.status != 'pending':
+    if req.status != RequestStatus.PENDING:
         return HttpResponse("Запрос уже обработан, нельзя удалить", status=400)
-    req.delete()
-    messages.success(request, 'Запрос удалён')
-    redirect_url = reverse('project_requests:requests_tab', kwargs={'username': req.project.owner.username, 'slug': req.project.slug})
+
+    project = req.project
+    delete_request(req=req)
+
+    messages.success(request, "Запрос удалён")
     response = HttpResponse(status=204)
-    response['HX-Redirect'] = redirect_url
+    response["HX-Redirect"] = reverse(
+        "project_requests:requests_tab",
+        kwargs={"username": project.owner.username, "slug": project.slug},
+    )
     return response
 
 
 @login_required
 @require_http_methods(["POST"])
-def request_decline(request, request_pk):
-    req = get_object_or_404(TaskRequest, pk=request_pk)
+def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
+    """Decline a pending request (tech support+)."""
+    req = get_request_by_pk(pk=request_pk)
+
     if not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Недостаточно прав")
-    if req.status != 'pending':
+    if req.status != RequestStatus.PENDING:
         return HttpResponse("Запрос уже обработан", status=400)
-    req.status = 'declined'
-    req.save()
-    Notification.objects.create(
-        recipient=req.author,
-        text=f'Ваш запрос в проекте «{req.project.name}» отклонён',
-        url=reverse('requests:request_detail', kwargs={'request_pk': req.pk})
-    )
-    messages.success(request, 'Запрос отклонён')
-    return redirect('project_requests:request_detail', request_pk=req.pk)
 
-
-@login_required
-def request_message_add(request, request_pk):
-    req = get_object_or_404(TaskRequest, pk=request_pk)
-    project = req.project
-    if req.author != request.user and not can_handle_requests(request.user, project):
-        return HttpResponseForbidden("Нет доступа к этому запросу")
-    if request.method == 'POST':
-        text = request.POST.get('text', '').strip()
-        if text:
-            RequestComment.objects.create(request=req, author=request.user, text=text)
-            if can_handle_requests(request.user, project) and req.status == 'pending':
-                req.status = 'reviewed'
-                req.save()
-    messages_list = req.messages.order_by('created_at')
-    return render(request, 'requests/partials/_request_messages_list.html', {
-        'req': req,
-        'messages_list': messages_list,
-    })
-
-
-@login_required
-def request_create_form(request, username, slug):
-    project = get_project_or_404(username, slug)
-    if not project.is_public:
-        if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
-            return HttpResponseForbidden("Вы не участник проекта")
-    return render(request, 'requests/partials/_request_create_form.html', {'project': project})
+    decline_request(req=req)
+    messages.success(request, "Запрос отклонён")
+    return redirect("project_requests:request_detail", request_pk=req.pk)
 
 
 @login_required
 @require_http_methods(["POST"])
-def request_create_submit(request, username, slug):
-    project = get_project_or_404(username, slug)
-    if not project.is_public:
-        if not ProjectMembership.objects.filter(user=request.user, project=project).exists():
-            return HttpResponseForbidden("Вы не участник проекта")
-    description = request.POST.get('description', '').strip()
+def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
+    """Add a comment to a request, optionally changing status to reviewed."""
+    req = get_request_by_pk(pk=request_pk)
+
+    if req.author != request.user and not can_handle_requests(
+        request.user, req.project
+    ):
+        return HttpResponseForbidden("Нет доступа к этому запросу")
+
+    text = request.POST.get("text", "").strip()
+    if text:
+        add_comment(req=req, author=request.user, text=text)
+
+        if (
+            can_handle_requests(request.user, req.project)
+            and req.status == RequestStatus.PENDING
+        ):
+            update_request_status(req=req, status=RequestStatus.REVIEWED)
+
+    return render(
+        request,
+        "requests/partials/_request_messages_list.html",
+        {
+            "req": req,
+            "messages_list": get_request_comments(req),
+        },
+    )
+
+
+@login_required
+def request_create_form(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Render the request creation form partial."""
+    project = get_project(username=username, slug=slug)
+
+    if not can_access_project(request.user, project):
+        return HttpResponseForbidden("Нет доступа")
+
+    return render(
+        request,
+        "requests/partials/_request_create_form.html",
+        {"project": project},
+    )
+
+
+@login_required
+@require_http_methods(["POST"])
+def request_create_submit(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Handle request creation from the dedicated form."""
+    project = get_project(username=username, slug=slug)
+
+    if not can_access_project(request.user, project):
+        return HttpResponseForbidden("Нет доступа")
+
+    description = request.POST.get("description", "").strip()
     if description:
-        TaskRequest.objects.create(project=project, author=request.user, description=description)
-        messages.success(request, 'Запрос создан')
-    if can_handle_requests(request.user, project):
-        requests_qs = TaskRequest.objects.filter(project=project).order_by('-created_at')
-    else:
-        requests_qs = TaskRequest.objects.filter(project=project, author=request.user).order_by('-created_at')
-    context = {'project': project, 'requests': requests_qs, 'is_tech_support': can_handle_requests(request.user, project)}
-    return render(request, 'requests/partials/_requests_tab.html', context)
+        create_request(project=project, author=request.user, description=description)
+        messages.success(request, "Запрос создан")
+
+    return _render_requests_tab(request, project)

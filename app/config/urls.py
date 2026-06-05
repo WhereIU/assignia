@@ -30,5 +30,6 @@ urlpatterns = [
     path('requests/', include('project_requests.urls', namespace='project_requests')),
     path('directions/', include('project_directions.urls', namespace='project_directions')),
     path('teams/', include('project_teams.urls', namespace='project_teams')),
+    path('members/', include('project_members.urls', namespace='project_members')),
     path('analytics/', include('project_analytics.urls', namespace='project_analytics'))
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT) #dev

@@ -10,7 +10,7 @@
     </thead>
     <tbody>
     {% for m in members %}
-        {% include 'projects/partials/_project_member_item.html' with m=m actor_role=actor_role %}
+        {% include 'members/partials/_member_item.html' with m=m actor_role=actor_role %}
     {% endfor %}
     </tbody>
 </table>

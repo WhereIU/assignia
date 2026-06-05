@@ -31,7 +31,7 @@
             {% if is_privileged %}
             <li class="nav-item">
                 <a class="nav-link {% if tab == 'members' %}active{% endif %}"
-                    hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}"
+                    hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
                     hx-target="#tab-content" hx-swap="innerHTML" href="#">Участники</a>
             </li>
             {% endif %}

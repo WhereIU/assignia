@@ -7,7 +7,7 @@
     <td>
         {% if actor_role == 'owner' and m.role != 'owner' %}
             <form
-                hx-post="{% url 'projects:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                hx-post="{% url 'project_members:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
                 hx-target="#members-container"
                 hx-swap="outerHTML">
                 {% csrf_token %}
@@ -28,7 +28,7 @@
             </form>
         {% elif actor_role == 'admin' and m.role != 'owner' and m.role != 'admin' %}
             <form
-                hx-post="{% url 'projects:change_member_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                hx-post="{% url 'project_members:change_member_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
                 hx-target="closest tr"
                 hx-swap="outerHTML">
                 {% csrf_token %}
@@ -57,7 +57,7 @@
                 {% if actor_role == 'owner' %}
                     <button
                     class="btn btn-outline-danger btn-sm"
-                    hx-post="{% url 'projects:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                    hx-post="{% url 'project_members:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
                     hx-target="closest tr"
                     hx-swap="delete">
                         Удалить
@@ -65,7 +65,7 @@
                 {% elif actor_role == 'admin' and m.role != 'admin' %}
                     <button
                         class="btn btn-outline-danger btn-sm"
-                        hx-post="{% url 'projects:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
+                        hx-post="{% url 'project_members:remove_member' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
                         hx-target="closest tr"
                         hx-swap="delete">
                         Удалить

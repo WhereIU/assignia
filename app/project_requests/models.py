@@ -1,7 +1,8 @@
 from django.db import models
 from django.conf import settings
 
-from common.constants import RequestStatus
+from .constants import RequestStatus
+
 
 class TaskRequest(models.Model):
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='requests')

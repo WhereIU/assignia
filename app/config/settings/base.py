@@ -68,6 +68,7 @@ INSTALLED_APPS = [
     "project_requests",
     "project_directions",
     "project_teams",
+    "project_members",
     "project_analytics",
 ]
 
@@ -100,7 +101,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "core.context_processors.notifications_count",
-                "projects.context_processors.membership_roles",
+                "project_members.context_processors.membership_roles",
             ],
         },
     },

@@ -1,130 +1,196 @@
-from django.shortcuts import get_object_or_404, render
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
-from django.views.decorators.http import require_http_methods
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.shortcuts import render
 from django.urls import reverse
-from django.db.models import Count
+from django.views.decorators.http import require_http_methods
 
-from projects.models import Project, ProjectMembership
+from project_members.permissions import can_manage_directions
+from projects.selectors import get_project
+from common.services import message_success, message_error
 
-from .models import Direction
+from .selectors import get_direction_by_pk, get_directions_by_project
+from .services import (
+    create_direction,
+    update_direction,
+    soft_delete_direction,
+    restore_direction,
+    hard_delete_direction,
+)
+
+
+def _render_directions_tab(
+    request: HttpRequest,
+    project,
+    *,
+    show_deleted: bool = False,
+    can_manage: bool = False,
+) -> HttpResponse:
+    """Render directions tab partial."""
+    return render(
+        request,
+        "directions/partials/_directions_tab.html",
+        {
+            "project": project,
+            "directions": get_directions_by_project(project, is_deleted=show_deleted),
+            "can_manage": can_manage,
+            "show_deleted": show_deleted,
+        },
+    )
 
 
 @login_required
-def direction_tab(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
+def direction_tab(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Return directions tab."""
+    project = get_project(username=username, slug=slug)
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
-    show_deleted = request.GET.get('show_deleted') == '1'
-    return redirect_to_directions(request, project, show_deleted)
+
+    show_deleted = request.GET.get("show_deleted") == "1"
+    return _render_directions_tab(
+        request,
+        project,
+        show_deleted=show_deleted,
+        can_manage=True,
+    )
 
 
 @login_required
 @require_http_methods(["POST"])
-def direction_create(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
+def direction_create(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Handle direction creation."""
+    project = get_project(username=username, slug=slug)
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
+
+    name = request.POST.get("name", "").strip()
+    description = request.POST.get("description", "").strip()
+
     if not name:
-        messages.error(request, 'Название направления обязательно')
-        return redirect_to_directions(request, project)
-    Direction.objects.create(project=project, name=name, description=description, created_by=request.user)
-    messages.success(request, f'Направление «{name}» создано')
-    return redirect_to_directions(request, project)
+        message_error(request, "Название направления обязательно")
+        return _render_directions_tab(request, project, can_manage=True)
+
+    create_direction(
+        project=project,
+        user=request.user,
+        name=name,
+        description=description,
+    )
+
+    message_success(request, f"Направление «{name}» создано")
+    return _render_directions_tab(request, project, can_manage=True)
 
 
 @login_required
 @require_http_methods(["POST"])
-def direction_update(request, direction_pk):
-    direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=False)
+def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Handle direction update."""
+    direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     project = direction.project
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
-    name = request.POST.get('name', '').strip()
-    description = request.POST.get('description', '').strip()
+
+    name = request.POST.get("name", "").strip()
+    description = request.POST.get("description", "").strip()
+
     if not name:
-        messages.error(request, 'Название направления обязательно')
-        return redirect_to_directions(request, project)
-    direction.name = name
-    direction.description = description
-    direction.save()
-    messages.success(request, 'Направление обновлено')
-    return redirect_to_directions(request, project)
+        message_error(request, "Название направления обязательно")
+        return _render_directions_tab(request, project, can_manage=True)
+
+    update_direction(
+        direction=direction,
+        name=name,
+        description=description,
+    )
+
+    message_success(request, "Направление обновлено")
+    return _render_directions_tab(request, project, can_manage=True)
 
 
 @login_required
 @require_http_methods(["POST"])
-def direction_delete(request, direction_pk):
-    direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=False)
-    project = direction.project
-    if not can_manage_directions(request.user, project):
+def direction_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Soft-delete direction."""
+    direction = get_direction_by_pk(pk=direction_pk)
+    if not can_manage_directions(request.user, direction.project):
         return HttpResponseForbidden("Недостаточно прав")
-    direction.is_deleted = True
-    direction.save()
-    messages.success(request, f'Направление «{direction.name}» удалено')
-    return redirect_to_directions(request, project)
+
+    soft_delete_direction(direction=direction)
+
+    message_success(request, f"Направление «{direction.name}» удалено")
+    return _render_directions_tab(request, direction.project, can_manage=True)
 
 
 @login_required
 @require_http_methods(["POST"])
-def direction_hard_delete(request, direction_pk):
-    direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=True)
-    project = direction.project
-    if not can_manage_directions(request.user, project):
+def direction_restore(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Restore soft-deleted direction."""
+    direction = get_direction_by_pk(pk=direction_pk)
+    if not can_manage_directions(request.user, direction.project):
         return HttpResponseForbidden("Недостаточно прав")
-    direction.delete()
-    messages.success(request, f'Направление «{direction.name}» удалено безвозвратно')
-    return redirect_to_directions(request, project, show_deleted=True)
+
+    restore_direction(direction=direction)
+
+    message_success(request, f"Направление «{direction.name}» восстановлено")
+    return _render_directions_tab(
+        request, direction.project, show_deleted=True, can_manage=True
+    )
 
 
 @login_required
 @require_http_methods(["POST"])
-def direction_restore(request, direction_pk):
-    direction = get_object_or_404(Direction, pk=direction_pk, is_deleted=True)
+def direction_hard_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Permanently delete direction."""
+    direction = get_direction_by_pk(pk=direction_pk)
     project = direction.project
+    name = direction.name
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
-    direction.is_deleted = False
-    direction.save()
-    messages.success(request, f'Направление «{direction.name}» восстановлено')
-    return redirect_to_directions(request, project, show_deleted=True)
+
+    hard_delete_direction(direction=direction)
+
+    message_success(request, f"Направление «{name}» удалено безвозвратно")
+    return _render_directions_tab(request, project, show_deleted=True, can_manage=True)
 
 
 @login_required
-def direction_create_form(request, username, slug):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    return render(request, 'directions/partials/_direction_create_form.html', {
-        'project': project,
-        'submit_url': reverse('project_directions:direction_create', kwargs={'username': username, 'slug': slug}),
-    })
+def direction_create_form(
+    request: HttpRequest, username: str, slug: str
+) -> HttpResponse:
+    """Return form partial for creating direction."""
+    project = get_project(username=username, slug=slug)
+    return render(
+        request,
+        "directions/partials/_direction_create_form.html",
+        {
+            "project": project,
+            "submit_url": reverse(
+                "project_directions:direction_create",
+                kwargs={"username": username, "slug": slug},
+            ),
+        },
+    )
 
 
 @login_required
-def direction_edit_form(request, username, slug, direction_pk):
-    project = get_object_or_404(Project, owner__username=username, slug=slug)
-    direction = get_object_or_404(Direction, pk=direction_pk, project=project, is_deleted=False)
-    return render(request, 'directions/partials/_direction_create_form.html', {
-        'project': project,
-        'direction': direction,
-        'submit_url': reverse('project_directions:direction_update', kwargs={'direction_pk': direction.pk}),
-    })
-
-
-def can_manage_directions(user, project):
-    if not user.is_authenticated:
-        return False
-    membership = ProjectMembership.objects.filter(user=user, project=project).first()
-    return membership and membership.role in ('admin', 'owner')
-
-
-def redirect_to_directions(request, project, show_deleted=False):
-    directions = project.directions.filter(is_deleted=show_deleted).annotate(task_count=Count('tasks'))
-    return render(request, 'directions/partials/_directions_tab.html', {
-        'project': project,
-        'directions': directions,
-        'can_manage': True,
-        'show_deleted': show_deleted,
-    })
+def direction_edit_form(
+    request: HttpRequest, username: str, slug: str, direction_pk: int
+) -> HttpResponse:
+    """Return form partial for editing direction."""
+    project = get_project(username=username, slug=slug)
+    direction = get_direction_by_pk(pk=direction_pk)
+    return render(
+        request,
+        "directions/partials/_direction_create_form.html",
+        {
+            "project": project,
+            "direction": direction,
+            "submit_url": reverse(
+                "project_directions:direction_update",
+                kwargs={"direction_pk": direction.pk},
+            ),
+        },
+    )

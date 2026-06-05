@@ -2,18 +2,19 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 
-from common.constants import ProjectRole, InvitationStatus
+from common.models import TimeStampedModel
+
+from .constants import InvitationStatus
 
 
-class Project(models.Model):
+class Project(TimeStampedModel):
     name = models.CharField(max_length=64)
     slug = models.SlugField(max_length=64)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_projects')
     is_public = models.BooleanField(default=False)
     options = models.JSONField(default=dict, blank=True)
-    created_at = models.DateTimeField(auto_now_add=True)
-    updated_at = models.DateTimeField(auto_now=True)
+
 
     class Meta:
         constraints = [
@@ -27,22 +28,6 @@ class Project(models.Model):
 
     def __str__(self):
         return self.name
-
-class ProjectMembership(models.Model):
-    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
-    project = models.ForeignKey(Project, on_delete=models.CASCADE)
-    role = models.CharField(
-        max_length=32,
-        choices=ProjectRole.choices,
-        default=ProjectRole.PARTICIPANT,
-    )
-    team = models.ForeignKey('project_teams.Team', on_delete=models.SET_NULL, null=True, blank=True)
-
-    class Meta:
-        unique_together = ('user', 'project')
-
-    def __str__(self):
-        return f"{self.user.username} в {self.project.name} как {self.get_role_display()}"
 
 class Invitation(models.Model):
     project = models.ForeignKey(Project, on_delete=models.CASCADE, related_name='invitations')

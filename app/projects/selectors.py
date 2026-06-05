@@ -1,0 +1,86 @@
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from django.shortcuts import get_object_or_404
+
+from project_members.selectors import get_project_ids_for_user
+
+from .models import Project, Invitation
+from .constants import InvitationStatus
+
+
+import random
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+    from users.models import User
+
+
+def get_recent_public_projects(limit: int = 6) -> list[Project]:
+    """Return random list of public projects."""
+    pks = Project.objects.filter(is_public=True).values_list("pk", flat=True)
+    random_pks = random.sample(list(pks), min(len(pks), limit))
+    return list(Project.objects.filter(pk__in=random_pks))
+
+
+def get_pending_invitations_for_user(user: User) -> QuerySet[Invitation]:
+    """Return pending invitations for user."""
+    return Invitation.objects.filter(
+        recipient=user, status=InvitationStatus.PENDING
+    ).select_related("project")
+
+
+def get_public_projects_by_user(user: User) -> QuerySet[Project]:
+    """Return public projects owned by user."""
+    return Project.objects.filter(owner=user, is_public=True).order_by("-created_at")
+
+
+def get_contributed_projects(user: User) -> QuerySet[Project]:
+    """Return public projects where user is member but aint owner."""
+    user_project_ids = get_project_ids_for_user(user)
+    return (
+        Project.objects.filter(
+            pk__in=user_project_ids,
+            is_public=True,
+        )
+        .exclude(owner=user)
+        .distinct()
+        .order_by("-created_at")
+    )
+
+
+def get_project(username: str, slug: str) -> Project:
+    """Return project by owner and slug, or 404."""
+    return get_object_or_404(Project, owner__username=username, slug=slug)
+
+
+def get_available_projects(user: User, query: str = "") -> QuerySet[Project]:
+    """
+    Return available projects for user.
+    """
+    projects = Project.objects.filter(is_public=True)
+    if user.is_authenticated:
+        private_ids = get_project_ids_for_user(user)
+        projects = projects | Project.objects.filter(pk__in=private_ids)
+        projects = projects.distinct()
+    if query:
+        from common.search import apply_project_search_filters, parse_search_query
+
+        filters = parse_search_query(query)
+        projects = apply_project_search_filters(projects, filters)
+    return projects.order_by("-created_at")
+
+
+def get_pending_invitations(project: Project) -> QuerySet[Invitation]:
+    """Return pending invitations for project."""
+    return Invitation.objects.filter(
+        project=project, status=InvitationStatus.PENDING
+    ).select_related("recipient")
+
+
+def get_invitation_by_pk(pk: int, **filters) -> Invitation:
+    """Return invitation by primary key with optional filters, or 404."""
+    qs = Invitation.objects.all()
+    if filters:
+        qs = qs.filter(**filters)
+    return get_object_or_404(qs, pk=pk)

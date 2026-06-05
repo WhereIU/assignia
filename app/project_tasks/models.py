@@ -1,12 +1,12 @@
 from django.db import models
 from django.conf import settings
 
-from common.managers import ActiveManager
 from common.models import (
     TimeStampedModel,
     SoftDeleteModel,
 )
-from common.constants import TaskStatus, PriorityLevel, RiskLevel
+from .constants import TaskStatus, PriorityLevel, RiskLevel
+
 
 class Task(TimeStampedModel, SoftDeleteModel):
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks')
@@ -20,8 +20,8 @@ class Task(TimeStampedModel, SoftDeleteModel):
     deadline = models.DateTimeField(null=True, blank=True)
     directions = models.ManyToManyField('project_directions.Direction', blank=True, related_name='tasks')
     teams = models.ManyToManyField('project_teams.Team', blank=True, related_name='tasks')
-    objects = ActiveManager()
     all_objects = models.Manager()
+    objects = models.Manager()
 
     def __str__(self):
         return self.name

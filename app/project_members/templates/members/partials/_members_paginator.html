@@ -5,7 +5,7 @@
               <li class="page-item">
                   <a
                       class="page-link"
-                      hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.previous_page_number }}&search={{ search_query|urlencode }}"
+                      hx-get="{% url 'members:members_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.previous_page_number }}&search={{ search_query|urlencode }}"
                       hx-target="#members-list-inner"
                       hx-swap="innerHTML">
                       &laquo;
@@ -21,7 +21,7 @@
                   <li class="page-item">
                       <a
                           class="page-link"
-                          hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}?page={{ num }}&search={{ search_query|urlencode }}"
+                          hx-get="{% url 'members:members_tab' username=project.owner.username slug=project.slug %}?page={{ num }}&search={{ search_query|urlencode }}"
                           hx-target="#members-list-inner"
                           hx-swap="innerHTML">
                           {{ num }}
@@ -34,7 +34,7 @@
               <li class="page-item">
                   <a
                       class="page-link"
-                      hx-get="{% url 'projects:members_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.next_page_number }}&search={{ search_query|urlencode }}"
+                      hx-get="{% url 'members:members_tab' username=project.owner.username slug=project.slug %}?page={{ page_obj.next_page_number }}&search={{ search_query|urlencode }}"
                       hx-target="#members-list-inner"
                       hx-swap="innerHTML">
                       &raquo;
