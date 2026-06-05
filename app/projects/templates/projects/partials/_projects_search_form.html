@@ -1,0 +1,23 @@
+<form id="projects-search-form" 
+      hx-get="{% url search_url %}" 
+      hx-target="{{ target_container|default:'#projects-container' }}" 
+      hx-swap="innerHTML"
+      hx-trigger="keyup changed delay:400ms, search, submit"
+      class="position-relative style-search-form" style="max-width: 450px; width: 100%;">
+    
+    <div class="input-group input-group-sm">
+        <span class="input-group-text bg-transparent border-end-0 text-muted">
+            <i class="bi bi-search"></i>
+        </span>
+        <input type="search" 
+               name="q" 
+               value="{{ query }}" 
+               class="form-control border-start-0 border-end-0 ps-0" 
+               placeholder="{{ placeholder_text|default:'Поиск проектов...' }}" 
+               aria-label="Поиск">
+        <button type="submit" class="btn btn-primary">
+            <span class="d-none d-sm-inline">Найти</span>
+            <span class="d-inline d-sm-none"><i class="bi bi-arrow-right-short"></i></span>
+        </button>
+    </div>
+</form>

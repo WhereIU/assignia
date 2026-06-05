@@ -39,8 +39,8 @@ services:
       - postgres_data:/var/lib/postgresql/data
     networks:
       - assignia-network
-    ports:
-      - "5433:5432" # pgAdmin
+    #ports:
+    #  - "5433:5432" # pgAdmin
 
   redis:
     image: redis:7-alpine
