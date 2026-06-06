@@ -14,3 +14,7 @@ def message_success(request: HttpRequest, message: str):
 
 def message_error(request: HttpRequest, message: str):
     return messages.error(request=request, message=message)
+
+
+def message_info(request: HttpRequest, message: str):
+    return messages.info(request=request, message=message)
