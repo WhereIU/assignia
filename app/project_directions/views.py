@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -44,6 +44,9 @@ def direction_tab(
 ) -> HttpResponse:
     """Return directions tab."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -63,6 +66,9 @@ def direction_create(
 ) -> HttpResponse:
     """Handle direction creation."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -89,6 +95,9 @@ def direction_create(
 def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
     """Handle direction update."""
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
+
     project = direction.project
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -106,7 +115,7 @@ def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
         description=description,
     )
 
-    message_success(request, "Направление обновлено")
+    message_success(request, "Направление updated")
     return _render_directions_tab(request, project, can_manage=True)
 
 
@@ -115,6 +124,9 @@ def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
 def direction_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
     """Soft-delete direction."""
     direction = get_direction_by_pk(pk=direction_pk)
+    if not direction:
+        raise Http404("Направление не найдено")
+
     if not can_manage_directions(request.user, direction.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -129,6 +141,9 @@ def direction_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
 def direction_restore(request: HttpRequest, direction_pk: int) -> HttpResponse:
     """Restore soft-deleted direction."""
     direction = get_direction_by_pk(pk=direction_pk)
+    if not direction:
+        raise Http404("Направление не найдено")
+
     if not can_manage_directions(request.user, direction.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -145,6 +160,9 @@ def direction_restore(request: HttpRequest, direction_pk: int) -> HttpResponse:
 def direction_hard_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
     """Permanently delete direction."""
     direction = get_direction_by_pk(pk=direction_pk)
+    if not direction:
+        raise Http404("Направление не найдено")
+
     project = direction.project
     name = direction.name
     if not can_manage_directions(request.user, project):
@@ -162,6 +180,9 @@ def direction_create_form(
 ) -> HttpResponse:
     """Return form partial for creating direction."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     return render(
         request,
         "directions/partials/_direction_create_form.html",
@@ -181,7 +202,13 @@ def direction_edit_form(
 ) -> HttpResponse:
     """Return form partial for editing direction."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     direction = get_direction_by_pk(pk=direction_pk)
+    if not direction:
+        raise Http404("Направление не найдено")
+
     return render(
         request,
         "directions/partials/_direction_create_form.html",
