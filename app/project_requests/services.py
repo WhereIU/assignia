@@ -27,7 +27,7 @@ def create_request(
 
 
 def add_comment(*, req: TaskRequest, author: User, text: str) -> RequestComment:
-    """Add a comment to a request."""
+    """Add comment to request."""
     return RequestComment.objects.create(request=req, author=author, text=text)
 
 
@@ -46,9 +46,7 @@ def decline_request(*, req: TaskRequest) -> TaskRequest:
 
 @transaction.atomic
 def convert_request_to_task(*, req: TaskRequest, actor: User) -> Task:
-    """
-    Convert request into new task and mark the request as converted.
-    """
+    """Convert request into new task and mark request as converted."""
     from project_tasks.models import Task
 
     task = Task.objects.create(

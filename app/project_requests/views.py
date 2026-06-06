@@ -1,10 +1,10 @@
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from common.services import message_success, message_error
 from project_members.permissions import can_handle_requests, can_access_project
 from projects.selectors import get_project
 
@@ -49,8 +49,10 @@ def _render_requests_tab(
 
 @login_required
 def request_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Main requests tab view."""
+    """Requests tab view."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
 
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
@@ -74,17 +76,19 @@ def request_create(
 ) -> HttpResponse:
     """Handle creation of new request."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
 
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Нет доступа")
 
     description = request.POST.get("description", "").strip()
     if not description:
-        messages.error(request, "Введите описание")
+        message_error(request, "Введите описание")
         return _render_requests_tab(request, project)
 
     create_request(project=project, author=request.user, description=description)
-    messages.success(request, "Запрос отправлен")
+    message_success(request, "Запрос отправлен")
     return _render_requests_tab(request, project)
 
 
@@ -92,6 +96,8 @@ def request_create(
 def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
     """Detail view of request."""
     req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
 
     if req.author != request.user and not can_handle_requests(
         request.user, req.project
@@ -114,20 +120,24 @@ def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
 def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
     """Convert request into task."""
     req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
 
     if not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Недостаточно прав")
 
     task = convert_request_to_task(req=req, actor=request.user)
-    messages.success(request, f"Задача «{task.name}» создана!")
+    message_success(request, f"Задача «{task.name}» создана!")
     return redirect("project_tasks:task_detail", task_pk=task.pk)
 
 
 @login_required
 @require_http_methods(["POST"])
 def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Delete request ."""
+    """Delete request."""
     req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
 
     if req.author != request.user:
         return HttpResponseForbidden("Вы не автор запроса")
@@ -137,7 +147,7 @@ def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
     project = req.project
     delete_request(req=req)
 
-    messages.success(request, "Запрос удалён")
+    message_success(request, "Запрос удалён")
     response = HttpResponse(status=204)
     response["HX-Redirect"] = reverse(
         "project_requests:requests_tab",
@@ -151,6 +161,8 @@ def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
 def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
     """Decline pending request."""
     req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
 
     if not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -158,7 +170,7 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
         return HttpResponse("Запрос уже обработан", status=400)
 
     decline_request(req=req)
-    messages.success(request, "Запрос отклонён")
+    message_success(request, "Запрос отклонён")
     return redirect("project_requests:request_detail", request_pk=req.pk)
 
 
@@ -167,6 +179,8 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
 def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
     """Add comment to request, optionally changing status to reviewed."""
     req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
 
     if req.author != request.user and not can_handle_requests(
         request.user, req.project
@@ -199,6 +213,8 @@ def request_create_form(
 ) -> HttpResponse:
     """Render the request creation form partial."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
 
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Нет доступа")
@@ -217,6 +233,8 @@ def request_create_submit(
 ) -> HttpResponse:
     """Handle request creation from dedicated form."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
 
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Нет доступа")
@@ -224,6 +242,6 @@ def request_create_submit(
     description = request.POST.get("description", "").strip()
     if description:
         create_request(project=project, author=request.user, description=description)
-        messages.success(request, "Запрос создан")
+        message_success(request, "Запрос создан")
 
     return _render_requests_tab(request, project)

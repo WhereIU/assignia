@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
-from django.shortcuts import get_object_or_404
+from typing import Optional, TYPE_CHECKING
 
 from .models import RequestComment, TaskRequest
 
@@ -11,9 +9,9 @@ if TYPE_CHECKING:
     from django.db.models import QuerySet
 
 
-def get_request_by_pk(pk: int) -> TaskRequest:
-    """Return request by primary key, or 404."""
-    return get_object_or_404(TaskRequest, pk=pk)
+def get_request_by_pk(pk: int) -> Optional[TaskRequest]:
+    """Return request by primary key."""
+    return TaskRequest.objects.filter(pk=pk).first()
 
 
 def get_requests_for_project(project: Project) -> QuerySet[TaskRequest]:
