@@ -1,0 +1,24 @@
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0">
+            <h5 class="modal-title text-danger fw-bold">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>Удаление проекта
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body pt-0">
+            <p>Вы уверены, что хотите навсегда удалить проект <strong>«{{ project.name }}»</strong>?</p>
+            <p class="text-danger small mb-0">Это действие необратимо.<br>Все связанные данные будут полностью стёрты.</p>
+        </div>
+        <div class="modal-footer bg-light border-top-0">
+            <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
+            <button type="button" 
+                    class="btn btn-danger btn-sm px-3"
+                    hx-delete="{% url 'projects:project_delete' username=project.owner.username slug=project.slug %}"
+                    hx-target="body"
+                    hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
+                Да, удалить проект
+            </button>
+        </div>
+    </div>
+</div>

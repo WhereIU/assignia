@@ -57,10 +57,13 @@
             </a>
         </div>
     </footer>
-
+    <div id="modal-container" class="modal fade" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered" id="modal-content">
+            </div>
+    </div>
+    {% include 'partials/_messages.html' %}
     <script src="{% static 'js/csrf.js' %}"></script>
     <script src="{% static 'js/csr.js' %}"></script>
     {% block extra_js %}{% endblock %}
-    {% include 'partials/_messages.html' %}
 </body>
 </html>

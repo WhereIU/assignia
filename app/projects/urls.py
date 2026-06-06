@@ -12,6 +12,8 @@ urlpatterns = [
     path('project/<str:username>/<str:slug>/', views.project_detail, name='project_detail'),
     path('project/<str:username>/<str:slug>/join/', views.project_join, name='project_join'),
     path('project/<str:username>/<str:slug>/update/', views.project_update, name='project_update'),
+    path('project/<str:username>/<slug:slug>/delete/', views.project_delete, name='project_delete'),
+    path('project/<str:username>/<slug:slug>/delete/confirm/', views.project_delete_confirm, name='project_delete_confirm'),
 
     path('form/project/<str:username>/<str:slug>/settings/', views.project_settings_form, name='project_settings_form'),
     

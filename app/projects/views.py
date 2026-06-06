@@ -7,7 +7,7 @@ from django.core.exceptions import ValidationError
 from django.core.paginator import Paginator
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.urls import reverse, reverse_lazy
 from django.views.decorators.http import require_http_methods
 
 from project_members.views import _render_members_tab
@@ -17,8 +17,8 @@ from project_members.permissions import (
     is_admin_or_owner,
     is_privileged,
     is_project_member,
+    is_project_owner,
 )
-from .constants import InvitationStatus
 from project_members.constants import ProjectRole
 from project_tasks.selectors import get_tasks_by_project
 from project_members.selectors import get_member_role
@@ -26,6 +26,7 @@ from project_members.services import create_membership as create_project_members
 from project_tasks.services import apply_tasks_filters
 from users.selectors import get_user_by_username
 
+from .constants import InvitationStatus
 from .forms import ProjectCreateForm
 from .selectors import (
     get_available_projects,
@@ -155,6 +156,36 @@ def project_join(request: HttpRequest, username: str, slug: str) -> HttpResponse
     return redirect(
         "projects:project_detail", username=username, slug=slug
     )
+
+
+def project_delete(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """If privilleged, delete project."""
+    project = get_project(username=username, slug=slug)
+    
+    if not is_project_owner(user=request.user, project=project):
+        return HttpResponseForbidden("Нельзя удалить чужой проект")
+        
+    project.delete()
+    
+    messages.success(request, f"Проект «{project.name}» успешно удалён.")
+
+    response = HttpResponse(status=200)
+    response["HX-Redirect"] = reverse("projects:available_projects")
+    return response
+
+
+@login_required
+@require_http_methods(["GET"])
+def project_delete_confirm(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Render confirm delete project."""
+    project = get_project(username=username, slug=slug)
+    
+    if not is_project_owner(user=request.user, project=project):
+        return HttpResponseForbidden("У вас нет прав для удаления этого проекта")
+        
+    return render(request, "projects/partials/_project_delete_confirm.html", {
+        "project": project
+    })
 
 
 @login_required

@@ -95,6 +95,11 @@ def can_delete_task_or_error(user, task) -> Optional[str]:
     return None
 
 
+def is_project_owner(user, project) -> bool:
+    """Check whether user has owner membership"""
+    return get_member_role(user, project) in ProjectRole.OWNER
+
+
 def is_privileged(user, project) -> bool:
     """Check whether user has privileged role."""
     return get_member_role(user, project) in PRIVILEGED_ROLES

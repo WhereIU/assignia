@@ -33,3 +33,11 @@ document.body.addEventListener('htmx:afterSettle', function() {
         });
     }
 });
+
+document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === "modal-container") {
+        const modalEl = document.getElementById('modal-container');
+        const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
+        modal.show();
+    }
+});
