@@ -1,16 +1,13 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
+import random
 
-from django.shortcuts import get_object_or_404
 from django.db.models import Q
 
 from project_members.selectors import get_project_ids_for_user
 
 from .models import Project, Invitation
 from .constants import InvitationStatus
-
-
-import random
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
@@ -50,15 +47,13 @@ def get_contributed_projects(user: User) -> QuerySet[Project]:
     )
 
 
-def get_project(username: str, slug: str) -> Project:
-    """Return project by owner and slug, or 404."""
-    return get_object_or_404(Project, owner__username=username, slug=slug)
+def get_project(username: str, slug: str) -> Optional[Project]:
+    """Return project by owner and slug."""
+    return Project.objects.filter(owner__username=username, slug=slug).select_related("owner").first()
 
 
 def get_available_projects(user: User, query: str = "") -> QuerySet[Project]:
-    """
-    Return available projects for user.
-    """
+    """Return available projects for user."""
     if user.is_authenticated:
         private_ids = get_project_ids_for_user(user)
         projects = Project.objects.filter(Q(is_public=True) | Q(pk__in=private_ids))
@@ -74,9 +69,7 @@ def get_available_projects(user: User, query: str = "") -> QuerySet[Project]:
 
 
 def get_all_public_projects_of_user(user: User) -> QuerySet[Project]:
-    """
-    Return all public projects of user
-    """
+    """Return all public projects of user."""
     user_project_ids = get_project_ids_for_user(user)
     
     return Project.objects.filter(
@@ -92,9 +85,6 @@ def get_pending_invitations(project: Project) -> QuerySet[Invitation]:
     ).select_related("recipient")
 
 
-def get_invitation_by_pk(pk: int, **filters) -> Invitation:
-    """Return invitation by primary key with optional filters, or 404."""
-    qs = Invitation.objects.all()
-    if filters:
-        qs = qs.filter(**filters)
-    return get_object_or_404(qs, pk=pk)
+def get_invitation_by_pk(pk: int, **filters) -> Optional[Invitation]:
+    """Return invitation by primary key with optional filters."""
+    return Invitation.objects.filter(pk=pk, **filters).select_related("sender", "recipient", "project", "project__owner").first()

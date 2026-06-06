@@ -31,9 +31,22 @@ def get_member_role(user: User, project: Project) -> Optional[str]:
     return membership.role if membership else None
 
 
+def get_project_ids_for_user(user: User) -> QuerySet[int]:
+    """Return queryset of project IDs where user is member."""
+    return ProjectMembership.objects.filter(user=user).values_list(
+        "project_id", flat=True
+    )
+
+
+def get_memberships_for_user(user: User) -> QuerySet[ProjectMembership]:
+    """Return memberships for user."""
+    return ProjectMembership.objects.filter(user=user).select_related("project")
+
+
 def search_project_memberships(project: Project, query: str) -> QuerySet[ProjectMembership]:
     """Filter project memberships by query."""
     qs = get_project_memberships(project)
     if query:
         qs = qs.filter(user__username__icontains=query)
     return qs
+

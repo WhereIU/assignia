@@ -1,17 +1,16 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
-from django.urls import reverse, reverse_lazy
+from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
 from project_members.views import _render_members_tab
-from common.selectors import get_page_filters
+from common.selectors import get_page_filters, get_paginated_page
+from common.services import message_success, message_error, message_info
 from project_members.permissions import (
     can_access_project,
     is_admin_or_owner,
@@ -33,7 +32,7 @@ from .selectors import (
     get_invitation_by_pk,
     get_pending_invitations,
     get_project
-    )
+)
 from .services import (
     accept_invitation,
     cancel_invitation,
@@ -49,12 +48,10 @@ if TYPE_CHECKING:
 
 def available_projects(request: HttpRequest) -> HttpResponse:
     query = request.GET.get("q", "").strip()
-    
     projects_queryset = get_available_projects(request.user, query=query)
     
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(projects_queryset, 6)
-    page_obj = paginator.get_page(page_number)
+    page_obj = get_paginated_page(projects_queryset, page=page_number, per_page=6)
     
     context = {
         "projects": page_obj, 
@@ -84,7 +81,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
             create_project_membership(
                 user=request.user, project=project, role="owner"
             )
-            messages.success(request, f"Проект «{project.name}» создан!")
+            message_success(request, f"Проект «{project.name}» создан!")
             return redirect(
                 "projects:project_detail",
                 username=request.user.username,
@@ -97,6 +94,9 @@ def project_create(request: HttpRequest) -> HttpResponse:
 
 def project_detail(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     if not can_access_project(request.user, project):
         if not request.user.is_authenticated:
             return redirect("users:login")
@@ -108,7 +108,6 @@ def project_detail(request: HttpRequest, username: str, slug: str) -> HttpRespon
 
     filters = get_page_filters(request)
 
-    # HTMX: filtering / tab reload
     if request.headers.get("HX-Request"):
         if any(request.GET.get(p) for p in ("status", "priority", "risk", "q")):
             tasks = apply_tasks_filters(tasks, filters)
@@ -144,30 +143,35 @@ def project_detail(request: HttpRequest, username: str, slug: str) -> HttpRespon
 @login_required
 def project_join(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     if not project.is_public:
         return HttpResponseForbidden("Нельзя вступить в приватный проект.")
+        
     if is_project_member(request.user, project):
-        messages.info(request, "Вы уже участник этого проекта.")
+        message_info(request, "Вы уже участник этого проекта.")
     else:
         create_project_membership(
             user=request.user, project=project, role="participant"
         )
-        messages.success(request, f"Вы вступили в проект «{project.name}»!")
+        message_success(request, f"Вы вступили в проект «{project.name}»!")
+        
     return redirect(
         "projects:project_detail", username=username, slug=slug
     )
 
 
 def project_delete(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """If privilleged, delete project."""
     project = get_project(username=username, slug=slug)
-    
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_project_owner(user=request.user, project=project):
         return HttpResponseForbidden("Нельзя удалить чужой проект")
         
     project.delete()
-    
-    messages.success(request, f"Проект «{project.name}» успешно удалён.")
+    message_success(request, f"Проект «{project.name}» успешно удалён.")
 
     response = HttpResponse(status=200)
     response["HX-Redirect"] = reverse("projects:available_projects")
@@ -177,9 +181,10 @@ def project_delete(request: HttpRequest, username: str, slug: str) -> HttpRespon
 @login_required
 @require_http_methods(["GET"])
 def project_delete_confirm(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render confirm delete project."""
     project = get_project(username=username, slug=slug)
-    
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_project_owner(user=request.user, project=project):
         return HttpResponseForbidden("У вас нет прав для удаления этого проекта")
         
@@ -191,6 +196,9 @@ def project_delete_confirm(request: HttpRequest, username: str, slug: str) -> Ht
 @login_required
 def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     return render(
         request,
         "projects/partials/_invitation_form.html",
@@ -208,18 +216,21 @@ def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpRespo
 @require_http_methods(["POST"])
 def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
     recipient_username = request.POST.get("username", "").strip()
     if not recipient_username:
-        messages.error(request, "Укажите имя пользователя")
+        message_error(request, "Укажите имя пользователя")
         return _render_invitation_form(request, project, username, slug)
 
     try:
         recipient = get_user_by_username(recipient_username)
     except Http404:
-        messages.error(request, "Пользователь не найден")
+        message_error(request, "Пользователь не найден")
         return _render_invitation_form(request, project, username, slug)
 
     try:
@@ -229,11 +240,10 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
             project=project,
         )
     except ValidationError as e:
-        messages.error(request, str(e))
+        message_error(request, str(e))
         return _render_invitation_form(request, project, username, slug)
 
-    messages.success(request, f"Приглашение отправлено {recipient.username}")
-    # HTMX: replace the tab
+    message_success(request, f"Приглашение отправлено {recipient.username}")
     response = _render_members_tab(request, project)
     response["HX-Retarget"] = "#tab-content"
     response["HX-Reswap"] = "innerHTML"
@@ -243,7 +253,6 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
 def _render_invitation_form(
     request: HttpRequest, project: Project, username: str, slug: str
 ) -> HttpResponse:
-    """Render invitation form with its URL."""
     return render(
         request,
         "projects/partials/_invitation_form.html",
@@ -262,14 +271,20 @@ def invitation_cancel(
     request: HttpRequest, username: str, slug: str, invitation_pk: int
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
     invitation = get_invitation_by_pk(
         pk=invitation_pk, project=project, status=InvitationStatus.PENDING
     )
+    if not invitation:
+        raise Http404("Приглашение не найдено")
+
     cancel_invitation(invitation=invitation)
-    messages.success(
+    message_success(
         request, f"Приглашение {invitation.recipient.username} отменено"
     )
 
@@ -291,24 +306,27 @@ def invitation_accept(request: HttpRequest, invitation_pk: int) -> HttpResponse:
     invitation = get_invitation_by_pk(
         pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
     )
+    if not invitation:
+        raise Http404("Приглашение не найдено")
+        
     project = invitation.project
     
     if is_project_member(request.user, project):
-        messages.info(request, "Вы уже участник проекта")
+        message_info(request, "Вы уже участник проекта")
     else:
         accept_invitation(invitation=invitation, user=request.user)
-        messages.success(request, f"Вы вступили в проект «{project.name}»")
+        message_success(request, f"Вы вступили в проект «{project.name}»")
 
     if request.GET.get("variant") == "inline":
-        return HttpResponse(
-            f'<li class="list-group-item d-flex justify-content-between align-items-center p-3 text-muted bg-light">'
-            f'  <div>'
-            f'    <span class="fw-bold">Пользователь {invitation.sender.username} пригласил вас в проект «{project.name}»</span>'
-            f'    <br><small class="text-muted">Только что</small>'
-            f'    <div class="mt-1"><span class="badge bg-success">Принято</span></div>'
-            f'  </div>'
-            f'</li>'
+        return render(
+            request,
+            "projects/partials/_invitation_inline_result.html",
+            {"invitation": invitation, "status": "accepted"},
         )
+
+    response = HttpResponse(status=200)
+    response["HX-Redirect"] = reverse("projects:project_detail", kwargs={"username": project.owner.username, "slug": project.slug})
+    return response
 
 
 @login_required
@@ -317,18 +335,17 @@ def invitation_decline(request: HttpRequest, invitation_pk: int) -> HttpResponse
     invitation = get_invitation_by_pk(
         pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
     )
+    if not invitation:
+        raise Http404("Приглашение не найдено")
+        
     decline_invitation(invitation=invitation)
-    messages.info(request, "Приглашение отклонено")
+    message_info(request, "Приглашение отклонено")
 
     if request.GET.get("variant") == "inline":
-        return HttpResponse(
-            f'<li class="list-group-item d-flex justify-content-between align-items-center p-3 text-muted bg-light">'
-            f'  <div>'
-            f'    <span class="fw-bold">Пользователь {invitation.sender.username} пригласил вас в проект «{invitation.project.name}»</span>'
-            f'    <br><small class="text-muted">Только что</small>'
-            f'    <div class="mt-1"><span class="badge bg-secondary">Отклонено</span></div>'
-            f'  </div>'
-            f'</li>'
+        return render(
+            request,
+            "projects/partials/_invitation_inline_result.html",
+            {"invitation": invitation, "status": "declined"},
         )
 
     response = HttpResponse(status=200)
@@ -341,6 +358,9 @@ def project_settings_tab(
     request: HttpRequest, username: str, slug: str
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
     return render(
@@ -355,6 +375,9 @@ def project_settings_form(
     request: HttpRequest, username: str, slug: str
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
     return render(
@@ -376,6 +399,9 @@ def project_update(
     request: HttpRequest, username: str, slug: str
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -384,7 +410,7 @@ def project_update(
     is_public = request.POST.get("is_public") == "on"
 
     if not name:
-        messages.error(request, "Название проекта не может быть пустым")
+        message_error(request, "Название проекта не может быть пустым")
         return redirect(
             "projects:project_settings_tab",
             username=username,
@@ -400,7 +426,7 @@ def project_update(
         description=description,
         is_public=is_public,
     )
-    messages.success(request, "Настройки проекта обновлены")
+    message_success(request, "Настройки проекта обновлены")
     return redirect(
         "projects:project_settings_tab",
         username=username,

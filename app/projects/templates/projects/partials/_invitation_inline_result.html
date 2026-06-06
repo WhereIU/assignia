@@ -1,0 +1,13 @@
+<li class="list-group-item d-flex justify-content-between align-items-center p-3 text-muted bg-light">
+    <div>
+        <span class="fw-bold">Пользователь {{ invitation.sender.username }} пригласил вас в проект «{{ invitation.project.name }}»</span>
+        <br><small class="text-muted">Только что</small>
+        <div class="mt-1">
+            {% if status == "accepted" %}
+                <span class="badge bg-success">Принято</span>
+            {% else %}
+                <span class="badge bg-secondary">Отклонено</span>
+            {% endif %}
+        </div>
+    </div>
+</li>

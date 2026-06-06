@@ -3,9 +3,9 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 
-from core.models import Notification
 from project_members.permissions import is_project_member
 from project_members.services import create_membership
+
 from .constants import InvitationStatus
 from .models import Invitation, Project
 
