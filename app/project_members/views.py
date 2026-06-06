@@ -3,22 +3,23 @@ from typing import TYPE_CHECKING
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import ValidationError
-from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import HttpRequest, HttpResponse, HttpResponseForbidden, Http404
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 from .services import remove_member, update_member_role
-from .permissions import (
-    ProjectRole,
-    can_manage_member,
+from .permissions import ProjectRole, can_manage_member, is_admin_or_owner
+from .selectors import (
     get_membership,
-    is_admin_or_owner,
+    get_membership_by_user_pk,
+    get_member_role,
+    get_project_memberships,
+    search_project_memberships,
 )
 
 from projects.selectors import get_project, get_pending_invitations
-from project_members.selectors import get_member_role, get_project_memberships, search_project_memberships
 from common.services import message_success, message_error
+from common.selectors import get_paginated_page
 
 if TYPE_CHECKING:
     from projects.models import Project
@@ -33,12 +34,12 @@ def _render_members_tab(
 ) -> HttpResponse:
     """Render members tab."""
     members = (
-        get_project_memberships(project=project)
+        search_project_memberships(project=project, query=search_query)
         if search_query
-        else search_project_memberships(project=project, query=search_query)
+        else get_project_memberships(project=project)
     )
-    paginator = Paginator(members, 10)
-    page_obj = paginator.get_page(page)
+    
+    page_obj = get_paginated_page(members, page, 10)
 
     actor_role = get_member_role(request.user, project)
     pending = get_pending_invitations(project=project)
@@ -66,8 +67,12 @@ def _render_members_tab(
 @login_required
 def members_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
     if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+        return HttpResponseForbidden("Недостаточно прав для просмотра участников")
+        
     search = request.GET.get("search", "")
     page = request.GET.get("page", 1)
     return _render_members_tab(request, project, search_query=search, page=page)
@@ -79,17 +84,23 @@ def member_update_role(
     request: HttpRequest, username: str, slug: str, user_pk: int
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
-    target = get_membership(project=project, user=user_pk)
+    if not project:
+        raise Http404("Проект не найден")
+
+    target = get_membership_by_user_pk(project=project, user_pk=user_pk)
+    if not target:
+        raise Http404("Участник не найден в данном проекте")
 
     if not can_manage_member(request.user, target, project):
-        return HttpResponseForbidden("Недостаточно прав")
+        return HttpResponseForbidden("У вас нет прав на редактирование этого участника")
 
     new_role = request.POST.get("role")
     if new_role not in ProjectRole.values:
-        message_error(request, "Неверная роль")
+        message_error(request, "Указана несуществующая роль")
         return _render_members_tab(request, project)
 
     actor_membership = get_membership(request.user, project)
+    
     try:
         update_member_role(
             actor_membership=actor_membership,
@@ -100,9 +111,7 @@ def member_update_role(
         message_error(request, str(e))
         return _render_members_tab(request, project)
 
-    message_success(
-        request, f"Роль {target.user.username} изменена на {new_role}"
-    )
+    message_success(request, f"Роль {target.user.username} изменена на {target.get_role_display()}")
     return _render_members_tab(request, project)
 
 
@@ -112,12 +121,18 @@ def member_remove(
     request: HttpRequest, username: str, slug: str, user_pk: int
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
-    target = get_membership(project=project, user=user_pk)
+    if not project:
+        raise Http404("Проект не найден")
+
+    target = get_membership_by_user_pk(project=project, user_pk=user_pk)
+    if not target:
+        raise Http404("Участник не найден в данном проекте")
 
     if not can_manage_member(request.user, target, project):
-        return HttpResponseForbidden("Недостаточно прав")
+        return HttpResponseForbidden("У вас нет прав на удаление этого участника")
 
     actor_membership = get_membership(request.user, project)
+    
     try:
         removed_username = remove_member(
             actor_membership=actor_membership,
@@ -127,5 +142,5 @@ def member_remove(
         message_error(request, str(e))
         return _render_members_tab(request, project)
 
-    message_success(request, f"{removed_username} удалён из проекта")
+    message_success(request, f"Пользователь {removed_username} успешно удалён из проекта")
     return _render_members_tab(request, project)

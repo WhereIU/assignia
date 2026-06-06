@@ -35,7 +35,7 @@ def can_manage_directions(user, project) -> bool:
 
 def can_manage_member(user, target_membership, project) -> bool:
     """Check whether user can change membership."""
-    if not user.is_authenticated:
+    if not user.is_authenticated or not target_membership:
         return False
 
     member_role = get_member_role(user, project)
@@ -108,4 +108,3 @@ def is_privileged(user, project) -> bool:
 def is_admin_or_owner(user, project) -> bool:
     """Check whether user is admin or owner."""
     return get_member_role(user, project) in ADMIN_ROLES
-
