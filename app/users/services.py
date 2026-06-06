@@ -1,14 +1,19 @@
+from __future__ import annotations
 import uuid
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
+from django.conf import settings
 from django.core.cache import cache
 from django.core.mail import send_mail
-from django.conf import settings
 from django.urls import reverse
+
+if TYPE_CHECKING:
+    from .models import User
 
 EMAIL_CONFIRMATION_TIMEOUT = 60 * 60
 
 
-def _generate_email_confirmation_token(user, new_email=None):
+def _generate_email_confirmation_token(user: User, new_email: Optional[str] = None) -> str:
     """Generate and store unique token for email confirmation."""
     old_token = cache.get(f"user_email_confirmation:{user.pk}")
     if old_token:
@@ -26,10 +31,8 @@ def _generate_email_confirmation_token(user, new_email=None):
     return token
 
 
-def send_email_confirmation(user, new_email=None):
-    """
-    Send confirmation email.
-    """
+def send_email_confirmation(user: User, new_email: Optional[str] = None) -> None:
+    """Send confirmation email."""
     token = _generate_email_confirmation_token(user, new_email)
     url = settings.BASE_URL + reverse("users:confirm_email", kwargs={"token": token})
 
@@ -49,9 +52,9 @@ def send_email_confirmation(user, new_email=None):
     user.save(update_fields=["pending_email"])
 
 
-def confirm_email_token(token):
+def confirm_email_token(token: str) -> Optional[User]:
     """Validate token and activate."""
-    data = cache.get(f"email_confirmation:{token}")
+    data: Optional[Dict[str, Any]] = cache.get(f"email_confirmation:{token}")
     if not data:
         return None
 
@@ -71,17 +74,14 @@ def confirm_email_token(token):
     return user
 
 
-def cancel_pending_email(user):
+def cancel_pending_email(user: User) -> None:
     """Cancel pending email change."""
     user.pending_email = None
     user.save(update_fields=["pending_email"])
 
 
-def change_user_email(user, new_email):
-    """
-    Check for existing pending email,
-    send confirmation and mark pending.
-    """
+def change_user_email(user: User, new_email: str) -> None:
+    """Check for existing pending email, send confirmation and mark pending."""
     if user.pending_email:
         raise ValueError("У вас уже есть неподтверждённый email.")
     try:
