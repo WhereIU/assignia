@@ -1,23 +1,23 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from django.shortcuts import get_object_or_404
-
 from .models import Team
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
+    from projects.models import Project
+    from project_directions.models import Direction
 
 
-def get_team_by_pk(pk: int, is_deleted: Optional[bool] = None) -> Team:
+def get_team_by_pk(pk: int, is_deleted: Optional[bool] = None) -> Optional[Team]:
     """Return team by primary key."""
     qs = Team.objects.all()
     if is_deleted is not None:
         qs = qs.filter(is_deleted=is_deleted)
-    return get_object_or_404(qs, pk=pk)
+    return qs.filter(pk=pk).first()
 
 
-def get_teams_by_direction(direction, is_deleted: bool = False) -> QuerySet[Team]:
+def get_teams_by_direction(direction: Direction, is_deleted: bool = False) -> QuerySet[Team]:
     """Return teams by direction."""
     return direction.teams.filter(is_deleted=is_deleted).order_by("-id")
 
@@ -27,7 +27,7 @@ def get_team_members(team: Team) -> QuerySet:
     return team.members.all()
 
 
-def get_teams_by_project(project, is_deleted: bool = False) -> QuerySet[Team]:
+def get_teams_by_project(project: Project, is_deleted: bool = False) -> QuerySet[Team]:
     """Return teams by project."""
     return Team.objects.filter(
         direction__project=project, is_deleted=is_deleted

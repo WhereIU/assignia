@@ -1,6 +1,5 @@
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
@@ -9,6 +8,7 @@ from project_members.permissions import can_manage_teams
 from project_members.selectors import search_project_memberships
 from project_directions.selectors import get_direction_by_pk
 from users.models import User
+from common.services import message_success, message_error
 
 from .selectors import (
     get_team_by_pk,
@@ -45,6 +45,8 @@ def _render_teams_tab(
 @login_required
 def team_tab(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
@@ -57,17 +59,19 @@ def team_tab(request: HttpRequest, direction_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_create(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
     name = request.POST.get("name", "").strip()
     if not name:
-        messages.error(request, "Название команды обязательно")
+        message_error(request, "Название команды обязательно")
         return _render_teams_tab(request, direction)
 
     create_team(direction=direction, name=name)
-    messages.success(request, f"Команда «{name}» создана")
+    message_success(request, f"Команда «{name}» создана")
     return _render_teams_tab(request, direction)
 
 
@@ -75,6 +79,9 @@ def team_create(request: HttpRequest, direction_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
+        
     direction = team.direction
 
     if not can_manage_teams(request.user, direction):
@@ -82,11 +89,11 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
 
     name = request.POST.get("name", "").strip()
     if not name:
-        messages.error(request, "Название команды обязательно")
+        message_error(request, "Название команды обязательно")
         return _render_teams_tab(request, direction)
 
     update_team(team=team, name=name)
-    messages.success(request, "Команда обновлена")
+    message_success(request, "Команда updated")
     return _render_teams_tab(request, direction)
 
 
@@ -94,13 +101,16 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
+        
     direction = team.direction
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
     soft_delete_team(team=team)
-    messages.success(request, f"Команда «{team.name}» удалена")
+    message_success(request, f"Команда «{team.name}» удалена")
     return _render_teams_tab(request, direction)
 
 
@@ -108,19 +118,24 @@ def team_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_restore(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk, is_deleted=True)
+    if not team:
+        raise Http404("Команда не найдена")
+        
     direction = team.direction
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
     restore_team(team=team)
-    messages.success(request, f"Команда «{team.name}» восстановлена")
+    message_success(request, f"Команда «{team.name}» восстановлена")
     return _render_teams_tab(request, direction, show_deleted=True)
 
 
 @login_required
 def team_members(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
 
     if not can_manage_teams(request.user, team.direction):
         return HttpResponseForbidden("Недостаточно прав")
@@ -141,6 +156,8 @@ def team_members(request: HttpRequest, team_pk: int) -> HttpResponse:
 @login_required
 def team_member_search(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
 
     if not can_manage_teams(request.user, team.direction):
         return HttpResponseForbidden("Недостаточно прав")
@@ -159,17 +176,21 @@ def team_member_search(request: HttpRequest, team_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_member_add(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
+        
     direction = team.direction
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
     user_id = request.POST.get("user_id")
-    try:
-        user = User.objects.get(pk=user_id)
-        add_member_to_team(team=team, user=user)
-    except User.DoesNotExist:
+    user = User.objects.filter(pk=user_id).first()
+    if not user:
         return HttpResponse("Пользователь не найден", status=404)
+
+    try:
+        add_member_to_team(team=team, user=user)
     except ValueError as e:
         return HttpResponse(str(e), status=400)
 
@@ -190,17 +211,19 @@ def team_member_add(request: HttpRequest, team_pk: int) -> HttpResponse:
 @require_http_methods(["POST"])
 def team_member_remove(request: HttpRequest, team_pk: int) -> HttpResponse:
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
+        
     direction = team.direction
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
     user_id = request.POST.get("user_id")
-    try:
-        user = User.objects.get(pk=user_id)
+    user = User.objects.filter(pk=user_id).first()
+    
+    if user:
         remove_member_from_team(team=team, user=user)
-    except User.DoesNotExist:
-        pass
 
     members = get_team_members(team)
     return render(
@@ -218,6 +241,8 @@ def team_member_remove(request: HttpRequest, team_pk: int) -> HttpResponse:
 @login_required
 def team_create_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
 
     return render(
         request,
@@ -238,7 +263,12 @@ def team_edit_form(
     request: HttpRequest, direction_pk: int, team_pk: int
 ) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
+        
     team = get_team_by_pk(pk=team_pk)
+    if not team:
+        raise Http404("Команда не найдена")
 
     return render(
         request,
