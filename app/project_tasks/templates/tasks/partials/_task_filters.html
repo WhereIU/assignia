@@ -1,4 +1,9 @@
-<form hx-get="{{ request.path }}" hx-target="#task-list-inner" hx-swap="innerHTML" class="mb-3 mt-0">
+<form hx-get="{{ request.path }}" 
+      hx-target="#task-list-inner" 
+      hx-swap="innerHTML" 
+      hx-trigger="keyup changed delay:1200ms from:input[type=search], change from:select, search, submit"
+      class="mb-3 mt-0">
+    
     <div class="row g-2 align-items-center">
         <div class="col-auto">
             <select name="status" class="form-select form-select-sm">
@@ -10,6 +15,7 @@
                 <option value="cancelled" {% if filters.status == "cancelled" %}selected{% endif %}>Отменена</option>
             </select>
         </div>
+        
         <div class="col-auto">
             <select name="priority" class="form-select form-select-sm">
                 <option value="">Любой приоритет</option>
@@ -20,6 +26,7 @@
                 <option value="1" {% if filters.priority == "1" %}selected{% endif %}>1 (низкий)</option>
             </select>
         </div>
+        
         <div class="col-auto">
             <select name="risk" class="form-select form-select-sm">
                 <option value="">Любой риск</option>
@@ -27,13 +34,13 @@
                 <option value="low" {% if filters.risk == "low" %}selected{% endif %}>Низкий (≤3)</option>
             </select>
         </div>
-        <div class="col-auto">
-            <input type="text" name="q" class="form-control form-control-sm" placeholder="Поиск..." value="{{ filters.q }}">
+        
+        <div class="col-12 col-sm-auto" style="min-width: 250px;">
+            {% include 'partials/_search_input.html' with placeholder='Поиск по задачам...' search_value=filters.q %}
         </div>
-        <div class="col-auto">
-            <button type="submit" class="btn btn-outline-secondary btn-sm">Применить</button>
+        
         </div>
-    </div>
+    
     {% if source %}
         <input type="hidden" name="source" value="{{ source }}">
     {% endif %}

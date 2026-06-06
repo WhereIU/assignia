@@ -1,0 +1,15 @@
+<div class="input-group input-group-sm">
+    <span class="input-group-text bg-transparent border-end-0 text-muted">
+        <i class="bi bi-search"></i>
+    </span>
+    <input type="search" 
+           name="q" 
+           value="{{ search_value|default:'' }}" 
+           class="form-control border-start-0 border-end-0 ps-0" 
+           placeholder="{{ placeholder|default:'Поиск...' }}" 
+           aria-label="Поиск">
+    <button type="submit" class="btn btn-primary btn-sm">
+        <span class="d-none d-sm-inline">Найти</span>
+        <span class="d-inline d-sm-none"><i class="bi bi-arrow-right-short"></i></span>
+    </button>
+</div>
