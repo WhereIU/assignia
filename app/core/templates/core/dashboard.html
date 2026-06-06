@@ -16,13 +16,7 @@
 {% block content %}
 <h1 class="mb-4">Дашборд</h1>
 
-{% if invitations %}
-    <div id="invitations-container">
-        {% include 'projects/partials/_invitations.html' %}
-    </div>
-{% endif %}
-
-<div id="tab-content"> 
+<div id="tab-content">
     <div id="task-list-inner"
         hx-target="#task-list-inner"
         hx-get="{% url 'core:dashboard' %}"

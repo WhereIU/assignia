@@ -79,7 +79,7 @@ def member_update_role(
     request: HttpRequest, username: str, slug: str, user_pk: int
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
-    target = get_membership(project=project, user_pk=user_pk)
+    target = get_membership(project=project, user=user_pk)
 
     if not can_manage_member(request.user, target, project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -112,7 +112,7 @@ def member_remove(
     request: HttpRequest, username: str, slug: str, user_pk: int
 ) -> HttpResponse:
     project = get_project(username=username, slug=slug)
-    target = get_membership(project=project, user_pk=user_pk)
+    target = get_membership(project=project, user=user_pk)
 
     if not can_manage_member(request.user, target, project):
         return HttpResponseForbidden("Недостаточно прав")

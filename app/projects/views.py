@@ -286,31 +286,54 @@ def invitation_cancel(
 
 
 @login_required
+@require_http_methods(["POST"])
 def invitation_accept(request: HttpRequest, invitation_pk: int) -> HttpResponse:
     invitation = get_invitation_by_pk(
         pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
     )
     project = invitation.project
-    accept_invitation(invitation=invitation, user=request.user)
+    
     if is_project_member(request.user, project):
         messages.info(request, "Вы уже участник проекта")
     else:
+        accept_invitation(invitation=invitation, user=request.user)
         messages.success(request, f"Вы вступили в проект «{project.name}»")
-    return redirect(
-        "projects:project_detail",
-        username=project.owner.username,
-        slug=project.slug,
-    )
+
+    if request.GET.get("variant") == "inline":
+        return HttpResponse(
+            f'<li class="list-group-item d-flex justify-content-between align-items-center p-3 text-muted bg-light">'
+            f'  <div>'
+            f'    <span class="fw-bold">Пользователь {invitation.sender.username} пригласил вас в проект «{project.name}»</span>'
+            f'    <br><small class="text-muted">Только что</small>'
+            f'    <div class="mt-1"><span class="badge bg-success">Принято</span></div>'
+            f'  </div>'
+            f'</li>'
+        )
 
 
 @login_required
+@require_http_methods(["POST"])
 def invitation_decline(request: HttpRequest, invitation_pk: int) -> HttpResponse:
     invitation = get_invitation_by_pk(
         pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
     )
     decline_invitation(invitation=invitation)
     messages.info(request, "Приглашение отклонено")
-    return redirect("core:home")
+
+    if request.GET.get("variant") == "inline":
+        return HttpResponse(
+            f'<li class="list-group-item d-flex justify-content-between align-items-center p-3 text-muted bg-light">'
+            f'  <div>'
+            f'    <span class="fw-bold">Пользователь {invitation.sender.username} пригласил вас в проект «{invitation.project.name}»</span>'
+            f'    <br><small class="text-muted">Только что</small>'
+            f'    <div class="mt-1"><span class="badge bg-secondary">Отклонено</span></div>'
+            f'  </div>'
+            f'</li>'
+        )
+
+    response = HttpResponse(status=200)
+    response["HX-Redirect"] = reverse("core:home")
+    return response
 
 
 @login_required

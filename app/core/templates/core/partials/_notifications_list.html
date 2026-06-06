@@ -1,0 +1,53 @@
+<div id="notifications-container">
+    <ul class="list-group shadow-sm mb-4">
+        {% for note in notifications %}
+        <li class="list-group-item d-flex justify-content-between align-items-center p-3 {% if note.content_type.model == 'invitation' and note.target_object.status != 'pending' %}text-muted bg-light{% endif %}">
+            <div>
+                {% if not note.is_read %}
+                    <span class="badge bg-danger me-2">Новое</span>
+                {% endif %}
+                
+                {% if note.content_type.model == 'invitation' and note.target_object %}
+                    <span class="fw-bold">{{ note.text }}</span>
+                    <br><small class="text-muted">{{ note.created_at|date:"d.m.Y H:i" }}</small>
+                    
+                    {% if note.target_object.status == 'pending' or note.target_object.status == 'PENDING' %}
+                        <div class="mt-2 action-buttons">
+                            <button hx-post="{% url 'projects:invitation_accept' note.target_object.pk %}?variant=inline"
+                                    hx-target="closest .list-group-item"
+                                    hx-swap="outerHTML"
+                                    class="btn btn-success btn-sm me-2">Принять</button>
+                            <button hx-post="{% url 'projects:invitation_decline' note.target_object.pk %}?variant=inline"
+                                    hx-target="closest .list-group-item"
+                                    hx-swap="outerHTML"
+                                    class="btn btn-outline-danger btn-sm">Отклонить</button>
+                        </div>
+                    {% else %}
+                        <div class="mt-1">
+                            {% if note.target_object.status == 'accepted' or note.target_object.status == 'ACCEPTED' %}
+                                <span class="badge bg-success">Принято</span>
+                            {% elif note.target_object.status == 'declined' or note.target_object.status == 'DECLINED' %}
+                                <span class="badge bg-secondary">Отклонено</span>
+                            {% else %}
+                                <span class="badge bg-light text-muted">Отозвано</span>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+
+                {% else %}
+                    {% if note.target_url != '#' %}
+                        <a href="{{ note.target_url }}" class="text-decoration-none fw-medium">{{ note.text }}</a>
+                    {% else %}
+                        {{ note.text }}
+                    {% endif %}
+                    <br><small class="text-muted">{{ note.created_at|date:"d.m.Y H:i" }}</small>
+                {% endif %}
+            </div>
+        </li>
+        {% empty %}
+            <div class="p-4 text-center text-muted bg-light rounded">
+                Нет уведомлений.
+            </div>
+        {% endfor %}
+    </ul>
+</div>

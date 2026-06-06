@@ -21,10 +21,30 @@ def home(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def notifications_list(request: HttpRequest) -> HttpResponse:
-    notifications = request.user.notifications.order_by("-created_at")
-    notifications.filter(is_read=False).update(is_read=True)
-    return render(request, "core/notifications.html", {"notifications": notifications})
+def notifications(request: HttpRequest) -> HttpResponse:
+    notifications_queryset = (
+            request.user.notifications
+            .prefetch_related("target_object", "target_object__sender", "target_object__project")
+            .order_by("-created_at")
+        )
+        
+    page_number = request.GET.get("page", 1)
+    paginator = Paginator(notifications_queryset, 10)
+    page_obj = paginator.get_page(page_number)
+    
+    unread_ids = [n.id for n in page_obj if not n.is_read]
+    if unread_ids:
+        request.user.notifications.filter(id__in=unread_ids).update(is_read=True)
+        
+    context = {
+        "page_obj": page_obj, 
+        "notifications": page_obj.object_list
+    }
+    
+    if request.headers.get("HX-Request"):
+        return render(request, "core/partials/_notifications_content.html", context)
+        
+    return render(request, "core/notifications.html", context)
 
 
 @login_required
