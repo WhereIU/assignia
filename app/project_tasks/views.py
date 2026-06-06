@@ -1,11 +1,11 @@
-from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
-from django.http import HttpRequest, HttpResponse, HttpResponseForbidden
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
 
 from common.selectors import get_page_filters
+from common.services import message_success
+from common.selectors import get_paginated_page 
 from project_members.permissions import (
     can_access_project,
     is_privileged,
@@ -47,14 +47,15 @@ from .services import (
 def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     """Render tasks tab."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
     tasks = get_tasks_by_project(project)
     filters = get_page_filters(request)
-
     tasks = apply_tasks_filters(tasks, filters)
 
     page = request.GET.get("page", 1)
-    paginator = Paginator(tasks, 10)
-    page_obj = paginator.get_page(page)
+    page_obj = get_paginated_page(tasks, page, per_page=10)
 
     is_member = is_project_member(request.user, project)
 
@@ -80,6 +81,8 @@ def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
 def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     """Create new task in project."""
     project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
 
     if not is_project_member(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
@@ -93,7 +96,7 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
                 creator=request.user,
                 assignee_ids=request.POST.getlist("assignee_ids"),
             )
-            messages.success(request, f"Задача «{task.name}» создана!")
+            message_success(request, f"Задача «{task.name}» создана!")
             return redirect(
                 "projects:project_detail",
                 username=username,
@@ -112,8 +115,10 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
 def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Render task detail page."""
     task = get_task_by_pk(pk=task_pk)
-    project = task.project
+    if not task:
+        raise Http404("Задача не найдена")
 
+    project = task.project
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("У вас нет доступа к этой задаче")
 
@@ -136,6 +141,8 @@ def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Take task for execution."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
 
     if not is_project_member(request.user, task.project):
         return HttpResponseForbidden("Вы не участник проекта")
@@ -155,6 +162,9 @@ def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Render task edit."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -177,6 +187,8 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Save changes to task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
 
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
@@ -186,7 +198,7 @@ def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
         data=request.POST,
         assignee_ids=request.POST.getlist("assignee_ids"),
     )
-    messages.success(request, "Задача сохранена")
+    message_success(request, "Задача сохранена")
 
     return render(
         request,
@@ -204,12 +216,15 @@ def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Soft-delete task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     error = can_delete_task_or_error(request.user, task)
     if error:
         return HttpResponse(error, status=400)
 
     delete_task(task=task)
-    messages.success(request, "Задача удалена")
+    message_success(request, "Задача удалена")
 
     return render(
         request,
@@ -227,12 +242,14 @@ def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_restore(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Restore soft-deleted task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
 
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
     restore_task(task=task)
-    messages.success(request, "Задача восстановлена")
+    message_success(request, "Задача восстановлена")
 
     return render(
         request,
@@ -250,6 +267,9 @@ def task_restore(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_update_status(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Update status of task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -266,6 +286,9 @@ def task_update_status(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_update_priority(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Update priority of task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -285,6 +308,9 @@ def task_update_priority(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_update_risk(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Update risk chance and impact of task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -308,6 +334,9 @@ def task_update_risk(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Add comment to task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     text = request.POST.get("text", "").strip()
     if text:
         add_task_comment(task=task, author=request.user, text=text)
@@ -324,6 +353,9 @@ def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Add assignee to task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -343,6 +375,9 @@ def task_assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_assignee_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Remove assignee from task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -358,6 +393,9 @@ def task_assignee_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_member_search(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Search project members for assignment."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -377,6 +415,9 @@ def task_member_search(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_direction_search(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Search directions for the task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -397,6 +438,9 @@ def task_direction_search(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_direction_add(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Add direction to task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -418,6 +462,9 @@ def task_direction_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_direction_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Remove direction from task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -435,6 +482,9 @@ def task_direction_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_team_search(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Search teams for task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -455,6 +505,9 @@ def task_team_search(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_team_add(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Add team to task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
@@ -474,6 +527,9 @@ def task_team_add(request: HttpRequest, task_pk: int) -> HttpResponse:
 def task_team_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
     """Remove team from task."""
     task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 

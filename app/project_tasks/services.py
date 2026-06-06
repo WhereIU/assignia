@@ -11,6 +11,7 @@ from users.models import User
 from .constants import TaskStatus, RiskLevel
 from .models import Task, TaskAssignment, TaskComment
 
+
 User = get_user_model()
 
 
@@ -108,9 +109,8 @@ def add_task_comment(*, task: Task, author: User, text: str) -> TaskComment:
 def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
     """Assign user to task.
     Returns error message on failure, or None on success."""
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
+    user = User.objects.filter(pk=user_id).first()
+    if not user:
         return "Пользователь не найден"
 
     if not is_project_member(user, task.project):
@@ -122,9 +122,8 @@ def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
 
 def remove_user_from_task(*, task: Task, user_id: int) -> None:
     """Remove user from task's assignees."""
-    try:
-        user = User.objects.get(pk=user_id)
-    except User.DoesNotExist:
+    user = User.objects.filter(pk=user_id).first()
+    if not user:
         return
     TaskAssignment.objects.filter(task=task, user=user).delete()
 
@@ -133,9 +132,8 @@ def add_direction_to_task(*, task: Task, direction_id: int) -> Optional[str]:
     """Add direction to task.
     Returns error message on failure, or None on success."""
     directions = get_directions_by_project(task.project, is_deleted=False)
-    try:
-        direction = directions.get(pk=direction_id)
-    except directions.model.DoesNotExist:
+    direction = directions.filter(pk=direction_id).first()
+    if not direction:
         return "Направление не найдено"
     task.directions.add(direction)
     return None
@@ -144,9 +142,8 @@ def add_direction_to_task(*, task: Task, direction_id: int) -> Optional[str]:
 def remove_direction_from_task(*, task: Task, direction_id: int) -> None:
     """Remove direction from task."""
     directions = get_directions_by_project(task.project, is_deleted=False)
-    try:
-        direction = directions.get(pk=direction_id)
-    except directions.model.DoesNotExist:
+    direction = directions.filter(pk=direction_id).first()
+    if not direction:
         return
     task.directions.remove(direction)
 
@@ -155,9 +152,8 @@ def add_team_to_task(*, task: Task, team_id: int) -> Optional[str]:
     """Add team to task.
     Returns error message on failure, or None on success."""
     teams = get_teams_by_project(task.project, is_deleted=False)
-    try:
-        team = teams.get(pk=team_id)
-    except teams.model.DoesNotExist:
+    team = teams.filter(pk=team_id).first()
+    if not team:
         return "Команда не найдена"
     task.teams.add(team)
     return None
@@ -166,9 +162,8 @@ def add_team_to_task(*, task: Task, team_id: int) -> Optional[str]:
 def remove_team_from_task(*, task: Task, team_id: int) -> None:
     """Remove team from task."""
     teams = get_teams_by_project(task.project, is_deleted=False)
-    try:
-        team = teams.get(pk=team_id)
-    except teams.model.DoesNotExist:
+    team = teams.filter(pk=team_id).first()
+    if not team:
         return
     task.teams.remove(team)
 
@@ -221,9 +216,8 @@ def _sync_assignees(task: Task, assignee_ids: List[int]) -> None:
     """Replace current assignees with the provided list of user IDs."""
     task.assignments.exclude(user__pk__in=assignee_ids).delete()
     for user_id in assignee_ids:
-        try:
-            user = User.objects.get(pk=user_id)
-        except User.DoesNotExist:
+        user = User.objects.filter(pk=user_id).first()
+        if not user:
             continue
         if is_project_member(user, task.project):
             TaskAssignment.objects.get_or_create(task=task, user=user)

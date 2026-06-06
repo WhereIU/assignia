@@ -1,7 +1,5 @@
 from __future__ import annotations
-from typing import TYPE_CHECKING
-
-from django.shortcuts import get_object_or_404
+from typing import Optional, TYPE_CHECKING
 
 from project_tasks.constants import TaskStatus
 
@@ -10,14 +8,15 @@ from .models import Task, TaskComment
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from users.models import User
+    from projects.models import Project
 
 
-def get_task_by_pk(pk: int) -> Task:
-    """Return task by primary key, or 404."""
-    return get_object_or_404(Task.objects.select_related("project"), pk=pk)
+def get_task_by_pk(pk: int) -> Optional[Task]:
+    """Return task by primary key."""
+    return Task.objects.select_related("project").filter(pk=pk).first()
 
 
-def get_tasks_by_project(project) -> QuerySet[Task]:
+def get_tasks_by_project(project: Project) -> QuerySet[Task]:
     """Return non-deleted tasks for project."""
     return Task.objects.filter(project=project, is_deleted=False)
 
