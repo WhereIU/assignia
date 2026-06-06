@@ -1,9 +1,15 @@
-from django.db.models import QuerySet, Count, Avg, Sum, F, Q
+from __future__ import annotations
+from typing import TYPE_CHECKING
 
+from django.db.models import Avg, Count, F, Q, Sum
+
+from project_tasks.constants import TaskStatus
 from project_teams.models import Team
 from users.models import User
-from projects.models import Project
-from project_tasks.constants import TaskStatus
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+    from projects.models import Project
 
 
 def get_teams_analytics(project: Project) -> QuerySet[Team]:

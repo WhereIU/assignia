@@ -1,7 +1,10 @@
-from typing import Dict, Any
-from projects.models import Project
+from __future__ import annotations
+from typing import Any, Dict, TYPE_CHECKING
 
-from .selectors import get_teams_analytics, get_participants_analytics
+from .selectors import get_participants_analytics, get_teams_analytics
+
+if TYPE_CHECKING:
+    from projects.models import Project
 
 
 def get_analytics_data(project: Project) -> Dict[str, Any]:
