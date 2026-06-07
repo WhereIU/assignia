@@ -199,17 +199,10 @@ def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpRespo
     if not project:
         raise Http404("Проект не найден")
         
-    return render(
-        request,
-        "projects/partials/_invitation_form.html",
-        {
-            "project": project,
-            "submit_url": reverse(
-                "projects:invitation_send",
-                kwargs={"username": username, "slug": slug},
-            ),
-        },
-    )
+    if not is_admin_or_owner(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    return _render_invitation_form(request, project, username, slug)
 
 
 @login_required
@@ -223,27 +216,30 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
         return HttpResponseForbidden("Недостаточно прав")
 
     recipient_username = request.POST.get("username", "").strip()
+    role = request.POST.get("role", "participant")
+
     if not recipient_username:
         message_error(request, "Укажите имя пользователя")
-        return _render_invitation_form(request, project, username, slug)
+        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
 
-    try:
-        recipient = get_user_by_username(recipient_username)
-    except Http404:
+    recipient = get_user_by_username(recipient_username)
+    if recipient is None:
         message_error(request, "Пользователь не найден")
-        return _render_invitation_form(request, project, username, slug)
+        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
 
     try:
         send_project_invitation(
             sender=request.user,
             recipient=recipient,
             project=project,
+            role=role,
         )
     except ValidationError as e:
-        message_error(request, str(e))
-        return _render_invitation_form(request, project, username, slug)
+        message_error(request, e.message)
+        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
 
     message_success(request, f"Приглашение отправлено {recipient.username}")
+    
     response = _render_members_tab(request, project)
     response["HX-Retarget"] = "#tab-content"
     response["HX-Reswap"] = "innerHTML"
@@ -251,13 +247,21 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
 
 
 def _render_invitation_form(
-    request: HttpRequest, project: Project, username: str, slug: str
+    request: HttpRequest, 
+    project: Project, 
+    username: str, 
+    slug: str, 
+    typed_username: str = "", 
+    selected_role: str = "participant"
 ) -> HttpResponse:
     return render(
         request,
         "projects/partials/_invitation_form.html",
         {
             "project": project,
+            "membership_roles": ProjectRole.choices,
+            "selected_role": selected_role,
+            "typed_username": typed_username,
             "submit_url": reverse(
                 "projects:invitation_send",
                 kwargs={"username": username, "slug": slug},

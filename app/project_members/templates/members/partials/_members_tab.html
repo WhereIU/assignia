@@ -2,85 +2,52 @@
     <div>
         <h4 class="mb-1">Участники проекта</h4>
         <small class="text-body-secondary">
-            Управление участниками и приглашениями
+            Управление командой, ролями и активными приглашениями
         </small>
     </div>
 
     {% if actor_role == 'owner' or actor_role == 'admin' %}
         <button
-            class="btn btn-success"
-            hx-get="{% url 'projects:invitation_form' username=project.owner.username slug=project.slug %}"
-            hx-target="#invite-form-container"
-            hx-swap="innerHTML">
-            <i class="bi bi-person-plus me-1"></i>
-            Пригласить
+            class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm"
+            data-bs-toggle="modal"
+            data-bs-target="#modal-container" hx-get="{% url 'projects:invitation_form' username=project.owner.username slug=project.slug %}"
+            hx-target="#modal-content"       hx-swap="innerHTML">
+            <i class="bi bi-person-plus-fill"></i>
+            Пригласить участников
         </button>
     {% endif %}
 </div>
 
-<div id="invite-form-container" class="mb-3"></div>
-
 <div class="card shadow-sm border-0">
-    <div class="card-body">
-
-        <form
-            class="mb-4"
-            hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
-            hx-target="#members-container"
-            hx-swap="innerHTML">
-
-            <div class="input-group">
-                <span class="input-group-text">
-                    <i class="bi bi-search"></i>
-                </span>
-
-                <input
-                    type="text"
-                    name="search"
-                    class="form-control"
-                    value="{{ search_query }}"
-                    placeholder="Поиск по имени пользователя">
-
-                <button class="btn btn-outline-primary">
-                    Найти
-                </button>
-            </div>
-        </form>
-
-
-            <div class="mb-4">
-                <div class="d-flex align-items-center mb-2">
-                    <h6 class="mb-0">Ожидают подтверждения</h6>
-                    <span class="badge bg-warning text-dark ms-2">
-                        {{ invitations|length }}
-                    </span>
+    <div class="card-body p-0">
+        <div class="p-3 border-bottom bg-light-subtle rounded-top">
+            <form
+                hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
+                hx-target="#tab-content"
+                hx-swap="innerHTML"
+                class="row g-2">
+                
+                <div class="col-md-6 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-secondary border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input
+                            type="text"
+                            name="search"
+                            class="form-control border-start-0 ps-0"
+                            value="{{ search_query|default:'' }}"
+                            placeholder="Поиск по имени пользователя...">
+                        <button class="btn btn-primary px-3" type="submit">
+                            Найти
+                        </button>
+                    </div>
                 </div>
-
-                <div id="pending-invitations-wrapper">
-                    {% include 'projects/partials/_invitations_pending.html' %}
-                </div>
-            </div>
-
-            <hr>
-
-
-        <div class="d-flex justify-content-between align-items-center mb-3">
-            <h6 class="mb-0">
-                Участники
-            </h6>
-
-            <span class="badge bg-secondary">
-                {{ page_obj.paginator.count }}
-            </span>
+            </form>
         </div>
 
-        <div id="members-container">
-            {% include 'members/partials/_members_list.html' with members=members %}
+        <div id="members-table-wrapper">
+            {% include 'members/partials/_members_list.html' %}
         </div>
-
-        <div class="mt-3">
-            {% include 'members/partials/_members_paginator.html' with page_obj=page_obj %}
-        </div>
-
     </div>
 </div>

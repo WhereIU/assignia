@@ -3,6 +3,7 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 
+from project_members.constants import ProjectRole
 from project_members.permissions import is_project_member
 from project_members.services import create_membership
 
@@ -34,7 +35,11 @@ def update_project(
 
 
 def send_project_invitation(
-    *, sender: User, recipient: User, project: Project
+    *, 
+    sender: User, 
+    recipient: User, 
+    project: Project, 
+    role: str = ProjectRole.PARTICIPANT 
 ) -> Invitation:
     """Send invitation after validation; raises ValidationError on failure."""
     if recipient == sender:
@@ -45,8 +50,9 @@ def send_project_invitation(
         recipient=recipient, project=project, status=InvitationStatus.PENDING
     ).exists():
         raise ValidationError("Приглашение уже существует")
+
     return Invitation.objects.create(
-        sender=sender, recipient=recipient, project=project
+        sender=sender, recipient=recipient, project=project, role=role
     )
 
 
@@ -57,9 +63,13 @@ def cancel_invitation(*, invitation: Invitation) -> None:
 
 
 def accept_invitation(*, invitation: Invitation, user: User) -> None:
-    """Accept invitation: create membership if not already member, mark accepted."""
+    """Accept invitation, create membership if not member yet, mark accepted."""
     if not is_project_member(user, invitation.project):
-        create_membership(user=user, project=invitation.project)
+        create_membership(
+            user=user, 
+            project=invitation.project, 
+            role=invitation.role
+        )
     invitation.status = InvitationStatus.ACCEPTED
     invitation.save(update_fields=["status"])
 

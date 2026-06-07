@@ -2,6 +2,7 @@ from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
 
+from project_members.constants import ProjectRole
 from common.models import TimeStampedModel
 
 from .constants import InvitationStatus
@@ -35,6 +36,11 @@ class Invitation(models.Model):
     recipient = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='received_invitations')
     status = models.CharField(max_length=16, choices=InvitationStatus.choices, default=InvitationStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
-
+    role = models.CharField(
+        max_length=32, 
+        choices=ProjectRole.choices, 
+        default=ProjectRole.PARTICIPANT
+    )
+    
     def __str__(self):
         return f"{self.sender.username} -> {self.recipient.username} ({self.project.name})"

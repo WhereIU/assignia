@@ -10,7 +10,7 @@ if TYPE_CHECKING:
 
 def get_membership(user: User, project: Project) -> Optional[ProjectMembership]:
     """Return membership by user and project."""
-    if not user.is_authenticated:
+    if user is None or not user.is_authenticated:
         return None
     return ProjectMembership.objects.filter(user=user, project=project).select_related("user").first()
 

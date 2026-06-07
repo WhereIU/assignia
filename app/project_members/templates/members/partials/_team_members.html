@@ -1,36 +1,53 @@
+<div id="team-members-container" class="card border-0 shadow-sm">
+    <div class="card-header bg-white py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h6 class="mb-0 fw-semibold">Состав команды: {{ team.name }}</h6>
+        <a href="#" class="btn btn-link btn-sm text-decoration-none p-0"
+           hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+           hx-target="#tab-content" hx-swap="innerHTML">
+            <i class="bi bi-arrow-left me-1"></i> Назад к командам
+        </a>
+    </div>
+    
+    <div class="card-body p-3">
+        <form hx-post="{% url 'project_teams:team_member_add' team_pk=team.pk %}"
+              hx-target="#team-members-container" hx-swap="outerHTML" class="position-relative mb-3">
+            {% csrf_token %}
+            <div class="input-group input-group-sm shadow-sm rounded">
+                <span class="input-group-text bg-white text-secondary border-end-0">
+                    <i class="bi bi-person-plus"></i>
+                </span>
+                <input type="text" class="form-control border-start-0 ps-0" name="member_search" placeholder="Введите имя для быстрого поиска..."
+                       hx-get="{% url 'project_teams:team_member_search' team_pk=team.pk %}"
+                       hx-trigger="keyup changed delay:250ms"
+                       hx-target="#member-search-results"
+                       hx-swap="innerHTML">
+            </div>
+            <div id="member-search-results" class="list-group position-absolute w-100 shadow-lg z-3 mt-1" style="max-height: 200px; overflow-y: auto;"></div>
+        </form>
 
-
-<div id="team-members-container">
-    <a href="#" class="btn btn-outline-secondary btn-sm mt-2"
-        hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
-        hx-target="#tab-content" hx-swap="innerHTML">
-        Назад к списку команд
-    </a>
-    <form hx-post="{% url 'project_teams:team_member_add' team_pk=team.pk %}"
-          hx-target="#team-members-container" hx-swap="outerHTML" class="mb-2">
-        {% csrf_token %}
-        <div class="input-group input-group-sm">
-            <input type="text" class="form-control" name="member_search" placeholder="Поиск участника..."
-                   hx-get="{% url 'project_teams:team_member_search' team_pk=team.pk %}"
-                   hx-trigger="keyup changed delay:300ms"
-                   hx-target="#member-search-results"
-                   hx-swap="innerHTML"
-                   value="">
-        </div>
-        <div id="member-search-results" class="list-group mt-1"></div>
-    </form>
-
-    <ul class="list-group">
-        {% for member in members %}
-            <li class="list-group-item d-flex justify-content-between align-items-center py-1">
-                <a href="{% url 'users:public_profile' username=member.username %}">{{ member.username }}</a>
-                <button hx-post="{% url 'project_teams:team_member_remove' team_pk=team.pk %}"
-                        hx-vals='{"user_id": "{{ member.pk }}"}'
-                        hx-target="#team-members-container" hx-swap="outerHTML"
-                        class="btn btn-outline-danger btn-sm">Удалить</button>
-            </li>
-        {% empty %}
-            <li class="list-group-item text-muted">Нет участников</li>
-        {% endfor %}
-    </ul>
+        <ul class="list-group list-group-flush border rounded overflow-hidden">
+            {% for member in members %}
+                <li class="list-group-item d-flex justify-content-between align-items-center py-2 px-3 hover-bg-light">
+                    <div class="d-flex align-items-center gap-2">
+                        <i class="bi bi-person-circle text-secondary"></i>
+                        <a href="{% url 'users:public_profile' username=member.username %}" class="text-decoration-none text-dark fw-medium small">
+                            {{ member.username }}
+                        </a>
+                    </div>
+                    <button hx-post="{% url 'project_teams:team_member_remove' team_pk=team.pk %}"
+                            hx-vals='{"user_id": "{{ member.pk }}"}'
+                            hx-target="#team-members-container" hx-swap="outerHTML"
+                            hx-confirm="Убрать участника из этой команды?"
+                            class="btn btn-outline-danger btn-xs px-2 py-05 fs-8 text-uppercase fw-semibold tracking-wider">
+                        Убрать
+                    </button>
+                </li>
+            {% empty %}
+                <li class="list-group-item text-center text-muted py-4 small">
+                    <i class="bi bi-info-circle d-block mb-1 text-secondary fs-5"></i>
+                    В команде пока нет ни одного участника
+                </li>
+            {% endfor %}
+        </ul>
+    </div>
 </div>
