@@ -6,6 +6,5 @@
             Участники не найдены
         </div>
     {% endfor %}
+    {% include "partials/_paginator.html" with hx_target="#members-table-wrapper" hx_include="#members-search-input" %}
 </div>
-
-{% include "partials/_paginator.html" %}
