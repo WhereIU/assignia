@@ -228,21 +228,20 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
         return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
 
     try:
-        send_project_invitation(
-            sender=request.user,
-            recipient=recipient,
-            project=project,
-            role=role,
-        )
+        send_project_invitation(sender=request.user, recipient=recipient, project=project, role=role)
     except ValidationError as e:
         message_error(request, e.message)
         return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
 
     message_success(request, f"Приглашение отправлено {recipient.username}")
     
-    response = _render_members_tab(request, project)
-    response["HX-Retarget"] = "#tab-content"
-    response["HX-Reswap"] = "innerHTML"
+    response = _render_invitation_form(
+        request, project, username, slug, 
+        typed_username="", selected_role=role
+    )
+    
+    response["HX-Trigger"] = "membersChanged"
+    
     return response
 
 
@@ -254,9 +253,15 @@ def _render_invitation_form(
     typed_username: str = "", 
     selected_role: str = "participant"
 ) -> HttpResponse:
+    template = (
+        "projects/partials/_invitation_form_inner.html"
+        if request.headers.get("HX-Target") == "modal-content"
+        else "projects/partials/_invitation_form.html"
+    )
+    
     return render(
         request,
-        "projects/partials/_invitation_form.html",
+        template,
         {
             "project": project,
             "membership_roles": ProjectRole.choices,
@@ -288,20 +293,11 @@ def invitation_cancel(
         raise Http404("Приглашение не найдено")
 
     cancel_invitation(invitation=invitation)
-    message_success(
-        request, f"Приглашение {invitation.recipient.username} отменено"
-    )
-
-    pending = get_pending_invitations(project=project)
-    return render(
-        request,
-        "projects/partials/_invitations_pending.html",
-        {
-            "pending_invitations": pending,
-            "project": project,
-            "actor_role": get_member_role(request.user, project),
-        },
-    )
+    message_success(request, f"Приглашение {invitation.recipient.username} отменено")
+    
+    response = HttpResponse(status=200)
+    response["HX-Trigger"] = "membersChanged"
+    return response
 
 
 @login_required

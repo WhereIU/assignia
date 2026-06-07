@@ -1,31 +1,11 @@
-<div class="table-responsive">
-    <table class="table table-hover align-middle mb-0">
-        <thead class="table-light text-secondary text-uppercase fs-7 small">
-            <tr>
-                <th class="ps-4 py-3" style="width: 45%;">Пользователь</th>
-                <th class="py-3" style="width: 35%;">Роль / Статус</th>
-                {% if actor_role == 'owner' or actor_role == 'admin' %}
-                    <th class="pe-4 py-3 text-end" style="width: 20%;">Действия</th>
-                {% endif %}
-            </tr>
-        </thead>
-        <tbody>
-            {% for m in members %}
-                {% include 'members/partials/_member_item.html' with m=m actor_role=actor_role %}
-            {% empty %}
-                <tr>
-                    <td colspan="3" class="text-center text-muted py-5">
-                        <i class="bi bi-people display-6 d-block mb-2 text-body-tertiary"></i>
-                        Участники не найдены
-                    </td>
-                </tr>
-            {% endfor %}
-        </tbody>
-    </table>
+<div class="list-group shadow-sm border-0">
+    {% for member in page_obj %}
+        {% include "members/partials/_member_item.html" %}
+    {% empty %}
+        <div class="list-group-item text-center text-muted py-4">
+            Участники не найдены
+        </div>
+    {% endfor %}
 </div>
 
-{% if page_obj.has_other_pages %}
-    <div class="p-3 border-top bg-light-subtle rounded-bottom">
-        {% include 'common/partials/_paginator.html' with page_obj=page_obj hx_target="#tab-content" %}
-    </div>
-{% endif %}
+{% include "partials/_paginator.html" %}

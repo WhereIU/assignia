@@ -2,16 +2,17 @@
     <div>
         <h4 class="mb-1">Участники проекта</h4>
         <small class="text-body-secondary">
-            Управление командой, ролями и активными приглашениями
+            Управление участниками проекта
         </small>
     </div>
 
     {% if actor_role == 'owner' or actor_role == 'admin' %}
         <button
+            type="button"
             class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm"
-            data-bs-toggle="modal"
-            data-bs-target="#modal-container" hx-get="{% url 'projects:invitation_form' username=project.owner.username slug=project.slug %}"
-            hx-target="#modal-content"       hx-swap="innerHTML">
+            hx-get="{% url 'projects:invitation_form' username=project.owner.username slug=project.slug %}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML">
             <i class="bi bi-person-plus-fill"></i>
             Пригласить участников
         </button>
@@ -34,6 +35,7 @@
                         </span>
                         <input
                             type="text"
+                            id="members-search-input"
                             name="search"
                             class="form-control border-start-0 ps-0"
                             value="{{ search_query|default:'' }}"
@@ -46,7 +48,11 @@
             </form>
         </div>
 
-        <div id="members-table-wrapper">
+        <div id="members-table-wrapper"
+             hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
+             hx-trigger="membersChanged from:body"
+             hx-include="#members-search-input"
+             hx-swap="innerHTML">
             {% include 'members/partials/_members_list.html' %}
         </div>
     </div>

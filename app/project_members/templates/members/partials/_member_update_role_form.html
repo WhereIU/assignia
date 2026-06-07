@@ -1,0 +1,38 @@
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 pb-0">
+            <h5 class="modal-title fw-bold">Изменить роль</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form hx-post="{% url 'project_members:member_update_role' username=project.owner.username slug=project.slug user_pk=target.user.pk %}"
+              hx-target="#tab-content"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            
+            <div class="modal-body py-3">
+                <p class="small text-muted mb-3">
+                    Вы изменяете роль для пользователя <strong>{{ target.user.username }}</strong>.
+                </p>
+
+                <div class="mb-2">
+                    <label class="form-label small fw-semibold text-secondary">Выберите роль</label>
+                    <select name="role" class="form-select">
+                        {% for key, value in roles %}
+                            {% if key != 'owner' %}
+                                <option value="{{ key }}" {% if target.role == key %}selected{% endif %}>
+                                    {{ value }}
+                                </option>
+                            {% endif %}
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary px-4" data-bs-dismiss="modal">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>

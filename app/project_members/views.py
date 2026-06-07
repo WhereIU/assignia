@@ -8,7 +8,7 @@ from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
 
 from .services import remove_member, update_member_role
-from .permissions import ProjectRole, can_manage_member, is_admin_or_owner
+from .permissions import ProjectRole, can_manage_member, is_admin_or_owner, is_privileged
 from .selectors import (
     get_membership,
     get_membership_by_user_pk,
@@ -33,20 +33,35 @@ def _render_members_tab(
     page: int = 1,
 ) -> HttpResponse:
     """Render members tab."""
-    members = (
+    memberships = list(
         search_project_memberships(project=project, query=search_query)
         if search_query
         else get_project_memberships(project=project)
     )
     
+    invitations_qs = get_pending_invitations(project=project)
+    if search_query:
+        invitations_qs = invitations_qs.filter(recipient__username__icontains=search_query)
+    invitations = list(invitations_qs)
+    
+    members = invitations + memberships
+    
     page_obj = get_paginated_page(members, page, 10)
+    
+    for member in page_obj:
+        if hasattr(member, "sender"):
+            member.can_manage = is_privileged(request.user, project)
+        else:
+            if member.user == request.user:
+                member.can_manage = False
+            else:
+                member.can_manage = can_manage_member(request.user, member, project)
 
     actor_role = get_member_role(request.user, project)
-    pending = get_pending_invitations(project=project)
 
     template = (
         "members/partials/_members_list.html"
-        if request.headers.get("HX-Target") == "members-container"
+        if request.headers.get("HX-Target") == "members-table-wrapper"
         else "members/partials/_members_tab.html"
     )
 
@@ -57,7 +72,6 @@ def _render_members_tab(
             "project": project,
             "members": page_obj,
             "actor_role": actor_role,
-            "pending_invitations": pending,
             "page_obj": page_obj,
             "search_query": search_query,
         },
@@ -116,6 +130,26 @@ def member_update_role(
 
 
 @login_required
+def member_update_role_form(request: HttpRequest, username: str, slug: str, user_pk: int) -> HttpResponse:
+    project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
+    target = get_membership_by_user_pk(project=project, user_pk=user_pk)
+    if not target:
+        raise Http404("Участник не найден")
+
+    if not can_manage_member(request.user, target, project):
+        return HttpResponseForbidden("У вас нет прав на редактирование этого участника")
+
+    return render(request, "members/partials/_member_update_role_form.html", {
+        "project": project,
+        "target": target,
+        "roles": ProjectRole.choices,
+    })
+
+
+@login_required
 @require_http_methods(["POST"])
 def member_remove(
     request: HttpRequest, username: str, slug: str, user_pk: int
@@ -144,3 +178,22 @@ def member_remove(
 
     message_success(request, f"Пользователь {removed_username} успешно удалён из проекта")
     return _render_members_tab(request, project)
+
+
+@login_required
+def member_remove_confirm(request: HttpRequest, username: str, slug: str, user_pk: int) -> HttpResponse:
+    project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+        
+    if not is_admin_or_owner(request.user, project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    target = get_membership_by_user_pk(project=project, user_pk=user_pk)
+    if not target:
+        raise Http404("Участник не найден")
+
+    return render(request, "members/partials/_member_remove_confirm.html", {
+        "project": project,
+        "target": target,
+    })

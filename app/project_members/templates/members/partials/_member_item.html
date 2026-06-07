@@ -1,119 +1,92 @@
-<tr class="{% if m.is_invite %}table-warning-subtle text-muted{% endif %}">
-    <td class="ps-4 py-3">
+{% if member.sender %}
+    <div class="list-group-item d-flex justify-content-between align-items-center py-3 bg-light-subtle">
         <div class="d-flex align-items-center gap-3">
-            {% if m.is_invite %}
-                <div class="avatar-container position-relative">
-                    <div class="avatar-placeholder bg-warning-subtle text-warning border border-warning rounded-circle d-flex align-items-center justify-content-center shadow-sm" style="width: 38px; height: 38px;">
-                        <i class="bi bi-envelope-fill fs-6"></i>
-                    </div>
-                </div>
-                <div>
-                    <span class="fw-semibold text-dark d-block lh-sm">{{ m.email|default:m.receiver.username }}</span>
-                    <span class="text-warning-dark small fs-8 fw-medium">Ожидает подтверждения</span>
-                </div>
+            
+            {% if member.recipient.avatar.url %}
+                <img src="{{ member.recipient.avatar.url }}" alt="{{ member.recipient.username }}" class="rounded-circle shadow-sm" width="38" height="38" style="object-fit: cover;">
             {% else %}
-                <div class="avatar-container">
-                    {% if m.user.avatar %}
-                        <img src="{{ m.user.avatar.url }}" 
-                             class="rounded-circle object-fit-cover border shadow-sm" 
-                             style="width: 38px; height: 38px;" 
-                             alt="{{ m.user.username }}">
-                    {% else %}
-                        <div class="avatar-placeholder bg-primary-subtle text-primary rounded-circle d-flex align-items-center justify-content-center fw-semibold border shadow-sm" style="width: 38px; height: 38px; font-size: 14px;">
-                            {{ m.user.username|slice:":2"|upper }}
-                        </div>
-                    {% endif %}
-                </div>
-                <div>
-                    <a href="{% url 'users:public_profile' username=m.user.username %}" class="fw-semibold text-decoration-none text-dark hover-primary d-block lh-sm">
-                        {{ m.user.username }}
-                    </a>
-                    {% if m.user == request.user %}
-                        <span class="text-secondary small fs-8">Это вы</span>
-                    {% endif %}
+                <div class="rounded-circle bg-warning-subtle text-warning border border-warning-subtle d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; min-width: 38px;">
+                    {{ member.recipient.username|slice:":1"|upper }}
                 </div>
             {% endif %}
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{% url 'users:public_profile' username=member.recipient.username %}" class="fw-semibold text-decoration-none text-dark link-primary">
+                    {{ member.recipient.username }}
+                </a>
+                <span class="badge bg-warning-subtle text-warning border border-warning-subtle">Ожидает</span>
+                <span class="badge bg-light text-secondary border">{{ member.get_role_display }}</span>
+            </div>
         </div>
-    </td>
-
-    <td class="py-3">
-        {% if m.is_invite %}
-            <span class="badge bg-light text-muted border px-2 py-1 fs-7 fw-normal">{{ m.get_role_display }}</span>
-        {% else %}
-            {% if actor_role == 'owner' and m.role != 'owner' %}
-                <form
-                    hx-post="{% url 'project_members:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
-                    hx-target="#tab-content"
-                    hx-swap="innerHTML">
-                    {% csrf_token %}
-                    <select name="role" class="form-select form-select-sm border-0 bg-light-subtle shadow-none text-dark fw-medium" style="max-width: 180px;" onchange="this.form.requestSubmit()">
-                        {% for key, value in membership_roles %}
-                            {% if key != 'owner' %}
-                                <option value="{{ key }}" {% if m.role == key %}selected{% endif %}>{{ value }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </form>
-            {% elif actor_role == 'admin' and m.role != 'owner' and m.role != 'admin' %}
-                <form
-                    hx-post="{% url 'project_members:member_update_role' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
-                    hx-target="#tab-content"
-                    hx-swap="innerHTML">
-                    {% csrf_token %}
-                    <select name="role" class="form-select form-select-sm border-0 bg-light-subtle shadow-none text-dark fw-medium" style="max-width: 180px;" onchange="this.form.requestSubmit()">
-                        {% for key, value in membership_roles %}
-                            {% if key != 'owner' and key != 'admin' %}
-                                <option value="{{ key }}" {% if m.role == key %}selected{% endif %}>{{ value }}</option>
-                            {% endif %}
-                        {% endfor %}
-                    </select>
-                </form>
-            {% else %}
-                <span class="badge bg-light text-dark border px-2 py-1 fs-7 fw-normal">{{ m.get_role_display }}</span>
-            {% endif %}
-        {% endif %}
-    </td>
-
-    {% if actor_role == 'owner' or actor_role == 'admin' %}
-        <td class="pe-4 py-3 text-end">
-            <div class="dropdown d-inline-block">
-                <button class="btn btn-link text-secondary p-1 rounded-circle hover-bg-light" type="button" data-bs-toggle="dropdown" aria-expanded="false">
-                    <i class="bi bi-three-dots-vertical fs-5"></i>
+        
+        {% if member.can_manage %}
+            <div class="dropdown">
+                <button class="btn btn-link text-secondary p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
                 </button>
-                <ul class="dropdown-menu dropdown-menu-end shadow-sm border-0 mt-1">
-                    {% if m.is_invite %}
-                        <li>
-                            <button 
-                                class="dropdown-item text-danger d-flex align-items-center gap-2 small py-2"
-                                hx-post="{% url 'project_members:invitation_cancel' username=project.owner.username slug=project.slug invite_pk=m.pk %}"
-                                hx-target="#tab-content"
-                                hx-confirm="Отменить это приглашение?"
-                                hx-swap="innerHTML">
-                                <i class="bi bi-x-circle"></i>
-                                Отменить приглашение
-                            </button>
-                        </li>
-                    {% else %}
-                        {% if m.role != 'owner' and m.user != request.user %}
-                            {% if actor_role == 'owner' or actor_role == 'admin' and m.role != 'admin' %}
-                                <li>
-                                    <button 
-                                        class="dropdown-item text-danger d-flex align-items-center gap-2 small py-2"
-                                        hx-post="{% url 'project_members:member_remove' username=project.owner.username slug=project.slug user_pk=m.user.pk %}"
-                                        hx-target="#tab-content"
-                                        hx-confirm="Вы уверены, что хотите исключить пользователя {{ m.user.username }} из проекта?"
-                                        hx-swap="innerHTML">
-                                        <i class="bi bi-person-dash"></i>
-                                        Исключить из проекта
-                                    </button>
-                                </li>
-                            {% endif %}
-                        {% else %}
-                            <li><span class="dropdown-item text-muted small py-2">Нет доступных действий</span></li>
-                        {% endif %}
-                    {% endif %}
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li>
+                        <a class="dropdown-item py-2 small text-danger d-flex align-items-center gap-2"
+                           role="button"
+                           href="#"
+                           hx-post="{% url 'projects:invitation_cancel' username=project.owner.username slug=project.slug invitation_pk=member.pk %}"
+                           hx-target="#tab-content"
+                           hx-swap="none">
+                            <i class="bi bi-x-circle"></i> Отменить приглашение
+                        </a>
+                    </li>
                 </ul>
             </div>
-        </td>
-    {% endif %}
-</tr>
+        {% endif %}
+    </div>
+
+{% else %}
+    <div class="list-group-item d-flex justify-content-between align-items-center py-3">
+        <div class="d-flex align-items-center gap-3">
+            
+            {% if member.user.avatar.url %}
+                <img src="{{ member.user.avatar.url }}" alt="{{ member.user.username }}" class="rounded-circle shadow-sm" width="38" height="38" style="object-fit: cover;">
+            {% else %}
+                <div class="rounded-circle bg-primary-subtle text-primary d-flex align-items-center justify-content-center fw-bold shadow-sm" style="width: 38px; height: 38px; min-width: 38px;">
+                    {{ member.user.username|slice:":1"|upper }}
+                </div>
+            {% endif %}
+
+            <div class="d-flex align-items-center gap-2 flex-wrap">
+                <a href="{% url 'users:public_profile' username=member.user.username %}" class="fw-semibold text-decoration-none text-dark link-primary">
+                    {{ member.user.username }}
+                </a>
+                <span class="badge bg-primary-subtle text-primary">{{ member.get_role_display }}</span>
+            </div>
+        </div>
+        
+        {% if member.can_manage %}
+            <div class="dropdown">
+                <button class="btn btn-link text-secondary p-0 border-0" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <i class="bi bi-three-dots-vertical"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end shadow border-0">
+                    <li>
+                        <a class="dropdown-item py-2 small d-flex align-items-center gap-2"
+                           role="button"
+                           href="#"
+                           hx-get="{% url 'project_members:member_update_role_form' username=project.owner.username slug=project.slug user_pk=member.user.pk %}"
+                           hx-target="#modal-container">
+                            <i class="bi bi-shield-check text-secondary"></i> Изменить роль
+                        </a>
+                    </li>
+                    <li><hr class="dropdown-divider"></li>
+                    <li>
+                        <a class="dropdown-item py-2 small text-danger d-flex align-items-center gap-2"
+                           role="button"
+                           href="#"
+                           hx-get="{% url 'project_members:member_remove_confirm' username=project.owner.username slug=project.slug user_pk=member.user.pk %}"
+                           hx-target="#modal-container">
+                            <i class="bi bi-person-x"></i> Исключить из проекта
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        {% endif %}
+    </div>
+{% endif %}
