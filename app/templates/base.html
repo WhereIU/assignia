@@ -13,7 +13,7 @@
     <script src="{% static 'js/bootstrap.bundle.min.js' %}"></script>
 </head>
 <body>
-    <div id="toast-container"></div>
+    <div id="toast-container" class="position-fixed top-0 end-0 p-3 animate-toast" style="z-index: 5000;"></div>
     
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
         <div class="container-fluid">
@@ -59,7 +59,7 @@
     </footer>
     <div id="modal-container" class="modal fade" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered" id="modal-content">
-            </div>
+    </div>
     </div>
     {% include 'partials/_messages.html' %}
     <script src="{% static 'js/csrf.js' %}"></script>

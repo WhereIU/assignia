@@ -5,10 +5,7 @@ body { display: flex; flex-direction: column; min-height: 100vh; }
 
 #toast-container {
     position: fixed;
-    top: 70px;
-    left: 50%;
     transform: translateX(-50%);
-    z-index: 1050;
     max-width: 400px;
     width: 90%;
 }
