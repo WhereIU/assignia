@@ -1,36 +1,40 @@
 document.addEventListener('DOMContentLoaded', function() {
-    var htmxMessages = document.getElementById('htmx-messages');
+    const htmxMessages = document.getElementById('htmx-messages');
     if (htmxMessages) {
-        var container = document.getElementById('toast-container');
-        while (htmxMessages.firstChild) {
-            container.appendChild(htmxMessages.firstChild);
-        }
+        moveAndShowToasts(htmxMessages);
         htmxMessages.remove();
-        var alerts = container.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            setTimeout(function() {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }, 2000);
-        });
     }
 });
 
-document.body.addEventListener('htmx:afterSettle', function() {
-    var htmxMessages = document.getElementById('htmx-messages');
-    if (htmxMessages) {
-        var container = document.getElementById('toast-container');
-        while (htmxMessages.firstChild) {
-            container.appendChild(htmxMessages.firstChild);
+function moveAndShowToasts(incomingMessagesDiv) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const newAlerts = incomingMessagesDiv.querySelectorAll('.alert');
+
+    while (incomingMessagesDiv.firstChild) {
+        container.appendChild(incomingMessagesDiv.firstChild);
+    }
+
+    newAlerts.forEach(function(alert) {
+        setTimeout(function() {
+            const bsAlert = new bootstrap.Alert(alert);
+            bsAlert.close();
+        }, 1500);
+    });
+}
+
+document.body.addEventListener('htmx:afterOnLoad', function(evt) {
+    const responseText = evt.detail.xhr.responseText;
+ 
+    if (responseText && responseText.includes('id="htmx-messages"')) {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(responseText, 'text/html');
+        const incomingMessages = doc.getElementById('htmx-messages');
+        
+        if (incomingMessages && incomingMessages.children.length > 0) {
+            moveAndShowToasts(incomingMessages);
         }
-        htmxMessages.remove();
-        var alerts = container.querySelectorAll('.alert');
-        alerts.forEach(function(alert) {
-            setTimeout(function() {
-                var bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            }, 2000);
-        });
     }
 });
 
