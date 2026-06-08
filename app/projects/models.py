@@ -9,8 +9,8 @@ from .constants import InvitationStatus
 
 
 class Project(TimeStampedModel):
-    name = models.CharField(max_length=64)
-    slug = models.SlugField(max_length=64)
+    name = models.CharField(max_length=32)
+    slug = models.SlugField(max_length=32)
     description = models.TextField(blank=True)
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_projects')
     is_public = models.BooleanField(default=False)

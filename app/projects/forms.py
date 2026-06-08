@@ -15,11 +15,11 @@ class ProjectCreateForm(forms.ModelForm):
     slug = forms.CharField(
         required=False,
         label='URL проекта',
-        max_length=64,
+        max_length=32,
         widget=forms.TextInput(attrs={
             'class': 'form-control',
             'placeholder': 'my-new-project',
-            'maxlength': 64,
+            'maxlength': 32,
             'id': 'id_slug',
         }),
         help_text='Оставьте пустым для автоматической генерации из названия.',
@@ -37,14 +37,14 @@ class ProjectCreateForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Мой новый проект',
-                'maxlength': 64,
+                'maxlength': 32,
                 'id': 'id_name',
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
                 'placeholder': 'Опишите, чем будет заниматься проект...',
-                'maxlength': 500,
+                'maxlength': 300,
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
@@ -82,6 +82,7 @@ class ProjectInvitationForm(forms.Form):
             'class': 'form-control',
             'placeholder': 'Введите точный логин пользователя...',
             'autocomplete': 'off',
+            'maxlength': '32',
         })
     )
     role = forms.ChoiceField(
@@ -114,11 +115,14 @@ class ProjectUpdateForm(forms.ModelForm):
         widgets = {
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
+                'maxlength': '32',
+                'autocomplete': 'off',
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 4,
                 'placeholder': 'Добавьте описание проекта...',
+                'maxlength': '300',
             }),
             'is_public': forms.CheckboxInput(attrs={
                 'class': 'form-check-input',
