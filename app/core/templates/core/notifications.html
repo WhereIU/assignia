@@ -2,9 +2,10 @@
 {% block title %}Уведомления{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <h1 class="mb-4">Уведомления</h1>
-    <div id="notifications-container" hx-target="#notifications-container" hx-swap="innerHTML">
+<div class="container mt-4" style="max-width: 800px;">
+    <h1 class="mb-4 fw-bold">Уведомления</h1>
+    
+    <div id="notifications-container">
         {% include 'core/partials/_notifications_content.html' %}
     </div>
 </div>

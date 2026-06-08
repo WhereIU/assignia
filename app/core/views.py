@@ -3,7 +3,7 @@ from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
-from common.selectors import get_page_filters
+from common.selectors import get_page_filters, get_paginated_page
 from project_members.selectors import get_memberships_for_user
 from projects.selectors import (
     get_pending_invitations_for_user,
@@ -11,6 +11,8 @@ from projects.selectors import (
 )
 from project_tasks.selectors import get_available_tasks_for_projects, get_tasks_assigned_to_user
 from project_tasks.services import apply_tasks_filters
+
+from .selectors import get_notifications_for_user
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -22,15 +24,10 @@ def home(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def notifications(request: HttpRequest) -> HttpResponse:
-    notifications_queryset = (
-            request.user.notifications
-            .prefetch_related("target_object", "target_object__sender", "target_object__project")
-            .order_by("-created_at")
-        )
-        
+    notifications_queryset = get_notifications_for_user(request.user)
     page_number = request.GET.get("page", 1)
-    paginator = Paginator(notifications_queryset, 10)
-    page_obj = paginator.get_page(page_number)
+    
+    page_obj = get_paginated_page(notifications_queryset, page=page_number, per_page=5)
     
     unread_ids = [n.id for n in page_obj if not n.is_read]
     if unread_ids:
@@ -62,10 +59,10 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     filters = get_page_filters(request)
     tasks = apply_tasks_filters(tasks, filters)
 
-    page = request.GET.get("page", 1)
     if request.headers.get("HX-Target") == "task-list-inner":
-        paginator = Paginator(tasks, 10)
-        page_obj = paginator.get_page(page)
+        page_number = request.GET.get("page", 1)
+        page_obj = get_paginated_page(tasks, page=page_number, per_page=5)
+        
         return render(
             request,
             "core/partials/_dashboard_tab.html",
