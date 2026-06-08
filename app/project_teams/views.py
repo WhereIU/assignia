@@ -85,11 +85,23 @@ def team_create(request: HttpRequest, direction_pk: int) -> HttpResponse:
     name = request.POST.get("name", "").strip()
     if not name:
         message_error(request, "Название команды обязательно")
-        return _render_teams_tab(request, direction)
+        return render(
+            request,
+            "teams/partials/_team_create_edit_form.html",
+            {
+                "direction": direction,
+                "project": direction.project,
+                "submit_url": reverse("project_teams:team_create", kwargs={"direction_pk": direction_pk}),
+            },
+            status=422
+        )
 
     create_team(direction=direction, name=name)
     message_success(request, f"Команда «{name}» создана")
-    return _render_teams_tab(request, direction)
+
+    response = HttpResponse(status=200)
+    response["HX-Trigger"] = "teamsChanged"
+    return response
 
 
 @login_required
@@ -107,11 +119,24 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
     name = request.POST.get("name", "").strip()
     if not name:
         message_error(request, "Название команды обязательно")
-        return _render_teams_tab(request, direction)
+        return render(
+            request,
+            "teams/partials/_team_create_edit_form.html",
+            {
+                "direction": direction,
+                "project": direction.project,
+                "team": team,
+                "submit_url": reverse("project_teams:team_update", kwargs={"team_pk": team_pk}),
+            },
+            status=422
+        )
 
     update_team(team=team, name=name)
     message_success(request, "Команда обновлена")
-    return _render_teams_tab(request, direction)
+    
+    response = HttpResponse(status=200)
+    response["HX-Trigger"] = "teamsChanged"
+    return response
 
 
 @login_required

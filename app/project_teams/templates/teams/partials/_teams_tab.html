@@ -1,6 +1,17 @@
-<div class="mb-3">
-    <h4 class="mb-1">Команды направления «{{ direction.name }}»</h4>
-    <small class="text-body-secondary">Управление командами направления и их составом</small>
+<div class="mb-3 d-flex align-items-center gap-3">
+    <button class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
+            style="width: 32px; height: 32px;"
+            hx-get="{% url 'project_directions:directions_tab' username=direction.project.owner.username slug=direction.project.slug %}"
+            hx-target="#tab-content"
+            hx-swap="innerHTML"
+            title="Назад к направлениям">
+        <i class="bi bi-arrow-left"></i>
+    </button>
+    
+    <div>
+        <h4 class="mb-1">Команды направления «{{ direction.name }}»</h4>
+        <small class="text-body-secondary">Управление командами направления</small>
+    </div>
 </div>
 
 <div class="card shadow-sm border-0">
@@ -9,7 +20,7 @@
         <div class="p-3 border-bottom bg-light-subtle rounded-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
             
             <form hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
-                  hx-target="#tab-content"
+                  hx-target="#teams-list-wrapper"
                   hx-swap="innerHTML"
                   class="flex-grow-1 mb-0"
                   style="max-width: 400px;">
@@ -33,7 +44,6 @@
             </form>
 
             <div class="d-flex align-items-center justify-content-between justify-content-md-end gap-2">
-                
                 {% if not show_deleted %}
                     <button class="btn btn-sm btn-light border-secondary-subtle text-secondary px-3"
                             hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted=1"

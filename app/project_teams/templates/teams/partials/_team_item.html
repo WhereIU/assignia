@@ -17,6 +17,13 @@
                         {% if not show_deleted %}
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
+                                   hx-get="{% url 'project_teams:team_members' team_pk=team.pk %}"
+                                   hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
+                                    <i class="bi bi-people me-2 text-secondary"></i> Участники команды
+                                </a>
+                            </li>
+                            <li>
+                                <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
                                    hx-get="{% url 'project_teams:team_edit_form' direction_pk=direction.pk team_pk=team.pk %}"
                                    hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
                                     <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
@@ -25,8 +32,8 @@
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small text-danger d-flex align-items-center" 
-                                hx-get="{% url 'project_teams:team_delete_confirm_form' team_pk=team.pk %}"
-                                hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
+                                   hx-get="{% url 'project_teams:team_delete_confirm_form' team_pk=team.pk %}"
+                                   hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
                                     <i class="bi bi-trash me-2"></i> Удалить временно
                                 </a>
                             </li>
@@ -53,15 +60,7 @@
                 </div>
             </div>
 
-            {% if not show_deleted %}
-                <div class="mt-3 pt-2 border-top">
-                    <button class="btn btn-sm btn-outline-primary w-100"
-                            hx-get="{% url 'project_teams:team_members' team_pk=team.pk %}"
-                            hx-target="#tab-content" hx-swap="innerHTML">
-                        <i class="bi bi-people me-1"></i> Управлять участниками
-                    </button>
-                </div>
-            {% else %}
+            {% if show_deleted %}
                 <div class="mt-3 pt-2 border-top text-center">
                     <span class="badge bg-danger-subtle text-danger px-2 py-1 small">Временно удаленная</span>
                 </div>
