@@ -12,6 +12,7 @@ from common.services import message_success, message_error
 from common.selectors import get_paginated_page
 
 from .selectors import (
+    filter_teams_by_search,
     get_team_by_pk,
     get_teams_by_direction,
     get_team_members,
@@ -37,8 +38,7 @@ def _render_teams_tab(
 
     teams_queryset = get_teams_by_direction(direction, is_deleted=show_deleted)
     
-    if search_query:
-        teams_queryset = teams_queryset.filter(name__icontains=search_query)
+    teams_queryset = filter_teams_by_search(teams_queryset, search_query)
 
     page_obj = get_paginated_page(teams_queryset, page, per_page=6)
     

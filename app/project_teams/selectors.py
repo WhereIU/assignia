@@ -32,3 +32,9 @@ def get_teams_by_project(project: Project, is_deleted: bool = False) -> QuerySet
     return Team.objects.filter(
         direction__project=project, is_deleted=is_deleted
     ).distinct()
+
+def filter_teams_by_search(teams_queryset: QuerySet, search_query: str) -> QuerySet:
+    """Filter teams by search."""
+    if search_query:
+        return teams_queryset.filter(name__icontains=search_query)
+    return teams_queryset

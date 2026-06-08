@@ -88,3 +88,10 @@ def get_pending_invitations(project: Project) -> QuerySet[Invitation]:
 def get_invitation_by_pk(pk: int, **filters) -> Optional[Invitation]:
     """Return invitation by primary key with optional filters."""
     return Invitation.objects.filter(pk=pk, **filters).select_related("sender", "recipient", "project", "project__owner").first()
+
+
+def filter_invitations_by_search(invitations_queryset: QuerySet, search_query: str) -> QuerySet:
+    """Filter invitations by search."""
+    if search_query:
+        return invitations_queryset.filter(recipient__username__icontains=search_query)
+    return invitations_queryset

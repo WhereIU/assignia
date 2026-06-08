@@ -17,7 +17,7 @@ from .selectors import (
     search_project_memberships,
 )
 
-from projects.selectors import get_project, get_pending_invitations
+from projects.selectors import get_project, get_pending_invitations, filter_invitations_by_search
 from common.services import message_success, message_error
 from common.selectors import get_paginated_page
 
@@ -40,8 +40,7 @@ def _render_members_tab(
     )
     
     invitations_qs = get_pending_invitations(project=project)
-    if search_query:
-        invitations_qs = invitations_qs.filter(recipient__username__icontains=search_query)
+    invitations_qs = filter_invitations_by_search(invitations_qs, search_query)
     invitations = list(invitations_qs)
     
     members = invitations + memberships
