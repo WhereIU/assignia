@@ -23,16 +23,16 @@
                         {% if not show_deleted %}
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
-                                   hx-get="{% url 'project_directions:direction_edit_form' direction_pk=direction.pk %}"
-                                   hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
-                                    <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
+                                   hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+                                   hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
+                                    <i class="bi bi-people me-2 text-secondary"></i> Команды
                                 </a>
                             </li>
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
-                                   hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
-                                   hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
-                                    <i class="bi bi-people me-2 text-secondary"></i> Команды
+                                   hx-get="{% url 'project_directions:direction_edit_form' direction_pk=direction.pk %}"
+                                   hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
+                                    <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider opacity-50"></li>
