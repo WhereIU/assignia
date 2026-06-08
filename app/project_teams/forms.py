@@ -10,6 +10,7 @@ class TeamForm(forms.ModelForm):
                 'class': 'form-control',
                 'placeholder': 'Введите название команды...',
                 'autocomplete': 'off',
+                'maxlength': '32',
             })
         }
         labels = {

@@ -10,20 +10,16 @@ class DirectionForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'autocomplete': 'off',
+                'maxlength': '32',
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
                 'rows': 3,
-                'placeholder': 'Краткое описание задач направления',
+                'placeholder': 'Краткое описание задач направления (макс. 64 символа)',
+                'maxlength': '64',
             }),
         }
         labels = {
             'name': 'Название направления',
             'description': 'Описание',
         }
-
-    def clean_name(self):
-        name = self.cleaned_data.get('name', '').strip()
-        if not name:
-            raise forms.ValidationError("Название направления обязательно")
-        return name

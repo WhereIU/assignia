@@ -15,4 +15,3 @@ class Team(TimeStampedModel, SoftDeleteModel):
 
     def __str__(self):
         return f"{self.name} ({self.direction.name})"
-

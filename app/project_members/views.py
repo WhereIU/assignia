@@ -16,6 +16,7 @@ from .selectors import (
     get_project_memberships,
     search_project_memberships,
 )
+from .forms import MemberRoleForm
 
 from projects.selectors import get_project, get_pending_invitations, filter_invitations_by_search
 from common.services import message_success, message_error
@@ -107,8 +108,9 @@ def member_update_role(
     if not can_manage_member(request.user, target, project):
         return HttpResponseForbidden("У вас нет прав на редактирование этого участника")
 
-    new_role = request.POST.get("role")
-    if new_role not in ProjectRole.values:
+    form = MemberRoleForm(request.POST, instance=target)
+    
+    if not form.is_valid():
         message_error(request, "Указана несуществующая роль")
         return _render_members_tab(request, project)
 
@@ -118,11 +120,21 @@ def member_update_role(
         update_member_role(
             actor_membership=actor_membership,
             target_membership=target,
-            new_role=new_role,
+            new_role=form.cleaned_data['role'],
         )
     except ValidationError as e:
+        form.add_error('role', e.message)
         message_error(request, str(e))
-        return _render_members_tab(request, project)
+        return render(
+            request, 
+            "members/partials/_member_update_role_form.html", 
+            {
+                "project": project,
+                "target": target,
+                "form": form,
+            },
+            status=422
+        )
 
     message_success(request, f"Роль {target.user.username} изменена на {target.get_role_display()}")
     return _render_members_tab(request, project)
@@ -141,10 +153,12 @@ def member_update_role_form(request: HttpRequest, username: str, slug: str, user
     if not can_manage_member(request.user, target, project):
         return HttpResponseForbidden("У вас нет прав на редактирование этого участника")
 
+    form = MemberRoleForm(instance=target)
+
     return render(request, "members/partials/_member_update_role_form.html", {
         "project": project,
         "target": target,
-        "roles": ProjectRole.choices,
+        "form": form,
     })
 
 
