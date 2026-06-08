@@ -32,7 +32,7 @@
                         <div class="flex-grow-1">
                             <h1 class="mb-1 h3 fw-bold text-dark">{{ profile_user.username }}</h1>
                             {% if profile_user.first_name or profile_user.last_name %}
-                                <div class="text-muted fs-6">
+                                <div class="text-muted fs-6 profile-fullname">
                                     {{ profile_user.first_name }} {{ profile_user.last_name }}
                                 </div>
                             {% endif %}
