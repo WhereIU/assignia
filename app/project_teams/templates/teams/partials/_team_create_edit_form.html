@@ -1,14 +1,29 @@
-<div class="card mb-3">
-    <div class="card-body">
-        <form hx-post="{{ submit_url }}" hx-target="#tab-content" hx-swap="innerHTML">
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">
+                {% if team %}Редактирование команды «{{ team.name }}»{% else %}Добавление новой команды{% endif %}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{{ submit_url }}" 
+              hx-target="#tab-content" 
+              hx-swap="innerHTML"
+              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
             {% csrf_token %}
-            <div class="mb-2">
-                <label class="form-label">Название команды</label>
-                <input type="text" name="name" class="form-control" value="{{ team.name|default:'' }}" required>
+            
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Название команды</label>
+                    <input type="text" name="name" class="form-control" value="{{ team.name|default:'' }}" autocomplete="off" required>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="this.closest('#team-form-container').innerHTML=''">Отмена</button>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary btn-sm">Сохранить</button>
+            </div>
         </form>
     </div>
 </div>

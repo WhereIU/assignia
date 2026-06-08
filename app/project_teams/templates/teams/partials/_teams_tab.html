@@ -16,12 +16,18 @@
         {% endif %}
         <button class="btn btn-success btn-sm ms-2"
                 hx-get="{% url 'project_teams:team_create_form' direction_pk=direction.pk %}"
-                hx-target="#team-form-container" hx-swap="innerHTML">
+                hx-target="#modal-container" hx-swap="innerHTML">
             <i class="bi bi-plus-lg"></i> Добавить команду
         </button>
     </div>
 </div>
-
-<div id="team-form-container"></div>
-
-{% include 'teams/partials/_teams_list.html' with teams=teams show_deleted=show_deleted %}
+<div class="position-relative w-100">
+    <div id="team-form-container" class="position-absolute start-0 top-0 w-100" style="z-index: 1050;"></div>
+    
+    <div id="teams-list-wrapper"
+         hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted={{ show_deleted|yesno:'1,0' }}"
+         hx-trigger="teamsChanged from:body"
+         hx-swap="innerHTML">
+        {% include 'teams/partials/_teams_list.html' %}
+    </div>
+</div>

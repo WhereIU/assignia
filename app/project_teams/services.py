@@ -22,6 +22,11 @@ def soft_delete_team(*, team: Team) -> Team:
     return team
 
 
+def hard_delete_team(*, team: Team) -> None:
+    """Permanently delete team."""
+    team.delete()
+
+
 def restore_team(*, team: Team) -> Team:
     """Restore soft-deleted team."""
     team.is_deleted = False

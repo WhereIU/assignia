@@ -9,6 +9,7 @@ from project_members.selectors import search_project_memberships
 from project_directions.selectors import get_direction_by_pk
 from users.models import User
 from common.services import message_success, message_error
+from common.selectors import get_paginated_page
 
 from .selectors import (
     get_team_by_pk,
@@ -17,6 +18,7 @@ from .selectors import (
 )
 from .services import (
     create_team,
+    hard_delete_team,
     update_team,
     soft_delete_team,
     restore_team,
@@ -28,22 +30,26 @@ from .services import (
 def _render_teams_tab(
     request: HttpRequest, direction, *, show_deleted: bool = False
 ) -> HttpResponse:
-    """Render teams tab for direction."""
-    teams = get_teams_by_direction(direction, is_deleted=show_deleted)
-    return render(
-        request,
-        "teams/partials/_teams_tab.html",
-        {
-            "direction": direction,
-            "project": direction.project,
-            "teams": teams,
-            "show_deleted": show_deleted,
-        },
-    )
+    """Render teams tab for direction with pagination."""
+    teams_queryset = get_teams_by_direction(direction, is_deleted=show_deleted)
+    
+    page = request.GET.get("page", 1)
+    page_obj = get_paginated_page(teams_queryset, page, per_page=6)
+    
+    context = {
+        "direction": direction,
+        "page_obj": page_obj,
+        "show_deleted": show_deleted,
+    }
+
+    if request.headers.get("HX-Target") == "teams-list-wrapper":
+        return render(request, "teams/partials/_teams_list.html", context)
+        
+    return render(request, "teams/partials/_teams_tab.html", context)
 
 
 @login_required
-def team_tab(request: HttpRequest, direction_pk: int) -> HttpResponse:
+def teams_tab(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
         raise Http404("Направление не найдено")
@@ -93,7 +99,7 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
         return _render_teams_tab(request, direction)
 
     update_team(team=team, name=name)
-    message_success(request, "Команда updated")
+    message_success(request, "Команда обновлена")
     return _render_teams_tab(request, direction)
 
 
@@ -112,6 +118,24 @@ def team_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
     soft_delete_team(team=team)
     message_success(request, f"Команда «{team.name}» удалена")
     return _render_teams_tab(request, direction)
+
+
+@login_required
+@require_http_methods(["POST"])
+def team_hard_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
+    """Permanently delete team."""
+    team = get_team_by_pk(pk=team_pk, is_deleted=True)
+    if not team:
+        raise Http404("Команда не найдена")
+        
+    direction = team.direction
+    if not can_manage_teams(request.user, direction):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    team_name = team.name
+    hard_delete_team(team=team)
+    message_success(request, f"Команда «{team_name}» полностью удалена")
+    return _render_teams_tab(request, direction, show_deleted=True)
 
 
 @login_required
@@ -281,5 +305,25 @@ def team_edit_form(
                 "project_teams:team_update",
                 kwargs={"team_pk": team_pk},
             ),
+        },
+    )
+
+
+@login_required
+def team_delete_confirm_form(request: HttpRequest, team_pk: int) -> HttpResponse:
+    """Render soft-delete form."""
+    team = get_team_by_pk(pk=team_pk, is_deleted=False)
+    if not team:
+        raise Http404("Команда не найдена")
+        
+    if not can_manage_teams(request.user, team.direction):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    return render(
+        request,
+        "teams/partials/_team_delete_confirm.html",
+        {
+            "team": team,
+            "submit_url": reverse("project_teams:team_delete", kwargs={"team_pk": team.pk}),
         },
     )
