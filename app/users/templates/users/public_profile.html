@@ -12,44 +12,93 @@
 {% block content %}
 <div class="card shadow-sm border-0 mb-4">
     <div class="card-body p-4">
-        <div class="d-flex align-items-start gap-4 flex-wrap">
-            <div class="flex-shrink-0">
-                {% if profile_user.avatar %}
-                    <img src="{{ profile_user.avatar.url }}" alt="Аватар" class="rounded-circle object-fit-cover border" width="96" height="96">
-                {% else %}
-                    <i class="bi bi-person-circle text-secondary" style="font-size: 96px;"></i>
-                {% endif %}
+        <div class="row row-cols-1 row-cols-md-2 g-4">
+            
+            <div class="col col-md-5 d-flex flex-column justify-content-between border-end-md">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-3 text-secondary opacity-75">
+                        <i class="bi bi-person-badge"></i>
+                        <h6 class="mb-0 fw-bold uppercase-tracking">Профиль</h6>
+                    </div>
+                    
+                    <div class="d-flex align-items-center gap-4 flex-wrap">
+                        <div class="flex-shrink-0">
+                            {% if profile_user.avatar %}
+                                <img src="{{ profile_user.avatar.url }}" alt="Аватар" class="rounded-circle object-fit-cover border shadow-sm" width="96" height="96">
+                            {% else %}
+                                <i class="bi bi-person-circle text-secondary" style="font-size: 96px; line-height: 1;"></i>
+                            {% endif %}
+                        </div>
+                        <div class="flex-grow-1">
+                            <h1 class="mb-1 h3 fw-bold text-dark">{{ profile_user.username }}</h1>
+                            {% if profile_user.first_name or profile_user.last_name %}
+                                <div class="text-muted fs-6">
+                                    {{ profile_user.first_name }} {{ profile_user.last_name }}
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="flex-grow-1">
-                <div class="mb-3">
-                    <h1 class="mb-1">{{ profile_user.username }}</h1>
-                    {% if profile_user.first_name or profile_user.last_name %}
-                        <div class="text-muted fs-5">
-                            {{ profile_user.first_name }} {{ profile_user.last_name }}
+
+            <div class="col col-md-7 ps-md-4 d-flex flex-column justify-content-between">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-3 text-primary">
+                        <i class="bi bi-person-lines-fill"></i>
+                        <h6 class="mb-0 fw-bold uppercase-tracking">О себе</h6>
+                    </div>
+                    
+                    {% if profile_user.bio %}
+                        <div class="profile-bio text-secondary pe-2">
+                            {{ profile_user.bio|linebreaksbr }}
+                        </div>
+                    {% else %}
+                        <div class="text-muted small italic opacity-75 pt-1">
+                            <i class="bi bi-chat-left-dots me-1"></i> Пользователь пока ничего не рассказал о себе.
                         </div>
                     {% endif %}
                 </div>
             </div>
+
         </div>
-        {% if profile_user.bio %}
-            <div class="mt-4 pt-4 border-top">
-                <div class="d-flex align-items-center gap-2 mb-3">
-                    <i class="bi bi-person-lines-fill text-primary"></i>
-                    <h5 class="mb-0">О себе</h5>
-                </div>
-                <div class="profile-bio">{{ profile_user.bio|linebreaksbr }}</div>
-            </div>
-        {% endif %}
     </div>
 </div>
 
-<div class="d-flex align-items-center justify-content-between mb-3">
-    <h3 class="mb-0">Проекты</h3>
-    <span class="badge bg-light text-dark border rounded-pill px-3">
-        Всего: {{ projects.paginator.count }}
-    </span>
-</div>
+<form hx-get="{% url 'users:public_profile' profile_user.username %}" 
+      hx-target="#projects-container" 
+      hx-swap="innerHTML" 
+      hx-trigger="submit">
+    
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-3">
+        <div class="d-flex align-items-center gap-2">
+            <h3 class="mb-0 fw-bold">Проекты</h3>
+            <span class="badge bg-light text-dark border rounded-pill px-3">
+                Всего: {{ total_projects_count }}
+            </span>
+        </div>
+        
+        <div style="max-width: 250px;" class="w-100">
+            <input type="text" 
+                   name="q" 
+                   value="{{ search_query|default:'' }}"
+                   placeholder="Поиск по проектам..." 
+                   class="form-control form-control-sm shadow-sm"
+                   hx-get="{% url 'users:public_profile' profile_user.username %}"
+                   hx-target="#projects-container"
+                   hx-swap="innerHTML"
+                   hx-trigger="keyup changed delay:400ms, search">
+        </div>
+    </div>
 
-{% include 'projects/partials/_profile_projects.html' %}
+    <div id="projects-container">
+        {% include 'projects/partials/_profile_projects.html' %}
+    </div>
+</form>
 
+<style>
+    .profile-bio::-webkit-scrollbar { width: 4px; }
+    .profile-bio::-webkit-scrollbar-track { background: transparent; }
+    .profile-bio::-webkit-scrollbar-thumb { background-color: rgba(var(--bs-primary-rgb), 0.25); border-radius: 10px; }
+    .profile-bio:hover::-webkit-scrollbar-thumb { background-color: rgba(var(--bs-primary-rgb), 0.5); }
+</style>
 {% endblock %}

@@ -97,16 +97,14 @@ class ProfileEditForm(UserChangeForm):
     password = None
     avatar = forms.ImageField(
         required=False,
-        widget=forms.FileInput(attrs={
-            'class': 'form-control'
-        })
+        widget=forms.FileInput(attrs={'class': 'form-control'})
     )
     bio = forms.CharField(
         required=False,
-        max_length=100,
+        max_length=150,
         widget=forms.Textarea(attrs={
             'class': 'form-control',
-            'rows': 7,
+            'rows': 5,
             'maxlength': 150,
             'placeholder': 'Расскажите о себе',
             "style": "resize:none;",

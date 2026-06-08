@@ -89,3 +89,13 @@ def change_user_email(user: User, new_email: str) -> None:
     except Exception as exc:
         raise RuntimeError("Не удалось отправить письмо.") from exc
     user.refresh_from_db()
+
+
+def delete_user_avatar(user: User) -> bool:
+    """
+    Deelete user avatar and clear avatar media.
+    """
+    if user.avatar:
+        user.avatar.delete(save=True)
+        return True
+    return False

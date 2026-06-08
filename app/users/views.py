@@ -17,12 +17,13 @@ from .forms import (
     ProfileEditForm,
     UserCreationForm,
 )
-from .selectors import get_user_by_username
+from .selectors import filter_projects_by_search, get_user_by_username
 from .services import (
     cancel_pending_email as cancel_new_email,
     change_user_email,
     confirm_email_token,
     send_email_confirmation,
+    delete_user_avatar,
 )
 
 
@@ -80,18 +81,26 @@ def confirm_email(request: HttpRequest, token: str) -> HttpResponse:
 
 
 def public_profile(request: HttpRequest, username: str) -> HttpResponse:
-    """Render public profile with user's projects."""
+    """Render public profile with user's projects and search filter."""
     profile_user = get_user_by_username(username)
     if not profile_user:
         raise Http404("Пользователь не найден")
 
     projects_queryset = get_all_public_projects_of_user(profile_user)
+    
+    user_projects_count = projects_queryset.count()
+
+    search_query = request.GET.get("q", "").strip()
+    filtered_projects = filter_projects_by_search(projects_queryset, search_query)
+
     page_number = request.GET.get("page", "1")
-    projects = get_paginated_page(queryset=projects_queryset, page=page_number, per_page=6)
+    projects = get_paginated_page(queryset=filtered_projects, page=page_number, per_page=6)
 
     context = {
         "profile_user": profile_user,
         "projects": projects,
+        "total_projects_count": user_projects_count,
+        "search_query": search_query,
     }
 
     if request.headers.get("HX-Request"):
@@ -104,6 +113,11 @@ def public_profile(request: HttpRequest, username: str) -> HttpResponse:
 def profile(request: HttpRequest) -> HttpResponse:
     """Edit profile data."""
     if request.method == "POST":
+        if "delete_avatar" in request.POST:
+            delete_user_avatar(request.user)
+            message_success(request, "Аватар успешно удалён.")
+            return redirect("users:profile")
+
         form = ProfileEditForm(request.POST, request.FILES, instance=request.user)
         if form.is_valid():
             form.save()
@@ -111,7 +125,21 @@ def profile(request: HttpRequest) -> HttpResponse:
             return redirect("users:profile")
     else:
         form = ProfileEditForm(instance=request.user)
+        
     return render(request, "users/profile.html", {"form": form})
+
+
+@login_required
+def delete_avatar(request: HttpRequest) -> HttpResponse:
+    """Handle avatar deletion modal and action via HTMX."""
+    if request.method == "POST":
+        delete_user_avatar(request.user)
+        message_success(request, "Аватар успешно удалён.")
+        
+        response = render(request, "users/partials/_user_block.html", {"user": request.user})
+        return response
+
+    return render(request, "users/partials/_delete_avatar_confirm.html")
 
 
 @login_required

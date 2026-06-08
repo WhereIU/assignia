@@ -2,46 +2,42 @@
 {% block title %}Профиль{% endblock %}
 
 {% block settings_content %}
-<div class="card shadow-sm">
-    <div class="card-body">
-        <div class="d-flex align-items-start mb-4">
-            <div class="me-3 flex-shrink-0">
-                {% if user.avatar %}
-                    <img src="{{ user.avatar.url }}" alt="Аватар" class="rounded-circle" width="64" height="64">
-                {% else %}
-                    <i class="bi bi-person-circle fs-1"></i>
-                {% endif %}
-            </div>
-            <div>
-                <h4 class="card-title mb-0">{{ user.username }}</h4>
-                <small class="text-muted">Редактирование профиля</small>
-            </div>
-        </div>
-
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            {% for field in form %}
-                <div class="mb-3">
-                    <label
-                        for="{{ field.id_for_label }}"
-                        class="form-label">
-                        {{ field.label }}
-                    </label>
-                    {{ field }}
-                    {% if field.help_text %}
-                        <div class="form-text">
-                            {{ field.help_text }}
-                        </div>
-                    {% endif %}
-                    {% if field.errors %}
-                        <div class="invalid-feedback d-block">
-                            {{ field.errors|striptags }}
-                        </div>
-                    {% endif %}
+<div class="settings_content">
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            {% include 'users/partials/_user_block.html' %}
+            <hr class="text-black-50 opacity-10 mb-4">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                {% for field in form %}
+                    <div class="mb-3">
+                        <label for="{{ field.id_for_label }}" class="form-label fw-semibold small text-secondary">
+                            {{ field.label }}
+                        </label>
+                        {{ field }}
+                        
+                        {% if field.help_text %}
+                            <div class="form-text text-muted small mt-1">
+                                {{ field.help_text }}
+                            </div>
+                        {% endif %}
+                        
+                        {% if field.errors %}
+                            <div class="invalid-feedback d-block mt-1">
+                                {{ field.errors|striptags }}
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endfor %}
+                
+                <div class="mt-4 pt-3 border-top d-flex justify-content-end">
+                    <button type="submit" class="btn btn-primary px-4">Сохранить изменения</button>
                 </div>
-            {% endfor %}
-            <button type="submit" class="btn btn-primary">Сохранить изменения</button>
-        </form>
+            </form>
+            
+        </div>
     </div>
 </div>
+
 {% endblock %}

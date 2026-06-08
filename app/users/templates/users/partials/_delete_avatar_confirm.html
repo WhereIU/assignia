@@ -1,0 +1,31 @@
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-light">
+            <h5 class="modal-title fw-bold text-dark">Удаление аватара</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'users:delete_avatar' %}" 
+              hx-target="#avatar-management-block"
+              hx-swap="outerHTML"
+              hx-on::before-request="
+                const modalEl = document.getElementById('modal-container');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) { modal.hide(); }
+              ">
+            {% csrf_token %}
+            
+            <div class="modal-body py-4 text-center">
+                <i class="bi bi-exclamation-triangle text-danger fs-1 d-block mb-3"></i>
+                <p class="mb-0 text-secondary fs-6">
+                    Вы уверены, что хотите безвозвратно удалить свой текущий аватар?
+                </p>
+            </div>
+            
+            <div class="modal-footer bg-body-tertiary">
+                <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-danger btn-sm px-3">Да, удалить</button>
+            </div>
+        </form>
+    </div>
+</div>
