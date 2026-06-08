@@ -1,0 +1,25 @@
+<div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header bg-danger text-white py-2">
+            <h6 class="modal-title d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Подтверждение
+            </h6>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'project_directions:direction_delete' direction_pk=direction.pk %}" 
+              hx-swap="none"
+              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
+            {% csrf_token %}
+            
+            <div class="modal-body text-center py-3">
+                <p class="small text-muted mb-0">Перенести направление <strong>«{{ direction.name }}»</strong> в архив удалённых?</p>
+            </div>
+            
+            <div class="modal-footer justify-content-center p-2 border-top-0">
+                <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-danger btn-sm px-3">Да, удалить</button>
+            </div>
+        </form>
+    </div>
+</div>

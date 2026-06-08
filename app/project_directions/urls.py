@@ -16,4 +16,5 @@ urlpatterns = [
     
     path('form/<str:username>/<str:slug>/create/', views.direction_create_form, name='direction_create_form'),
     path('form/<int:direction_pk>/edit/', views.direction_edit_form, name='direction_edit_form'),
+    path('form/<int:direction_pk>/delete-confirm/', views.direction_delete_confirm_form, name='direction_delete_confirm_form'),
 ]

@@ -9,7 +9,7 @@ from projects.selectors import get_project
 from common.services import message_success, message_error
 from common.selectors import get_paginated_page
 
-from .selectors import get_direction_by_pk, get_directions_by_project
+from .selectors import filter_directions_by_search, get_direction_by_pk, get_directions_by_project
 from .services import (
     create_direction,
     update_direction,
@@ -28,15 +28,18 @@ def _render_directions_tab(
     show_deleted: bool = False,
     can_manage: bool = False,
 ) -> HttpResponse:
-    """Render directions tab partial with pagination."""
+    """Render directions tab."""
     template = (
         "directions/partials/_directions_list.html"
         if request.headers.get("HX-Target") == "directions-list-wrapper"
         else "directions/partials/_directions_tab.html"
     )
+    
+    search_query = request.GET.get("search", "").strip()
     page = request.GET.get("page", 1)
 
     directions_queryset = get_directions_by_project(project, is_deleted=show_deleted)
+    directions_queryset = filter_directions_by_search(directions_queryset, search_query)
     
     page_obj = get_paginated_page(
         queryset=directions_queryset,
@@ -54,6 +57,7 @@ def _render_directions_tab(
             "page_obj": page_obj,
             "can_manage": can_manage,
             "show_deleted": show_deleted,
+            "search_query": search_query,
         }
     )
 
@@ -83,10 +87,7 @@ def directions_tab(
 
 @login_required
 @require_http_methods(["POST"])
-def direction_create(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
-    """Handle direction creation."""
+def direction_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -102,22 +103,12 @@ def direction_create(
         return render(
             request,
             "directions/partials/_direction_create_form.html",
-            {
-                "username": username,
-                "slug": slug,
-                "name": name,
-                "description": description,
-            },
+            {"username": username, "slug": slug, "name": name, "description": description},
         )
 
-    create_direction(
-        project=project,
-        user=request.user,
-        name=name,
-        description=description,
-    )
-
+    create_direction(project=project, user=request.user, name=name, description=description)
     message_success(request, f"Направление «{name}» создано")
+    
     response = HttpResponse(status=200)
     response["HX-Trigger"] = "directionsChanged"
     return response
@@ -126,7 +117,6 @@ def direction_create(
 @login_required
 @require_http_methods(["POST"])
 def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
-    """Handle direction update."""
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
         raise Http404("Направление не найдено")
@@ -143,20 +133,12 @@ def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
         return render(
             request,
             "directions/partials/_direction_edit_form.html",
-            {
-                "direction": direction,
-                "name": name,
-                "description": description,
-            },
+            {"direction": direction, "name": name, "description": description},
         )
 
-    update_direction(
-        direction=direction,
-        name=name,
-        description=description,
-    )
-
+    update_direction(direction=direction, name=name, description=description)
     message_success(request, "Направление успешно обновлено")
+    
     response = HttpResponse(status=200)
     response["HX-Trigger"] = "directionsChanged"
     return response
@@ -222,10 +204,8 @@ def direction_hard_delete(request: HttpRequest, direction_pk: int) -> HttpRespon
 
 
 @login_required
-def direction_create_form(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
-    """Return form partial for creating direction."""
+def direction_create_form(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Return form creating direction."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -243,10 +223,8 @@ def direction_create_form(
 
 
 @login_required
-def direction_edit_form(
-    request: HttpRequest, direction_pk: int
-) -> HttpResponse:
-    """Return form partial for editing direction."""
+def direction_edit_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Return form editing direction."""
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
         raise Http404("Направление не найдено")
@@ -259,4 +237,21 @@ def direction_edit_form(
             "name": None,
             "description": None,
         },
+    )
+
+
+@login_required
+def direction_delete_confirm_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
+    """Render soft-delete confirmation for direction."""
+    direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+    if not direction:
+        raise Http404("Направление не найдено")
+        
+    if not can_manage_directions(request.user, direction.project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    return render(
+        request,
+        "directions/partials/_direction_delete_confirm.html",
+        {"direction": direction},
     )
