@@ -5,12 +5,12 @@ from django.shortcuts import render
 from project_members.permissions import is_project_member
 from projects.selectors import get_project
 
-from .services import get_analytics_data
+from .services import get_analytics_widget_context
 
 
 @login_required
 def analytics_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render project analytics tab."""
+    """Render analytics tab."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -18,8 +18,16 @@ def analytics_tab(request: HttpRequest, username: str, slug: str) -> HttpRespons
     if not is_project_member(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
 
-    context = get_analytics_data(project)
+    if request.headers.get('HX-Request') and 'type' in request.GET:
+        widget_type = request.GET.get('type')
+        block_id = request.GET.get('block_id', '1')
+        
+        context = get_analytics_widget_context(project, widget_type, block_id, request.GET)
+        
+        template = f'analytics/partials/_{widget_type}_widget_content.html'
+        return render(request, template, context)
 
+    context = {'project': project}
     if request.headers.get('HX-Request'):
         return render(request, 'analytics/partials/_analytics_tab.html', context)
 

@@ -1,0 +1,84 @@
+<div id="analytics-card-{{ block_id }}" class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center py-3">
+        <span class="text-secondary fw-semibold small text-uppercase tracking-wider">
+            <i class="bi bi-grid-3x3-gap me-2"></i>Аналитика команд
+        </span>
+        <div class="dropdown">
+            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">Сменить вид</button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
+                <li><a class="dropdown-item active" href="#">Статистика команд</a></li>
+                <li><a class="dropdown-item" href="#" hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}" hx-target="#analytics-card-{{ block_id }}" hx-swap="outerHTML">Продуктивность участников</a></li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card-body p-4">
+        <form hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}"
+              hx-target="#analytics-card-{{ block_id }}"
+              hx-swap="outerHTML"
+              class="mb-3">
+            <div class="input-group input-group-sm">
+                <input type="search" 
+                       name="q" 
+                       value="{{ search_query }}"
+                       class="form-control" 
+                       placeholder="Поиск команды или направления...">
+                <button class="btn btn-primary" type="submit">
+                    <i class="bi bi-search"></i>
+                </button>
+            </div>
+        </form>
+
+        <div class="d-flex flex-column gap-3">
+            {% for team in page_obj %}
+                <div class="p-3 bg-light rounded border border-light-subtle">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <h5 class="fw-bold mb-0 text-dark" style="font-size: 1rem;">{{ team.name }}</h5>
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle mt-1" style="font-size: 0.7rem;">
+                                {{ team.direction.name }}
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <span class="small text-muted d-block" style="font-size: 0.75rem;">Риски</span>
+                            <span class="badge {% if team.total_risk > 15 %}bg-danger{% elif team.total_risk > 5 %}bg-warning text-dark{% else %}bg-success{% endif %} shadow-sm">
+                                {{ team.total_risk|default:"0" }}
+                            </span>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <div class="d-flex justify-content-between small text-muted mb-1" style="font-size: 0.8rem;">
+                            <span>Выполнено: <strong>{{ team.done_tasks }}</strong> из {{ team.total_tasks }}</span>
+                            <strong>{% if team.total_tasks > 0 %}{% widthratio team.done_tasks team.total_tasks 100 %}%{% else %}0%{% endif %}</strong>
+                        </div>
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-success rounded-pill" style="width: {% if team.total_tasks > 0 %}{% widthratio team.done_tasks team.total_tasks 100 %}{% else %}0{% endif %}%"></div>
+                        </div>
+                    </div>
+                </div>
+            {% empty %}
+                <div class="text-center py-4 text-muted small">Команды не найдены</div>
+            {% endfor %}
+        </div>
+
+        {% if page_obj.has_other_pages %}
+            <div class="d-flex justify-content-between align-items-center mt-4 pt-2 border-top">
+                <span class="small text-muted">Стр. {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}</span>
+                <div class="btn-group btn-group-sm">
+                    {% if page_obj.has_previous %}
+                        <button class="btn btn-outline-secondary" hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}&page={{ page_obj.previous_page_number }}&q={{ search_query }}" hx-target="#analytics-card-{{ block_id }}" hx-swap="outerHTML"><i class="bi bi-chevron-left"></i></button>
+                    {% else %}
+                        <button class="btn btn-outline-secondary" disabled><i class="bi bi-chevron-left"></i></button>
+                    {% endif %}
+                    
+                    {% if page_obj.has_next %}
+                        <button class="btn btn-outline-secondary" hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}&page={{ page_obj.next_page_number }}&q={{ search_query }}" hx-target="#analytics-card-{{ block_id }}" hx-swap="outerHTML"><i class="bi bi-chevron-right"></i></button>
+                    {% else %}
+                        <button class="btn btn-outline-secondary" disabled><i class="bi bi-chevron-right"></i></button>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>

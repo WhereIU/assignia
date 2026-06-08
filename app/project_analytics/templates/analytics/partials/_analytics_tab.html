@@ -1,6 +1,32 @@
-<h2>Статистика проекта «{{ project.name }}»</h2>
+<div class="analytics-tab-wrapper animate-fade-in">
+    <div class="mb-4">
+        <h3 class="fw-bold text-dark mb-1">Аналитика проекта</h3>
+        <small class="text-muted">Интерактивные метрики</small>
+    </div>
 
-<div id="analytic-content-container">
-  {% include 'analytics/partials/_teams_analytic.html' with teams=teams %}
-  {% include 'analytics/partials/_participants_analytic.html' with participants=participants %}
+    <div class="row g-4">
+        <div class="col-12 col-xl-6">
+            <div id="analytics-card-1" 
+                 hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id=1"
+                 hx-trigger="load" 
+                 hx-swap="outerHTML">
+                 <div class="card shadow-sm border-0 p-5 text-center text-muted">
+                     <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
+                     <p class="mb-0 small">Загрузка аналитики команд...</p>
+                 </div>
+            </div>
+        </div>
+
+        <div class="col-12 col-xl-6">
+            <div id="analytics-card-2" 
+                 hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=participants&block_id=2"
+                 hx-trigger="load" 
+                 hx-swap="outerHTML">
+                 <div class="card shadow-sm border-0 p-5 text-center text-muted">
+                     <div class="spinner-border spinner-border-sm text-secondary mb-2" role="status"></div>
+                     <p class="mb-0 small">Загрузка продуктивности участников...</p>
+                 </div>
+            </div>
+        </div>
+    </div>
 </div>
