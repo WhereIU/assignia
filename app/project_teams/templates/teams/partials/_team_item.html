@@ -1,7 +1,6 @@
 <div class="col">
     <div class="card h-100 shadow-sm border-{% if show_deleted %}danger{% else %}light{% endif %} position-relative">
         <div class="card-body d-flex flex-column justify-content-between">
-            
             <div class="d-flex justify-content-between align-items-start">
                 <div>
                     <h6 class="card-title mb-1 text-dark fw-bold pe-4">{{ team.name }}</h6>
@@ -10,7 +9,6 @@
                         Участников: <span class="badge bg-light text-dark border">{{ team.members.count }}</span>
                     </small>
                 </div>
-
                 <div class="dropdown">
                     <button class="btn btn-link text-muted p-0 lh-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                         <i class="bi bi-three-dots-vertical fs-5"></i>
@@ -36,15 +34,17 @@
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small text-success d-flex align-items-center" 
                                    hx-post="{% url 'project_teams:team_restore' team_pk=team.pk %}"
-                                   hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
+                                   hx-swap="none" 
+                                   style="cursor: pointer;">
                                     <i class="bi bi-arrow-counterclockwise me-2"></i> Восстановить
                                 </a>
                             </li>
                             <li><hr class="dropdown-divider"></li>
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small text-danger fw-bold d-flex align-items-center" 
-                                hx-post="{% url 'project_teams:team_hard_delete' team_pk=team.pk %}"
-                                hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
+                                   hx-post="{% url 'project_teams:team_hard_delete' team_pk=team.pk %}"
+                                   hx-swap="none"
+                                   style="cursor: pointer;">
                                     <i class="bi bi-exclamation-octagon me-2"></i> Удалить полностью
                                 </a>
                             </li>

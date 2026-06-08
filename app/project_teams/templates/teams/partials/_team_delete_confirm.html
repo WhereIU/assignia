@@ -8,8 +8,7 @@
         </div>
         
         <form hx-post="{{ submit_url }}" 
-              hx-target="#tab-content" 
-              hx-swap="innerHTML"
+              hx-swap="none"
               hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
             {% csrf_token %}
             

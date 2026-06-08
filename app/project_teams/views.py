@@ -28,18 +28,25 @@ from .services import (
 
 
 def _render_teams_tab(
-    request: HttpRequest, direction, *, show_deleted: bool = False
+    request: HttpRequest, direction, show_deleted: bool =False
 ) -> HttpResponse:
-    """Render teams tab for direction with pagination."""
+    """Render teams tab."""
+
+    search_query = request.GET.get("search", "").strip()
+    page = request.GET.get("page", 1)
+
     teams_queryset = get_teams_by_direction(direction, is_deleted=show_deleted)
     
-    page = request.GET.get("page", 1)
+    if search_query:
+        teams_queryset = teams_queryset.filter(name__icontains=search_query)
+
     page_obj = get_paginated_page(teams_queryset, page, per_page=6)
     
     context = {
         "direction": direction,
         "page_obj": page_obj,
         "show_deleted": show_deleted,
+        "search_query": search_query,
     }
 
     if request.headers.get("HX-Target") == "teams-list-wrapper":
@@ -51,14 +58,18 @@ def _render_teams_tab(
 @login_required
 def teams_tab(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
+
     if not direction:
         raise Http404("Направление не найдено")
 
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
-
+    
     show_deleted = request.GET.get("show_deleted") == "1"
-    return _render_teams_tab(request, direction, show_deleted=show_deleted)
+    
+    return _render_teams_tab(
+        request, direction, show_deleted=show_deleted
+    )
 
 
 @login_required
@@ -106,6 +117,7 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def team_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
+    """Soft-delete team."""
     team = get_team_by_pk(pk=team_pk)
     if not team:
         raise Http404("Команда не найдена")
@@ -117,7 +129,10 @@ def team_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
 
     soft_delete_team(team=team)
     message_success(request, f"Команда «{team.name}» удалена")
-    return _render_teams_tab(request, direction)
+    
+    response = HttpResponse("")
+    response["HX-Trigger"] = "teamsChanged"
+    return response
 
 
 @login_required
@@ -135,12 +150,16 @@ def team_hard_delete(request: HttpRequest, team_pk: int) -> HttpResponse:
     team_name = team.name
     hard_delete_team(team=team)
     message_success(request, f"Команда «{team_name}» полностью удалена")
-    return _render_teams_tab(request, direction, show_deleted=True)
+    
+    response = HttpResponse("")
+    response["HX-Trigger"] = "teamsChanged"
+    return response
 
 
 @login_required
 @require_http_methods(["POST"])
 def team_restore(request: HttpRequest, team_pk: int) -> HttpResponse:
+    """Restore soft-deleted team."""
     team = get_team_by_pk(pk=team_pk, is_deleted=True)
     if not team:
         raise Http404("Команда не найдена")
@@ -152,7 +171,10 @@ def team_restore(request: HttpRequest, team_pk: int) -> HttpResponse:
 
     restore_team(team=team)
     message_success(request, f"Команда «{team.name}» восстановлена")
-    return _render_teams_tab(request, direction, show_deleted=True)
+    
+    response = HttpResponse("")
+    response["HX-Trigger"] = "teamsChanged"
+    return response
 
 
 @login_required

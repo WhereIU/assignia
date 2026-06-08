@@ -1,33 +1,73 @@
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h5>Команды направления «{{ direction.name }}»</h5>
+<div class="d-flex justify-content-between align-items-center mb-4">
     <div>
-        {% if not show_deleted %}
-            <button class="btn btn-outline-secondary btn-sm"
-                    hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted=1"
-                    hx-target="#tab-content" hx-swap="innerHTML">
-                Показать удалённые
-            </button>
-        {% else %}
-            <button class="btn btn-outline-secondary btn-sm"
-                    hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
-                    hx-target="#tab-content" hx-swap="innerHTML">
-                Скрыть удалённые
-            </button>
-        {% endif %}
-        <button class="btn btn-primary btn-sm ms-2"
-                hx-get="{% url 'project_teams:team_create_form' direction_pk=direction.pk %}"
-                hx-target="#modal-container" hx-swap="innerHTML">
-            <i class="bi bi-plus-lg"></i> Добавить команду
-        </button>
+        <h4 class="mb-1">Команды направления «{{ direction.name }}»</h4>
+        <small class="text-body-secondary">Управление командами направления</small>
     </div>
+
+    <button class="btn btn-primary d-inline-flex align-items-center gap-2 shadow-sm"
+            hx-get="{% url 'project_teams:team_create_form' direction_pk=direction.pk %}"
+            hx-target="#modal-container" 
+            hx-swap="innerHTML">
+        <i class="bi bi-plus-lg"></i> Добавить команду
+    </button>
 </div>
-<div class="position-relative w-100">
-    <div id="team-form-container" class="position-absolute start-0 top-0 w-100" style="z-index: 1050;"></div>
-    
-    <div id="teams-list-wrapper"
-         hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted={{ show_deleted|yesno:'1,0' }}"
-         hx-trigger="teamsChanged from:body"
-         hx-swap="innerHTML">
-        {% include 'teams/partials/_teams_list.html' %}
+
+<div class="card shadow-sm border-0">
+    <div class="card-body p-0">
+        <div class="p-3 border-bottom bg-light-subtle rounded-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+            <form hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+                  hx-target="#tab-content"
+                  hx-swap="innerHTML"
+                  class="row g-2 flex-grow-1 mb-0">
+                
+                <input type="hidden" name="show_deleted" value="{{ show_deleted|yesno:'1,0' }}">
+
+                <div class="col-md-6 col-lg-4">
+                    <div class="input-group input-group-sm">
+                        <span class="input-group-text bg-white text-secondary border-end-0">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text"
+                               id="teams-search-input"
+                               name="search"
+                               class="form-control border-start-0 ps-0"
+                               value="{{ search_query|default:'' }}"
+                               placeholder="Поиск по названию команды...">
+                        <button class="btn btn-primary px-3" type="submit">
+                            Найти
+                        </button>
+                    </div>
+                </div>
+            </form>
+
+            <div>
+                {% if not show_deleted %}
+                    <button class="btn btn-sm btn-light border-secondary-subtle text-secondary px-3"
+                            hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted=1"
+                            hx-target="#tab-content" 
+                            hx-swap="innerHTML">
+                        <i class="bi bi-eye-slash me-1"></i> Показать удалённые
+                    </button>
+                {% else %}
+                    <button class="btn btn-sm btn-dark px-3"
+                            hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+                            hx-target="#tab-content" 
+                            hx-swap="innerHTML">
+                        <i class="bi bi-eye me-1"></i> Скрыть удалённые
+                    </button>
+                {% endif %}
+            </div>
+        </div>
+
+        <div id="team-form-container" class="position-relative w-100"></div>
+
+        <div id="teams-list-wrapper"
+             class="p-3"
+             hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}?show_deleted={{ show_deleted|yesno:'1,0' }}"
+             hx-trigger="teamsChanged from:body"
+             hx-include="#teams-search-input"
+             hx-swap="innerHTML">
+            {% include 'teams/partials/_teams_list.html' %}
+        </div>
     </div>
 </div>
