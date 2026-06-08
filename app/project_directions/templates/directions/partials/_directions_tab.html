@@ -20,7 +20,7 @@
             </button>
         {% endif %}
         
-        <button class="btn btn-sm btn-success px-3"
+        <button class="btn btn-sm btn-primary px-3"
                 hx-get="{% url 'project_directions:direction_create_form' username=username slug=slug %}"
                 hx-target="#direction-form-container" 
                 hx-swap="innerHTML">
