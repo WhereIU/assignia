@@ -26,11 +26,10 @@ from project_tasks.services import apply_tasks_filters
 from users.selectors import get_user_by_username
 
 from .constants import InvitationStatus
-from .forms import ProjectCreateForm
+from .forms import ProjectCreateForm, ProjectInvitationForm
 from .selectors import (
     get_available_projects,
     get_invitation_by_pk,
-    get_pending_invitations,
     get_project
 )
 from .services import (
@@ -41,6 +40,7 @@ from .services import (
     send_project_invitation,
     update_project,
 )
+
 
 if TYPE_CHECKING:
     from projects.models import Project
@@ -202,7 +202,8 @@ def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpRespo
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    return _render_invitation_form(request, project, username, slug)
+    form = ProjectInvitationForm(initial={"role": "participant"})
+    return _render_invitation_form(request, project, username, slug, form=form)
 
 
 @login_required
@@ -215,33 +216,27 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    recipient_username = request.POST.get("username", "").strip()
-    role = request.POST.get("role", "participant")
+    form = ProjectInvitationForm(request.POST)
 
-    if not recipient_username:
-        message_error(request, "Укажите имя пользователя")
-        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
+    if not form.is_valid():
+        message_error(request, "Исправьте ошибки в форме")
+        return _render_invitation_form(request, project, username, slug, form=form, status=422)
 
-    recipient = get_user_by_username(recipient_username)
-    if recipient is None:
-        message_error(request, "Пользователь не найден")
-        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
+    recipient = form.cleaned_data['username']
+    role = form.cleaned_data['role']
 
     try:
         send_project_invitation(sender=request.user, recipient=recipient, project=project, role=role)
     except ValidationError as e:
+        form.add_error('username', e.message)
         message_error(request, e.message)
-        return _render_invitation_form(request, project, username, slug, typed_username=recipient_username, selected_role=role)
+        return _render_invitation_form(request, project, username, slug, form=form, status=422)
 
     message_success(request, f"Приглашение отправлено {recipient.username}")
     
-    response = _render_invitation_form(
-        request, project, username, slug, 
-        typed_username="", selected_role=role
-    )
-    
+    empty_form = ProjectInvitationForm(initial={"role": role})
+    response = _render_invitation_form(request, project, username, slug, form=empty_form)
     response["HX-Trigger"] = "membersChanged"
-    
     return response
 
 
@@ -250,8 +245,8 @@ def _render_invitation_form(
     project: Project, 
     username: str, 
     slug: str, 
-    typed_username: str = "", 
-    selected_role: str = "participant"
+    form: ProjectInvitationForm,
+    status: int = 200
 ) -> HttpResponse:
     template = (
         "projects/partials/_invitation_form_inner.html"
@@ -264,14 +259,13 @@ def _render_invitation_form(
         template,
         {
             "project": project,
-            "membership_roles": ProjectRole.choices,
-            "selected_role": selected_role,
-            "typed_username": typed_username,
+            "form": form,
             "submit_url": reverse(
                 "projects:invitation_send",
                 kwargs={"username": username, "slug": slug},
             ),
         },
+        status=status
     )
 
 

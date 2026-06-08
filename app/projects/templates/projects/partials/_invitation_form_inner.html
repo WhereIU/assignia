@@ -11,29 +11,27 @@
     
     <div class="modal-body py-3">
         <div class="mb-3">
-            <label class="form-label small fw-semibold text-secondary">Имя пользователя</label>
+            <label class="form-label small fw-semibold text-secondary">{{ form.username.label }}</label>
             <div class="input-group shadow-sm-inside">
                 <span class="input-group-text bg-light text-secondary"><i class="bi bi-person"></i></span>
                 <input type="text" 
                        name="username" 
-                       class="form-control" 
-                       placeholder="Введите точный логин пользователя..."
-                       value="{{ typed_username|default:'' }}"
+                       class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                       placeholder="{{ form.username.field.widget.attrs.placeholder }}"
+                       value="{{ form.username.value|default_if_none:'' }}"
                        required>
+                {% if form.username.errors %}
+                    <div class="invalid-feedback d-block">{{ form.username.errors|join:", " }}</div>
+                {% endif %}
             </div>
         </div>
 
         <div class="mb-2">
-            <label class="form-label small fw-semibold text-secondary">Роль в проекте</label>
-            <select name="role" class="form-select shadow-sm-inside">
-                {% for key, value in membership_roles %}
-                    {% if key != 'owner' %}
-                        <option value="{{ key }}" {% if selected_role == key %}selected{% endif %}>
-                            {{ value }}
-                        </option>
-                    {% endif %}
-                {% endfor %}
-            </select>
+            <label class="form-label small fw-semibold text-secondary">{{ form.role.label }}</label>
+            {{ form.role }}
+            {% if form.role.errors %}
+                <div class="invalid-feedback d-block">{{ form.role.errors|join:", " }}</div>
+            {% endif %}
         </div>
     </div>
 

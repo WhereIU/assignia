@@ -1,7 +1,14 @@
 from django import forms
 from django.utils.text import slugify
+from django.contrib.auth import get_user_model
+
+from project_members.constants import ProjectRole
+from users.selectors import get_user_by_username 
 
 from .models import Project
+
+
+User = get_user_model()
 
 
 class ProjectCreateForm(forms.ModelForm):
@@ -66,3 +73,35 @@ class ProjectCreateForm(forms.ModelForm):
         if not name:
             raise forms.ValidationError('Название не может быть пустым.')
         return name
+
+
+class ProjectInvitationForm(forms.Form):
+    username = forms.CharField(
+        label="Имя пользователя",
+        widget=forms.TextInput(attrs={
+            'class': 'form-control',
+            'placeholder': 'Введите точный логин пользователя...',
+            'autocomplete': 'off',
+        })
+    )
+    role = forms.ChoiceField(
+        label="Роль в проекте",
+        widget=forms.Select(attrs={'class': 'form-select shadow-sm-inside'})
+    )
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['role'].choices = [
+            (key, value) for key, value in ProjectRole.choices if key != 'owner'
+        ]
+
+    def clean_username(self):
+        username = self.cleaned_data.get('username', '').strip()
+        if not username:
+            raise forms.ValidationError("Укажите имя пользователя")
+            
+        recipient = get_user_by_username(username)
+        if recipient is None:
+            raise forms.ValidationError("Пользователь не найден")
+
+        return recipient
