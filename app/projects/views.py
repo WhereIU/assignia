@@ -26,7 +26,7 @@ from project_tasks.services import apply_tasks_filters
 from users.selectors import get_user_by_username
 
 from .constants import InvitationStatus
-from .forms import ProjectCreateForm, ProjectInvitationForm
+from .forms import ProjectCreateForm, ProjectInvitationForm, ProjectUpdateForm
 from .selectors import (
     get_available_projects,
     get_invitation_by_pk,
@@ -374,11 +374,15 @@ def project_settings_form(
         
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
+        
+    form = ProjectUpdateForm(instance=project, user=request.user)
+    
     return render(
-        request,
-        "projects/partials/_project_settings_form.html",
+        request, 
+        "projects/partials/_project_settings_form.html", 
         {
             "project": project,
+            "form": form,
             "submit_url": reverse(
                 "projects:project_update",
                 kwargs={"username": username, "slug": slug},
@@ -399,28 +403,21 @@ def project_update(
     if not is_admin_or_owner(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    name = request.POST.get("name", "").strip()
-    description = request.POST.get("description", "").strip()
-    is_public = request.POST.get("is_public") == "on"
+    form = ProjectUpdateForm(request.POST, instance=project, user=request.user)
 
-    if not name:
-        message_error(request, "Название проекта не может быть пустым")
-        return redirect(
-            "projects:project_settings_tab",
-            username=username,
-            slug=slug,
+    if not form.is_valid():
+        message_error(request, "Заполните обязательные поля корректно")
+        return render(
+            request,
+            "projects/partials/_project_settings_form.html",
+            {"project": project, "form": form, "submit_url": request.path},
+            status=422
         )
 
-    if not get_member_role(request.user, project) == ProjectRole.OWNER:
-        is_public = project.is_public
-
-    update_project(
-        project=project,
-        name=name,
-        description=description,
-        is_public=is_public,
-    )
+    update_project(project=project, **form.cleaned_data)
+    
     message_success(request, "Настройки проекта обновлены")
+
     return redirect(
         "projects:project_settings_tab",
         username=username,

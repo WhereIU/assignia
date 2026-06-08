@@ -1,6 +1,6 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h5 class="mb-0">Настройки проекта</h5>
-    <button class="btn btn-outline-secondary btn-sm"
+    <button class="btn btn-primary btn-sm"
             hx-get="{% url 'projects:project_settings_form' username=project.owner.username slug=project.slug %}"
             hx-target="#modal-container"
             hx-swap="innerHTML">

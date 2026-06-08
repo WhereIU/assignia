@@ -105,3 +105,29 @@ class ProjectInvitationForm(forms.Form):
             raise forms.ValidationError("Пользователь не найден")
 
         return recipient
+
+
+class ProjectUpdateForm(forms.ModelForm):
+    class Meta:
+        model = Project
+        fields = ['name', 'description', 'is_public']
+        widgets = {
+            'name': forms.TextInput(attrs={
+                'class': 'form-control',
+            }),
+            'description': forms.Textarea(attrs={
+                'class': 'form-control',
+                'rows': 4,
+                'placeholder': 'Добавьте описание проекта...',
+            }),
+            'is_public': forms.CheckboxInput(attrs={
+                'class': 'form-check-input',
+                'style': 'width: 2.5em; height: 1.25em;',
+                'id': 'is-public',
+            })
+        }
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user and self.instance and self.instance.owner != user:
+            del self.fields['is_public']

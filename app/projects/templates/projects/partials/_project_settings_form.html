@@ -7,29 +7,39 @@
         <form hx-post="{{ submit_url }}" 
               hx-target="#tab-content" 
               hx-swap="innerHTML" 
-              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
+              hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }"
+              novalidate>
             {% csrf_token %}
             <div class="modal-body">
+                
                 <div class="mb-3">
                     <label class="form-label small fw-bold text-muted">Название проекта</label>
-                    <input type="text" name="name" class="form-control" value="{{ project.name }}" required>
-                </div>
-                <div class="mb-3">
-                    <label class="form-label small fw-bold text-muted">Описание</label>
-                    <textarea name="description" class="form-control" rows="4" placeholder="Добавьте описание проекта...">{{ project.description|default:'' }}</textarea>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
                 </div>
                 
-                {% if request.user == project.owner %}
+                <div class="mb-3">
+                    <label class="form-label small fw-bold text-muted">Описание</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <div class="invalid-feedback d-block">{{ form.description.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                
+                {% if form.is_public %}
                 <div class="p-3 bg-light rounded border d-flex align-items-center justify-content-between my-3">
                     <div>
                         <label class="form-check-label fw-bold small d-block" for="is-public">Публичный статус</label>
                         <small class="text-muted">Доступен ли всем для просмотра</small>
                     </div>
                     <div class="form-check form-switch m-0">
-                        <input class="form-check-input" type="checkbox" name="is_public" id="is-public" style="width: 2.5em; height: 1.25em;" {% if project.is_public %}checked{% endif %}>
+                        {{ form.is_public }}
                     </div>
                 </div>
                 {% endif %}
+                
             </div>
             <div class="modal-footer bg-light border-top-0">
                 <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
