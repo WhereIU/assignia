@@ -26,6 +26,7 @@ from .services import (
     add_member_to_team,
     remove_member_from_team,
 )
+from .forms import TeamForm
 
 
 def _render_teams_tab(
@@ -82,23 +83,25 @@ def team_create(request: HttpRequest, direction_pk: int) -> HttpResponse:
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
-    name = request.POST.get("name", "").strip()
-    if not name:
-        message_error(request, "Название команды обязательно")
+    form = TeamForm(request.POST)
+    
+    if not form.is_valid():
+        message_error(request, "Исправьте ошибки в форме")
         return render(
             request,
             "teams/partials/_team_create_edit_form.html",
             {
                 "direction": direction,
                 "project": direction.project,
+                "form": form,
                 "submit_url": reverse("project_teams:team_create", kwargs={"direction_pk": direction_pk}),
             },
             status=422
         )
 
-    create_team(direction=direction, name=name)
-    message_success(request, f"Команда «{name}» создана")
-
+    create_team(direction=direction, name=form.cleaned_data['name'])
+    message_success(request, f"Команда «{form.cleaned_data['name']}» создана")
+    
     response = HttpResponse(status=200)
     response["HX-Trigger"] = "teamsChanged"
     return response
@@ -116,9 +119,10 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
     if not can_manage_teams(request.user, direction):
         return HttpResponseForbidden("Недостаточно прав")
 
-    name = request.POST.get("name", "").strip()
-    if not name:
-        message_error(request, "Название команды обязательно")
+    form = TeamForm(request.POST, instance=team)
+    
+    if not form.is_valid():
+        message_error(request, "Исправьте ошибки в форме")
         return render(
             request,
             "teams/partials/_team_create_edit_form.html",
@@ -126,13 +130,14 @@ def team_update(request: HttpRequest, team_pk: int) -> HttpResponse:
                 "direction": direction,
                 "project": direction.project,
                 "team": team,
+                "form": form,
                 "submit_url": reverse("project_teams:team_update", kwargs={"team_pk": team_pk}),
             },
             status=422
         )
 
-    update_team(team=team, name=name)
-    message_success(request, "Команда обновлена")
+    update_team(team=team, name=form.cleaned_data['name'])
+    message_success(request, "Команда успешно обновлена")
     
     response = HttpResponse(status=200)
     response["HX-Trigger"] = "teamsChanged"
@@ -309,11 +314,13 @@ def team_member_remove(request: HttpRequest, team_pk: int) -> HttpResponse:
     )
 
 
-@login_required
+login_required
 def team_create_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
         raise Http404("Направление не найдено")
+
+    form = TeamForm()
 
     return render(
         request,
@@ -321,18 +328,14 @@ def team_create_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
         {
             "direction": direction,
             "project": direction.project,
-            "submit_url": reverse(
-                "project_teams:team_create",
-                kwargs={"direction_pk": direction_pk},
-            ),
+            "form": form,
+            "submit_url": reverse("project_teams:team_create", kwargs={"direction_pk": direction_pk}),
         },
     )
 
 
 @login_required
-def team_edit_form(
-    request: HttpRequest, direction_pk: int, team_pk: int
-) -> HttpResponse:
+def team_edit_form(request: HttpRequest, direction_pk: int, team_pk: int) -> HttpResponse:
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
         raise Http404("Направление не найдено")
@@ -341,6 +344,8 @@ def team_edit_form(
     if not team:
         raise Http404("Команда не найдена")
 
+    form = TeamForm(instance=team)
+
     return render(
         request,
         "teams/partials/_team_create_edit_form.html",
@@ -348,10 +353,8 @@ def team_edit_form(
             "direction": direction,
             "project": direction.project,
             "team": team,
-            "submit_url": reverse(
-                "project_teams:team_update",
-                kwargs={"team_pk": team_pk},
-            ),
+            "form": form,
+            "submit_url": reverse("project_teams:team_update", kwargs={"team_pk": team_pk}),
         },
     )
 
