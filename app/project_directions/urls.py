@@ -6,7 +6,7 @@ from . import views
 app_name = 'project_directions'
 
 urlpatterns = [
-    path('tab/<str:username>/<str:slug>/', views.direction_tab, name='directions_tab'),
+    path('tab/<str:username>/<str:slug>/', views.directions_tab, name='directions_tab'),
 
     path('new/<str:username>/<str:slug>/create/', views.direction_create, name='direction_create'),
     path('direction/<int:direction_pk>/update/', views.direction_update, name='direction_update'),
@@ -15,5 +15,5 @@ urlpatterns = [
     path('direction/<int:direction_pk>/restore/', views.direction_restore, name='direction_restore'),
     
     path('form/<str:username>/<str:slug>/create/', views.direction_create_form, name='direction_create_form'),
-    path('form/<str:username>/<str:slug>/<int:direction_pk>/edit/', views.direction_edit_form, name='direction_edit_form'),
+    path('form/<int:direction_pk>/edit/', views.direction_edit_form, name='direction_edit_form'),
 ]

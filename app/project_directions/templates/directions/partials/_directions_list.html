@@ -1,18 +1,15 @@
-
-<div class="table-responsive">
-    <table class="table table-striped">
-        <thead><tr>
-            <th>Название</th><th>Описание</th><th>Задач</th>
-            {% if can_manage %}<th>Действия</th>{% endif %}
-        </tr></thead>
-        <tbody>
-            {% for d in directions %}
-              {% include 'directions/partials/_direction_item.html' with d=d show_deleted=show_deleted can_manage=can_manage %}
-            {% empty %}
-                <tr><td colspan="4">Нет направлений</td></tr>
-            {% endfor %}
-          </tbody>
-    </table>
+<div id="directions-list" class="d-flex flex-column gap-2 mb-3">
+    {% for direction in page_obj %}
+        {% include 'directions/partials/_direction_item.html' %}
+    {% empty %}
+        <div class="text-center py-5 bg-body-tertiary rounded-3 border border-dashed border-secondary-subtle">
+            <div class="text-muted mb-2">
+                <i class="bi bi-folder2-open display-6 opacity-50"></i>
+            </div>
+            <span class="text-secondary fw-medium">Направления пока не созданы</span>
+            <p class="text-muted small mb-0">Используйте кнопку выше, чтобы структурировать задачи проекта</p>
+        </div>
+    {% endfor %}
 </div>
 
-  
+{% include "partials/_paginator.html" with hx_target="#directions-list-wrapper" %}
