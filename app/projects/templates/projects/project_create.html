@@ -25,7 +25,7 @@
                         {% if form.name.errors %}
                             <div class="invalid-feedback d-block">{{ form.name.errors|striptags }}</div>
                         {% endif %}
-                        <small class="form-text text-muted">До 50 символов.</small>
+                        <small class="form-text text-muted">До 32 символов.</small>
                     </div>
 
                     <div class="mb-3">
@@ -49,7 +49,7 @@
                         {% if form.description.errors %}
                             <div class="invalid-feedback d-block">{{ form.description.errors|striptags }}</div>
                         {% endif %}
-                        <small class="form-text text-muted">Краткое описание (до 500 символов).</small>
+                        <small class="form-text text-muted">Краткое описание (до 300 символов).</small>
                     </div>
 
                     <div class="form-check mb-4">
