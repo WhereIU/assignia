@@ -6,18 +6,31 @@
         </div>
         
         <form hx-post="{% url 'project_directions:direction_update' direction_pk=direction.pk %}" 
-              hx-swap="none"
-              hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
+              hx-target="this"
+              hx-swap="outerHTML"
+              hx-on::before-request="
+                const modalEl = document.getElementById('modal-container');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) { modal.hide(); }
+              ">
             {% csrf_token %}
             
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">Название направления</label>
-                    <input type="text" name="name" class="form-control" value="{{ name|default:direction.name }}" autocomplete="off" required>
+                    <label class="form-label">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <script>document.getElementsByName('name')[0].classList.add('is-invalid');</script>
+                        <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Описание</label>
-                    <textarea name="description" class="form-control" rows="3" placeholder="Кратко опишите направление">{{ description|default:direction.description|default:'' }}</textarea>
+                    <label class="form-label">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <script>document.getElementsByName('description')[0].classList.add('is-invalid');</script>
+                        <div class="invalid-feedback d-block">{{ form.description.errors|join:", " }}</div>
+                    {% endif %}
                 </div>
             </div>
             

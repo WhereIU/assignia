@@ -17,6 +17,7 @@ from .services import (
     restore_direction,
     hard_delete_direction,
 )
+from .forms import DirectionForm
 
 
 def _render_directions_tab(
@@ -95,19 +96,28 @@ def direction_create(request: HttpRequest, username: str, slug: str) -> HttpResp
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    name = request.POST.get("name", "").strip()
-    description = request.POST.get("description", "").strip()
+    form = DirectionForm(request.POST)
 
-    if not name:
-        message_error(request, "Название направления обязательно")
+    if not form.is_valid():
+        message_error(request, "Исправьте ошибки в форме")
         return render(
             request,
             "directions/partials/_direction_create_form.html",
-            {"username": username, "slug": slug, "name": name, "description": description},
+            {
+                "username": username,
+                "slug": slug,
+                "form": form,
+            },
+            status=422,
         )
 
-    create_direction(project=project, user=request.user, name=name, description=description)
-    message_success(request, f"Направление «{name}» создано")
+    create_direction(
+        project=project, 
+        user=request.user, 
+        name=form.cleaned_data['name'], 
+        description=form.cleaned_data['description']
+    )
+    message_success(request, f"Направление «{form.cleaned_data['name']}» создано")
     
     response = HttpResponse(status=200)
     response["HX-Trigger"] = "directionsChanged"
@@ -125,18 +135,25 @@ def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
     if not can_manage_directions(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    name = request.POST.get("name", "").strip()
-    description = request.POST.get("description", "").strip()
+    form = DirectionForm(request.POST, instance=direction)
 
-    if not name:
-        message_error(request, "Название направления обязательно")
+    if not form.is_valid():
+        message_error(request, "Исправьте ошибки в форме")
         return render(
             request,
             "directions/partials/_direction_edit_form.html",
-            {"direction": direction, "name": name, "description": description},
+            {
+                "direction": direction,
+                "form": form,
+            },
+            status=422,
         )
 
-    update_direction(direction=direction, name=name, description=description)
+    update_direction(
+        direction=direction, 
+        name=form.cleaned_data['name'], 
+        description=form.cleaned_data['description']
+    )
     message_success(request, "Направление успешно обновлено")
     
     response = HttpResponse(status=200)
@@ -210,14 +227,14 @@ def direction_create_form(request: HttpRequest, username: str, slug: str) -> Htt
     if not project:
         raise Http404("Проект не найден")
 
+    form = DirectionForm()
     return render(
         request,
         "directions/partials/_direction_create_form.html",
         {
             "username": username,
             "slug": slug,
-            "name": "",
-            "description": "",
+            "form": form,
         },
     )
 
@@ -229,13 +246,13 @@ def direction_edit_form(request: HttpRequest, direction_pk: int) -> HttpResponse
     if not direction:
         raise Http404("Направление не найдено")
 
+    form = DirectionForm(instance=direction)
     return render(
         request,
         "directions/partials/_direction_edit_form.html",
         {
             "direction": direction,
-            "name": None,
-            "description": None,
+            "form": form,
         },
     )
 
