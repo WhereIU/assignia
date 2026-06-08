@@ -43,7 +43,7 @@ def _render_directions_tab(
     
     page_obj = get_paginated_page(
         queryset=directions_queryset,
-        per_page=6,
+        per_page=12,
         page=page,
     )
     

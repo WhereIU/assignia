@@ -40,7 +40,7 @@ def _render_teams_tab(
     
     teams_queryset = filter_teams_by_search(teams_queryset, search_query)
 
-    page_obj = get_paginated_page(teams_queryset, page, per_page=6)
+    page_obj = get_paginated_page(teams_queryset, page, per_page=12)
     
     context = {
         "direction": direction,
