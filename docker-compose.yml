@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   web:
     build:
@@ -27,11 +25,11 @@ services:
       - assignia-network
 
   db:
-    image: postgres:15
+    image: postgres:16-alpine
     env_file:
       - .env
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 2s
       timeout: 5s
       retries: 20
@@ -43,7 +41,7 @@ services:
     #  - "5433:5432" # pgAdmin
 
   redis:
-    image: redis:7-alpine
+    image: redis:7.4-alpine
     networks:
       - assignia-network
 
