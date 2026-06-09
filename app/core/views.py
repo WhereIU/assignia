@@ -1,5 +1,4 @@
 from django.contrib.auth.decorators import login_required
-from django.core.paginator import Paginator
 from django.http import HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 
@@ -13,6 +12,7 @@ from project_tasks.selectors import get_available_tasks_for_projects, get_tasks_
 from project_tasks.services import apply_tasks_filters
 
 from .selectors import get_notifications_for_user
+from .services import mark_notifications_as_read
 
 
 def home(request: HttpRequest) -> HttpResponse:
@@ -24,6 +24,7 @@ def home(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def notifications(request: HttpRequest) -> HttpResponse:
+    """Show notifications of user."""
     notifications_queryset = get_notifications_for_user(request.user)
     page_number = request.GET.get("page", 1)
     
@@ -31,7 +32,7 @@ def notifications(request: HttpRequest) -> HttpResponse:
     
     unread_ids = [n.id for n in page_obj if not n.is_read]
     if unread_ids:
-        request.user.notifications.filter(id__in=unread_ids).update(is_read=True)
+        mark_notifications_as_read(user=request.user, notification_ids=unread_ids)
         
     context = {
         "page_obj": page_obj, 

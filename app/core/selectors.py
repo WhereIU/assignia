@@ -1,14 +1,27 @@
-from django.db.models import QuerySet
-from django.contrib.auth import get_user_model
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+from django.db.models import Prefetch
+
+from projects.models import Invitation
+from project_tasks.models import TaskComment
+from project_requests.models import TaskRequest
+
+from .models import Notification
+
+if TYPE_CHECKING:
+    from django.db.models import QuerySet
+    from django.contrib.auth import get_user_model
+    User = get_user_model()
 
 
-User = get_user_model()
+def get_notifications_for_user(user: User) -> QuerySet[Notification]:
+    """
+    Return queryset of notifcations for user.
+    """
 
-
-def get_notifications_for_user(user: User) -> QuerySet:
-    """Return notifications for user."""
     return (
-        user.notifications
-        .prefetch_related("target_object", "target_object__sender", "target_object__project")
+        Notification.objects.filter(recipient=user)
         .order_by("-created_at")
+        .prefetch_related("target_object")
     )
