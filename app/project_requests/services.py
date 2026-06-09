@@ -39,7 +39,7 @@ def decline_request(*, req: TaskRequest) -> TaskRequest:
     create_notification(
         recipient=req.author,
         text=f"Ваш запрос в проекте «{req.project.name}» отклонён",
-        url=reverse('project_requests:request_detail', kwargs={'request_pk': req.pk})
+        target_object=req
     )
     return req
 
@@ -53,6 +53,11 @@ def convert_request_to_task(*, req: TaskRequest, actor: User) -> Task:
         project=req.project,
         name=req.description[:100],
         creator=actor,
+    )
+    create_notification(
+        recipient=req.author,
+        text=f"На основе вашего запроса в проекте «{req.project.name}» создана задача",
+        target_object=req
     )
     req.status = RequestStatus.CONVERTED
     req.save(update_fields=["status"])

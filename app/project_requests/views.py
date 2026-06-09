@@ -136,7 +136,7 @@ def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
 
     task = convert_request_to_task(req=req, actor=request.user)
     message_success(request, f"Задача «{task.name}» создана!")
-    return redirect("project_tasks:task_detail", task_pk=task.pk)
+    return render(request, "requests/partials/_request_card.html", {"req": req, "is_tech_support": True})
 
 
 @login_required
@@ -156,11 +156,8 @@ def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
     delete_request(req=req)
 
     message_success(request, "Запрос удалён")
-    response = HttpResponse(status=204)
-    response["HX-Redirect"] = reverse(
-        "project_requests:requests_tab",
-        kwargs={"username": project.owner.username, "slug": project.slug},
-    )
+    response = HttpResponse(status=200)
+    response["HX-Redirect"] = f"/projects/{project.owner.username}/{project.slug}/?tab=requests"
     return response
 
 
@@ -179,7 +176,7 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
 
     decline_request(req=req)
     message_success(request, "Запрос отклонён")
-    return redirect("project_requests:request_detail", request_pk=req.pk)
+    return render(request, "requests/partials/_request_card.html", {"req": req, "is_tech_support": True})
 
 
 @login_required

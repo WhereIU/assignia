@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.urls import reverse
 
 from .constants import RequestStatus
 
@@ -10,6 +11,11 @@ class TaskRequest(models.Model):
     description = models.TextField()
     status = models.CharField(max_length=16, choices=RequestStatus.choices, default=RequestStatus.PENDING)
     created_at = models.DateTimeField(auto_now_add=True)
+
+    def get_absolute_url(self) -> str:
+        """Return url for detail request."""
+        return reverse('project_requests:request_detail', kwargs={'request_pk': self.pk})
+
 
 class RequestComment(models.Model):
     request = models.ForeignKey(TaskRequest, on_delete=models.CASCADE, related_name='messages')
