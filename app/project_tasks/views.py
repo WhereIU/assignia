@@ -2,6 +2,7 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import redirect, render
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 
 from common.selectors import get_page_filters
 from common.services import message_success
@@ -97,11 +98,18 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
                 assignee_ids=request.POST.getlist("assignee_ids"),
             )
             message_success(request, f"Задача «{task.name}» создана!")
-            return redirect(
+            
+            success_url = reverse(
                 "projects:project_detail",
-                username=username,
-                slug=slug,
-            )
+                kwargs={"username": username, "slug": slug}
+            ) + "?tab=tasks"
+        
+            if request.headers.get("HX-Request"):
+                response = HttpResponse()
+                response["HX-Redirect"] = success_url
+                return response
+
+            return redirect(success_url)
     else:
         form = TaskCreateForm()
 
