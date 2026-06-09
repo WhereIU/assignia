@@ -35,7 +35,15 @@
                 <li><a class="dropdown-item" href="{% url 'users:profile' %}">Настройки профиля</a></li>
                 <li><a class="dropdown-item" href="{% url 'users:public_profile' username=user.username %}">Мой профиль</a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item text-danger" href="{% url 'users:logout' %}">Выйти</a></li>
+                <li>
+                    <a class="dropdown-item text-danger" 
+                    href="#" 
+                    hx-post="{% url 'users:logout' %}" 
+                    hx-target="body" 
+                    hx-push-url="true">
+                    <i class="bi bi-box-arrow-right me-1"></i> Выйти
+                    </a>
+                </li>
             </ul>
         </div>
     {% else %}
