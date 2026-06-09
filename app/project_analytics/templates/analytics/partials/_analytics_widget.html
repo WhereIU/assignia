@@ -11,19 +11,19 @@
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 {% if widget_type == 'teams' %}active{% endif %}" 
-                       href="#"
-                       hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}"
-                       hx-target="#analytics-card-{{ block_id }}"
-                       hx-swap="outerHTML">
+                    href="#"
+                    hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}"
+                    hx-target="#analytics-card-{{ block_id }}"
+                    hx-swap="outerHTML">
                         <i class="bi bi-grid-3x3-gap"></i> Статистика команд
                     </a>
                 </li>
                 <li>
                     <a class="dropdown-item d-flex align-items-center gap-2 {% if widget_type == 'participants' %}active{% endif %}" 
-                       href="#"
-                       hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}"
-                       hx-target="#analytics-card-{{ block_id }}"
-                       hx-swap="outerHTML">
+                    href="#"
+                    hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}"
+                    hx-target="#analytics-card-{{ block_id }}"
+                    hx-swap="outerHTML">
                         <i class="bi bi-people"></i> Продуктивность участников
                     </a>
                 </li>

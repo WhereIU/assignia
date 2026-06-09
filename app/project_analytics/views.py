@@ -38,6 +38,11 @@ def analytics_widget_element(request: HttpRequest, username: str, slug: str) -> 
     block_id = request.GET.get('block_id', '1')
     
     context = get_analytics_widget_context(project, widget_type, block_id, request.GET)
+    
+    context['widget_type'] = widget_type
+    context['block_id'] = block_id
+    context['project'] = project
+    
     template = f'analytics/partials/_{widget_type}_widget_content.html'
     
     return render(request, template, context)
