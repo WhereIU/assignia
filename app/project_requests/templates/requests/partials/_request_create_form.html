@@ -1,4 +1,4 @@
-<div class="modal-dialog modal-dialog-centered">
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 550px;">
     <div class="modal-content border-0 shadow-lg">
         <div class="modal-header bg-light border-0 py-3">
             <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
@@ -8,16 +8,14 @@
         </div>
         
         <form hx-post="{% url 'project_requests:request_create' username=project.owner.username slug=project.slug %}" 
-              hx-target="this"
-              hx-swap="outerHTML"
-              hx-on::before-request="
-                const modalEl = document.getElementById('modal-container');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) { modal.hide(); }
-              ">
+            hx-target="this"
+            hx-swap="outerHTML"
+            hx-on::before-request="
+            const mEl = document.getElementById('modal-container');
+            const m = bootstrap.Modal.getInstance(mEl);
+            if (m) { m.hide(); }">
             {% csrf_token %}
-            
-            <div class="modal-body py-4">
+            <div class="modal-body py-4" style="max-height: 400px;">
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small">{{ form.description.label }}</label>
                     {{ form.description }}
@@ -40,7 +38,7 @@
             
             <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" class="btn btn-success fw-medium px-4 shadow-sm">Отправить</button>
+                <button type="submit" class="btn btn-primary fw-medium px-4 shadow-sm">Отправить</button>
             </div>
         </form>
     </div>

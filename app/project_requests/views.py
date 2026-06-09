@@ -4,16 +4,17 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods
 
+from common.selectors import get_paginated_page
 from common.services import message_success, message_error
 from project_members.permissions import can_handle_requests, can_access_project
 from projects.selectors import get_project
 
 from .constants import RequestStatus
 from .selectors import (
-    get_requests_for_project,
+    get_filtered_requests_for_project,
+    get_request_status_choices,
     get_request_by_pk,
     get_request_comments,
-    get_requests_by_author,
 )
 from .services import (
     add_comment,
@@ -26,49 +27,54 @@ from .services import (
 from .forms import TaskRequestForm
 
 
-def _get_requests_queryset(project, user):
-    """Return appropriate request queryset based on user permissions."""
-    if can_handle_requests(user, project):
-        return get_requests_for_project(project)
-    return get_requests_by_author(project, author=user)
-
-
-def _render_requests_tab(
-    request: HttpRequest,
-    project,
-    *,
-    template: str = "requests/partials/_requests_tab.html",
-) -> HttpResponse:
-    """Render requests tab partial with project and request list."""
-    context = {
-        "project": project,
-        "requests": _get_requests_queryset(project, request.user),
-        "is_tech_support": can_handle_requests(request.user, project),
-    }
-    return render(request, template, context)
-
-
-@login_required
-def requests_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Requests tab view."""
-    project = get_project(username=username, slug=slug)
-    if not project:
-        raise Http404("Проект не найден")
-
-    if not can_access_project(request.user, project):
-        return HttpResponseForbidden("Вы не участник проекта")
-
+def _render_requests_tab(request: HttpRequest, project) -> HttpResponse:
+    """Render requests tab."""
     if request.headers.get("HX-Target") == "requests-list-wrapper":
         template = "requests/partials/_requests_list.html"
     else:
         template = "requests/partials/_requests_tab.html"
 
-    context = {
-        "project": project,
-        "requests": _get_requests_queryset(project, request.user),
-        "is_tech_support": can_handle_requests(request.user, project),
-    }
-    return render(request, template, context)
+    search_query = request.GET.get("search", "").strip()
+    status_filter = request.GET.get("status", "").strip()
+    page = request.GET.get("page", 1)
+
+    requests_queryset = get_filtered_requests_for_project(
+        project=project,
+        user=request.user,
+        search_query=search_query,
+        status_filter=status_filter
+    )
+
+    page_obj = get_paginated_page(
+        queryset=requests_queryset,
+        per_page=10,
+        page=page,
+    )
+
+    return render(
+        request,
+        template,
+        {
+            "project": project,
+            "page_obj": page_obj,
+            "search_query": search_query,
+            "status_filter": status_filter,
+            "status_choices": get_request_status_choices(),
+        }
+    )
+
+
+@login_required
+def requests_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Requests tab."""
+    project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
+    if not can_access_project(request.user, project):
+        return HttpResponseForbidden("Нет доступа")
+
+    return _render_requests_tab(request, project)
 
 
 @login_required
