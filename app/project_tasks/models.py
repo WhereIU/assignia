@@ -10,7 +10,7 @@ from .constants import TaskStatus, PriorityLevel, RiskLevel
 
 class Task(TimeStampedModel, SoftDeleteModel):
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks')
-    name = models.CharField(max_length=32)
+    name = models.CharField(max_length=64)
     description = models.TextField(blank=True)
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_tasks')
     priority = models.IntegerField(choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)

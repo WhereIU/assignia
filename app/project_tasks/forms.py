@@ -16,7 +16,7 @@ class TaskCreateForm(forms.ModelForm):
             'name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Кратко опишите задачу',
-                'maxlength': 300,
+                'maxlength': 64,
             }),
             'description': forms.Textarea(attrs={
                 'class': 'form-control',
