@@ -5,7 +5,6 @@ from django.shortcuts import redirect, render
 from common.selectors import get_page_filters, get_paginated_page
 from project_members.selectors import get_memberships_for_user
 from projects.selectors import (
-    get_pending_invitations_for_user,
     get_recent_public_projects,
 )
 from project_tasks.selectors import get_available_tasks_for_projects, get_tasks_assigned_to_user
@@ -51,8 +50,9 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     user_projects = [m.project for m in memberships]
     project_ids = [p.id for p in user_projects]
 
-    source = request.GET.get("source", "assigned")
-    if source == "assigned":
+    active_tab = request.GET.get("tab", "assigned")
+    
+    if active_tab == "assigned":
         tasks = get_tasks_assigned_to_user(request.user)
     else:
         tasks = get_available_tasks_for_projects(project_ids)
@@ -69,20 +69,19 @@ def dashboard(request: HttpRequest) -> HttpResponse:
             "core/partials/_dashboard_tab.html",
             {
                 "page_obj": page_obj,
-                "show_take_button": source != "assigned",
+                "show_take_button": active_tab != "assigned",
                 "filters": filters,
-                "source": source,
+                "active_tab": active_tab,
             },
         )
 
-    invitations = get_pending_invitations_for_user(request.user)
     return render(
         request,
         "core/dashboard.html",
         {
             "user_projects": user_projects,
             "filters": filters,
-            "invitations": invitations,
+            "active_tab": active_tab,
         },
     )
 

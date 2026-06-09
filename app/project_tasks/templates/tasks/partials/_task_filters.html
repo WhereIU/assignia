@@ -38,10 +38,5 @@
         <div class="col-12 col-sm-auto" style="min-width: 250px;">
             {% include 'partials/_search_input.html' with placeholder='Поиск по задачам...' search_value=filters.q %}
         </div>
-        
-        </div>
-    
-    {% if source %}
-        <input type="hidden" name="source" value="{{ source }}">
-    {% endif %}
+    </div>
 </form>
