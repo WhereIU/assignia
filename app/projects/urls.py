@@ -10,6 +10,7 @@ urlpatterns = [
 
     path('new/project/create/', views.project_create, name='project_create'),
     path('project/<str:username>/<str:slug>/', views.project_detail, name='project_detail'),
+    path("project/<str:username>/<slug:slug>/overview/", views.project_overview_tab, name="project_overview_tab"),
     path('project/<str:username>/<str:slug>/join/', views.project_join, name='project_join'),
     path('project/<str:username>/<str:slug>/update/', views.project_update, name='project_update'),
     path('project/<str:username>/<slug:slug>/delete/', views.project_delete, name='project_delete'),

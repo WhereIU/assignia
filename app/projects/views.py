@@ -18,12 +18,9 @@ from project_members.permissions import (
     is_project_member,
     is_project_owner,
 )
-from project_members.constants import ProjectRole
 from project_tasks.selectors import get_tasks_by_project
-from project_members.selectors import get_member_role
 from project_members.services import create_membership as create_project_membership
 from project_tasks.services import apply_tasks_filters
-from users.selectors import get_user_by_username
 
 from .constants import InvitationStatus
 from .forms import ProjectCreateForm, ProjectInvitationForm, ProjectUpdateForm
@@ -71,6 +68,26 @@ def available_projects(request: HttpRequest) -> HttpResponse:
         context
     )
 
+@login_required
+def project_overview_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Render project overview tab."""
+    project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
+    if not can_access_project(request.user, project):
+        return HttpResponseForbidden("Вы не участник проекта")
+
+    context = {
+        "project": project,
+        "is_owner": is_project_owner(request.user, project),
+    }
+
+    return render(
+        request, 
+        "projects/partials/_project_overview_tab.html", 
+        context
+    )
 
 @login_required
 def project_create(request: HttpRequest) -> HttpResponse:
@@ -89,7 +106,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
             )
     else:
         form = ProjectCreateForm(initial={"owner": request.user})
-    return render(request, "projects/project_create.html", {"form": form})
+    return render(request, "projects/project_create.html", {"form": form, "active_tab": "overview"})
 
 
 def project_detail(request: HttpRequest, username: str, slug: str) -> HttpResponse:
@@ -101,6 +118,8 @@ def project_detail(request: HttpRequest, username: str, slug: str) -> HttpRespon
         if not request.user.is_authenticated:
             return redirect("users:login")
         return HttpResponseForbidden("Вы не участник проекта")
+
+    active_tab = request.GET.get("tab", "overview")
 
     tasks = get_tasks_by_project(project)
     is_member = is_project_member(request.user, project)
@@ -136,6 +155,7 @@ def project_detail(request: HttpRequest, username: str, slug: str) -> HttpRespon
             "is_member": is_member,
             "is_privileged": is_priv,
             "filters": filters,
+            "active_tab": active_tab,
         },
     )
 
