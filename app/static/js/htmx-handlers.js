@@ -1,3 +1,4 @@
+// Handles initial notification when page first loads
 document.addEventListener('DOMContentLoaded', function() {
     const htmxMessages = document.getElementById('htmx-messages');
     if (htmxMessages) {
@@ -6,6 +7,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 
+// Moves notification elements into notification container and schedule it
 function moveAndShowToasts(incomingMessagesDiv) {
     const container = document.getElementById('toast-container');
     if (!container) return;
@@ -24,6 +26,7 @@ function moveAndShowToasts(incomingMessagesDiv) {
     });
 }
 
+// Monitors dynamic network responses to extract and display new notifications
 document.body.addEventListener('htmx:afterOnLoad', function(evt) {
     const responseText = evt.detail.xhr.responseText;
  
@@ -38,10 +41,26 @@ document.body.addEventListener('htmx:afterOnLoad', function(evt) {
     }
 });
 
+// Manage any dynamic content update
 document.body.addEventListener('htmx:afterSwap', function(evt) {
+    //  if modal content was loaded, initializes and launches modal overlays
     if (evt.detail.target.id === "modal-container") {
         const modalEl = document.getElementById('modal-container');
         const modal = bootstrap.Modal.getOrCreateInstance(modalEl);
         modal.show();
+    }
+
+    // Re-initializes interactive components inside newly swapped panels
+    if (evt.detail.target.id === 'tab-content') {
+        const dropdowns = evt.detail.target.querySelectorAll('[data-bs-toggle="dropdown"]');
+        dropdowns.forEach(function(dropdownToggleEl) {
+            bootstrap.Dropdown.getOrCreateInstance(dropdownToggleEl);
+        });
+        
+        // Initialize contextual tooltips
+        const tooltips = evt.detail.target.querySelectorAll('[data-bs-toggle="tooltip"]');
+        tooltips.forEach(function(tooltipTriggerEl) {
+            bootstrap.Tooltip.getOrCreateInstance(tooltipTriggerEl);
+        });
     }
 });
