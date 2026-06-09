@@ -1,5 +1,9 @@
+<span id="request-status-badge-{{ req.pk }}" hx-swap-oob="true" class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %}">
+    {{ req.get_status_display }}
+</span>
+
 {% for msg in messages_list %}
     {% include 'requests/partials/_request_message_item.html' with msg=msg %}
 {% empty %}
-<p class="text-muted">Пока нет сообщений.</p>
+    <p class="text-muted small py-3 text-center">Пока нет сообщений. Начните обсуждение!</p>
 {% endfor %}

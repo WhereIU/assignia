@@ -165,7 +165,15 @@ footer {
 .profile-bio:hover::-webkit-scrollbar-thumb {
     background-color: rgba(var(--bs-primary-rgb), 0.5);
 }
-
+.shadow-sm-hover:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08)!important;
+    border-color: var(--bs-primary-border-subtle)!important;
+}
+.transition-all {
+    transition: all 0.2s ease-in-out;
+}
+.fs-7 { font-size: 0.8rem; }
 
 @media (max-width: 576px) {
     .search-hint-wrapper .search-hints {

@@ -1,31 +1,54 @@
-<div class="card mb-3">
+<div class="card mb-3 shadow-sm border-0">
     <div class="card-body">
-        <h5>Запрос #{{ req.pk }}</h5>
-        <p>{{ req.description }}</p>
-        <div class="text-muted small mb-2">
-            Автор: <a href="{% url 'users:public_profile' username=req.author.username %}" class="text-decoration-none text-muted">{{ req.author.username }}</a> · {{ req.created_at|date:"d.m.Y H:i" }}
+        <div class="mb-3">
+            <a href="{% url 'projects:project_detail' username=req.project.owner.username slug=req.project.slug %}?tab=requests" 
+               class="text-decoration-none btn btn-link btn-sm p-0 text-muted">
+                <i class="bi bi-arrow-left"></i> Вернуться к запросам
+            </a>
         </div>
-        <span class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %}">
-            {{ req.get_status_display }}
-        </span>
+        
+        <div class="d-flex justify-content-between align-items-start">
+            <h5 class="fw-bold">Запрос #{{ req.pk }}</h5>
+            
+            <span id="request-status-badge-{{ req.pk }}" class="badge bg-{% if req.status == 'converted' %}success{% elif req.status == 'reviewed' %}warning{% elif req.status == 'declined' %}danger{% else %}secondary{% endif %}">
+                {{ req.get_status_display }}
+            </span>
+        </div>
+        
+        <p class="mt-3 text-dark">{{ req.description }}</p>
+        
+        <div class="text-muted small mb-3">
+            Автор: <a href="{% url 'users:public_profile' username=req.author.username %}" class="text-decoration-none text-muted fw-semibold">{{ req.author.username }}</a> · {{ req.created_at|date:"d.m.Y H:i" }}
+        </div>
 
         {% if is_tech_support and req.status == 'pending' %}
-            <form method="post" action="{% url 'project_requests:request_convert' request_pk=req.pk %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-success btn-sm ms-2">Создать задачу</button>
-            </form>
-            <form method="post" action="{% url 'project_requests:request_decline' request_pk=req.pk %}" class="d-inline">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm ms-2">Отклонить</button>
-            </form>
+            <div class="border-top pt-3 d-flex gap-2">
+                <form method="post" action="{% url 'project_requests:request_convert' request_pk=req.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-success btn-sm">
+                        <i class="bi bi-gear-fill me-1"></i> Создать задачу
+                    </button>
+                </form>
+                <form method="post" action="{% url 'project_requests:request_decline' request_pk=req.pk %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-x-circle me-1"></i> Отклонить
+                    </button>
+                </form>
+            </div>
         {% endif %}
 
         {% if req.author == user and req.status == 'pending' %}
-            <form hx-post="{% url 'project_requests:request_delete' request_pk=req.pk %}"
-                  class="d-inline ms-2">
-                {% csrf_token %}
-                <button type="submit" class="btn btn-outline-danger btn-sm">Удалить запрос</button>
-            </form>
+            <div class="border-top pt-3">
+                <form hx-post="{% url 'project_requests:request_delete' request_pk=req.pk %}"
+                      hx-confirm="Вы уверены, что хотите навсегда удалить этот запрос?"
+                      class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-outline-danger btn-sm">
+                        <i class="bi bi-trash3 me-1"></i> Удалить запрос
+                    </button>
+                </form>
+            </div>
         {% endif %}
     </div>
 </div>

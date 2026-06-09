@@ -23,6 +23,7 @@ from .services import (
     delete_request,
     update_request_status,
 )
+from .forms import TaskRequestForm
 
 
 def _get_requests_queryset(project, user):
@@ -48,7 +49,7 @@ def _render_requests_tab(
 
 
 @login_required
-def request_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+def requests_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     """Requests tab view."""
     project = get_project(username=username, slug=slug)
     if not project:
@@ -57,16 +58,17 @@ def request_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
 
-    if request.headers.get("HX-Request"):
-        return _render_requests_tab(request, project)
+    if request.headers.get("HX-Target") == "requests-list-wrapper":
+        template = "requests/partials/_requests_list.html"
+    else:
+        template = "requests/partials/_requests_tab.html"
 
     context = {
         "project": project,
         "requests": _get_requests_queryset(project, request.user),
         "is_tech_support": can_handle_requests(request.user, project),
-        "tab": "requests",
     }
-    return render(request, "projects/project_detail.html", context)
+    return render(request, template, context)
 
 
 @login_required
@@ -175,6 +177,7 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
 
 
 @login_required
+@login_required
 @require_http_methods(["POST"])
 def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
     """Add comment to request, optionally changing status to reviewed."""
@@ -182,19 +185,14 @@ def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
     if not req:
         raise Http404("Запрос не найден")
 
-    if req.author != request.user and not can_handle_requests(
-        request.user, req.project
-    ):
+    if req.author != request.user and not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Нет доступа к этому запросу")
 
     text = request.POST.get("text", "").strip()
     if text:
         add_comment(req=req, author=request.user, text=text)
 
-        if (
-            can_handle_requests(request.user, req.project)
-            and req.status == RequestStatus.PENDING
-        ):
+        if can_handle_requests(request.user, req.project) and req.status == RequestStatus.PENDING:
             update_request_status(req=req, status=RequestStatus.REVIEWED)
 
     return render(
@@ -208,10 +206,9 @@ def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
 
 
 @login_required
-def request_create_form(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
-    """Render the request creation form partial."""
+@require_http_methods(["GET", "POST"])
+def request_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Create new request for tech support."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -219,29 +216,37 @@ def request_create_form(
     if not can_access_project(request.user, project):
         return HttpResponseForbidden("Нет доступа")
 
+    if request.method == "POST":
+        form = TaskRequestForm(request.POST)
+        if form.is_valid():
+            create_request(
+                project=project,
+                author=request.user,
+                description=form.cleaned_data["description"],
+            )
+            message_success(request, "Запрос в поддержку успешно создан")
+            
+            response = HttpResponse(status=200)
+            response["HX-Trigger"] = "requestsChanged"
+            return response
+        
+        message_error(request, "Исправьте ошибки в форме")
+        return render(
+            request,
+            "requests/partials/_request_create_form.html",
+            {
+                "project": project,
+                "form": form,
+            },
+            status=422,
+        )
+
+    form = TaskRequestForm()
     return render(
         request,
         "requests/partials/_request_create_form.html",
-        {"project": project},
+        {
+            "project": project,
+            "form": form,
+        },
     )
-
-
-@login_required
-@require_http_methods(["POST"])
-def request_create_submit(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
-    """Handle request creation from dedicated form."""
-    project = get_project(username=username, slug=slug)
-    if not project:
-        raise Http404("Проект не найден")
-
-    if not can_access_project(request.user, project):
-        return HttpResponseForbidden("Нет доступа")
-
-    description = request.POST.get("description", "").strip()
-    if description:
-        create_request(project=project, author=request.user, description=description)
-        message_success(request, "Запрос создан")
-
-    return _render_requests_tab(request, project)

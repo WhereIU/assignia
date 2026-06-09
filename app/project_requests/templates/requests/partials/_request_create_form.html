@@ -1,22 +1,47 @@
-<div class="request-form-overlay">
-    <div class="d-flex justify-content-between align-items-center mb-3">
-        <h5 class="mb-0">Новый запрос</h5>
-        <button type="button" class="btn-close" aria-label="Закрыть"
-                onclick="this.closest('#request-form-container').innerHTML = ''"></button>
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light border-0 py-3">
+            <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-patch-question text-primary"></i> Новый запрос в техподдержку
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'project_requests:request_create' username=project.owner.username slug=project.slug %}" 
+              hx-target="this"
+              hx-swap="outerHTML"
+              hx-on::before-request="
+                const modalEl = document.getElementById('modal-container');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) { modal.hide(); }
+              ">
+            {% csrf_token %}
+            
+            <div class="modal-body py-4">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    
+                    {% if form.description.errors %}
+                        <script>document.getElementsByName('description')[0].classList.add('is-invalid');</script>
+                        <div class="invalid-feedback d-block mt-2">
+                            {% for error in form.description.errors %}
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="alert alert-info border-0 bg-light-subtle rounded small text-muted d-flex gap-2 mb-0">
+                    <i class="bi bi-info-circle text-info fs-5 mt-0.5"></i>
+                    <span>Тех.поддержка рассмотрит ваше обращение.<br> Вы получите уведомление.</span>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-success fw-medium px-4 shadow-sm">Отправить</button>
+            </div>
+        </form>
     </div>
-    <form hx-post="{% url 'project_requests:request_create_submit' username=project.owner.username slug=project.slug %}"
-          hx-target="#tab-content"
-          hx-swap="innerHTML">
-        {% csrf_token %}
-        <div class="mb-3">
-            <textarea class="form-control" name="description" rows="4" placeholder="Опишите проблему или задачу..."></textarea>
-        </div>
-        <div class="d-flex justify-content-end gap-2">
-            <button type="button" class="btn btn-outline-secondary btn-sm"
-                    onclick="this.closest('#request-form-container').innerHTML = ''">
-                Отмена
-            </button>
-            <button type="submit" class="btn btn-success btn-sm">Отправить</button>
-        </div>
-    </form>
 </div>
