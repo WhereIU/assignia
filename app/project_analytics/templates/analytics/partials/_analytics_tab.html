@@ -7,7 +7,7 @@
     <div class="row g-4">
         <div class="col-12 col-xl-6">
             <div id="analytics-card-1" 
-                 hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=teams&block_id=1"
+                 hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=teams&block_id=1"
                  hx-trigger="load" 
                  hx-swap="outerHTML">
                  <div class="card shadow-sm border-0 p-5 text-center text-muted">
@@ -19,7 +19,7 @@
 
         <div class="col-12 col-xl-6">
             <div id="analytics-card-2" 
-                 hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}?type=participants&block_id=2"
+                 hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=participants&block_id=2"
                  hx-trigger="load" 
                  hx-swap="outerHTML">
                  <div class="card shadow-sm border-0 p-5 text-center text-muted">

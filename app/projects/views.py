@@ -109,55 +109,18 @@ def project_create(request: HttpRequest) -> HttpResponse:
     return render(request, "projects/project_create.html", {"form": form, "active_tab": "overview"})
 
 
+@login_required
 def project_detail(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     project = get_project(username=username, slug=slug)
-    if not project:
-        raise Http404("Проект не найден")
+    if not project or not can_access_project(request.user, project):
+        raise Http404()
 
-    if not can_access_project(request.user, project):
-        if not request.user.is_authenticated:
-            return redirect("users:login")
-        return HttpResponseForbidden("Вы не участник проекта")
-
-    active_tab = request.GET.get("tab", "overview")
-
-    tasks = get_tasks_by_project(project)
-    is_member = is_project_member(request.user, project)
-    is_priv = is_privileged(request.user, project)
-
-    filters = get_page_filters(request)
-
-    if request.headers.get("HX-Request"):
-        if any(request.GET.get(p) for p in ("status", "priority", "risk", "q")):
-            tasks = apply_tasks_filters(tasks, filters)
-            return render(
-                request,
-                "tasks/partials/_task_list.html",
-                {"tasks": tasks, "show_take_button": True, "filters": filters},
-            )
-        return render(
-            request,
-            "tasks/partials/_tasks_tab.html",
-            {
-                "tasks": tasks,
-                "project": project,
-                "is_member": is_member,
-                "filters": filters,
-            },
-        )
-
-    return render(
-        request,
-        "projects/project_detail.html",
-        {
-            "project": project,
-            "tasks": tasks,
-            "is_member": is_member,
-            "is_privileged": is_priv,
-            "filters": filters,
-            "active_tab": active_tab,
-        },
-    )
+    return render(request, "projects/project_detail.html", {
+        "project": project,
+        "active_tab": request.GET.get("tab", "overview"),
+        "is_member": is_project_member(request.user, project),
+        "is_privileged": is_privileged(request.user, project),
+    })
 
 
 @login_required

@@ -10,7 +10,7 @@ from .services import get_analytics_widget_context
 
 @login_required
 def analytics_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render analytics tab."""
+    """Return analytics tab."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -18,18 +18,26 @@ def analytics_tab(request: HttpRequest, username: str, slug: str) -> HttpRespons
     if not is_project_member(request.user, project):
         return HttpResponseForbidden("Вы не участник проекта")
 
-    if request.headers.get('HX-Request') and 'type' in request.GET:
-        widget_type = request.GET.get('type')
-        block_id = request.GET.get('block_id', '1')
-        
-        context = get_analytics_widget_context(project, widget_type, block_id, request.GET)
-        
-        template = f'analytics/partials/_{widget_type}_widget_content.html'
-        return render(request, template, context)
-
     context = {'project': project}
+
     if request.headers.get('HX-Request'):
         return render(request, 'analytics/partials/_analytics_tab.html', context)
 
-    context['tab'] = 'analytics'
+    context['active_tab'] = 'analytics'
     return render(request, 'projects/project_detail.html', context)
+
+
+@login_required
+def analytics_widget_element(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Return analytic tab."""
+    project = get_project(username=username, slug=slug)
+    if not project or not is_project_member(request.user, project):
+        return HttpResponseForbidden()
+
+    widget_type = request.GET.get('type')
+    block_id = request.GET.get('block_id', '1')
+    
+    context = get_analytics_widget_context(project, widget_type, block_id, request.GET)
+    template = f'analytics/partials/_{widget_type}_widget_content.html'
+    
+    return render(request, template, context)

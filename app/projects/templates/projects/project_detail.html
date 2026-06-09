@@ -100,21 +100,29 @@
 {% endblock %}
 
 {% block content %}
-<div id="tab-content">
-    {% if not active_tab or active_tab == 'overview' %}
-        {% include 'projects/partials/_project_overview_tab.html' %}
-    {% elif active_tab == 'tasks' %}
-        {% include 'tasks/partials/_tasks_tab.html' %}
-    {% elif active_tab == 'requests' %}
-        {% include 'requests/partials/_requests_tab.html' %}
-    {% elif active_tab == 'analytics' %}
-        {% include 'analytics/partials/_analytics_tab.html' %}
-    {% elif active_tab == 'members' %}
-        {% include 'members/partials/_members_tab.html' %}
-    {% elif active_tab == 'directions' %}
-        {% include 'directions/partials/_directions_tab.html' %}
-    {% elif active_tab == 'settings' %}
-        {% include 'projects/partials/_project_settings.html' %}
-    {% endif %}
+<div id="tab-content" hx-disinherit="*"
+     {% if active_tab == 'overview' %}
+        hx-get="{% url 'projects:project_overview_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'tasks' %}
+        hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'directions' %}
+        hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'members' %}
+        hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'analytics' %}
+        hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'requests' %}
+        hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'settings' %}
+        hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
+     {% endif %}
+     hx-trigger="load"
+     hx-swap="innerHTML">
+    
+    <div class="text-center py-5">
+        <div class="spinner-border text-secondary" role="status">
+            <span class="visually-hidden">Загрузка...</span>
+        </div>
+    </div>
 </div>
 {% endblock %}
