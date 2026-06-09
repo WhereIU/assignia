@@ -12,6 +12,7 @@ class Team(TimeStampedModel, SoftDeleteModel):
 
     class Meta:
         default_related_name = 'teams'
+        ordering = ['-created_at']
 
     def __str__(self):
         return f"{self.name} ({self.direction.name})"
