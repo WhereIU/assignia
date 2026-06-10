@@ -38,7 +38,7 @@
                             <li><hr class="dropdown-divider opacity-50"></li>
                             <li>
                                 <a class="dropdown-menu-item dropdown-item small text-danger d-flex align-items-center" 
-                                   hx-get="{% url 'project_directions:direction_delete_confirm_form' direction_pk=direction.pk %}"
+                                   hx-get="{% url 'project_directions:direction_delete_confirm' direction_pk=direction.pk %}"
                                    hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
                                     <i class="bi bi-trash me-2"></i> Удалить временно
                                 </a>

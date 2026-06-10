@@ -360,8 +360,8 @@ def team_edit_form(request: HttpRequest, direction_pk: int, team_pk: int) -> Htt
 
 
 @login_required
-def team_delete_confirm_form(request: HttpRequest, team_pk: int) -> HttpResponse:
-    """Render soft-delete form."""
+def team_delete_confirm(request: HttpRequest, team_pk: int) -> HttpResponse:
+    """Render soft-delete for team."""
     team = get_team_by_pk(pk=team_pk, is_deleted=False)
     if not team:
         raise Http404("Команда не найдена")
@@ -377,3 +377,4 @@ def team_delete_confirm_form(request: HttpRequest, team_pk: int) -> HttpResponse
             "submit_url": reverse("project_teams:team_delete", kwargs={"team_pk": team.pk}),
         },
     )
+

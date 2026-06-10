@@ -258,7 +258,7 @@ def direction_edit_form(request: HttpRequest, direction_pk: int) -> HttpResponse
 
 
 @login_required
-def direction_delete_confirm_form(request: HttpRequest, direction_pk: int) -> HttpResponse:
+def direction_delete_confirm(request: HttpRequest, direction_pk: int) -> HttpResponse:
     """Render soft-delete confirmation for direction."""
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
     if not direction:
