@@ -10,6 +10,7 @@
       loop:
         - ../docker-compose.prod.yml
         - ../app
+        - ../requirements.txt  
         - ../nginx
         - ../docker
       when: (deploy_method | default('copy')) == 'copy'
