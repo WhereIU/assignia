@@ -9,8 +9,9 @@ app/staticfiles/
 
 # Cashe
 *pytest_cache
+
 # ansible
-/ansible/*.ini
+ansible/*.ini
 
 # Large files
 *.tar
