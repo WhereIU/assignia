@@ -22,9 +22,23 @@ from .services import (
     create_request,
     decline_request,
     delete_request,
-    update_request_status,
 )
 from .forms import TaskRequestForm
+
+
+def _get_messages_context(req, page_number=1) -> dict:
+    messages_queryset = get_request_comments(req=req).order_by("-created_at")
+    
+    page_obj = get_paginated_page(queryset=messages_queryset, page=page_number, per_page=10)
+    
+    fixed_path = reverse("project_requests:request_detail", kwargs={"request_pk": req.pk})
+    
+    return {
+        "req": req,
+        "messages_list": page_obj.object_list,
+        "page_obj": page_obj,
+        "fixed_path": fixed_path,
+    }
 
 
 def _render_requests_tab(request: HttpRequest, project) -> HttpResponse:
@@ -102,26 +116,21 @@ def request_create(
 
 @login_required
 def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Detail view of request."""
     req = get_request_by_pk(pk=request_pk)
-    if not req:
-        raise Http404("Запрос не найден")
-
-    if req.author != request.user and not can_handle_requests(
-        request.user, req.project
-    ):
+    if not req or (req.author != request.user and not can_handle_requests(request.user, req.project)):
         return HttpResponseForbidden("Нет доступа")
 
-    return render(
-        request,
-        "requests/request_detail.html",
-        {
-            "project": req.project,
-            "req": req,
-            "messages_list": get_request_comments(req),
-            "is_tech_support": can_handle_requests(request.user, req.project),
-        },
-    )
+    page = request.GET.get("page", 1)
+    context = _get_messages_context(req, page_number=page)
+
+    if request.headers.get("HX-Target") == "messages-list-wrapper":
+        return render(request, "requests/partials/_request_messages_list.html", context)
+
+    context.update({
+        "project": req.project,
+        "is_tech_support": can_handle_requests(request.user, req.project),
+    })
+    return render(request, "requests/request_detail.html", context)
 
 
 @login_required
@@ -190,32 +199,23 @@ def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
 
 
 @login_required
-@login_required
 @require_http_methods(["POST"])
 def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Add comment to request, optionally changing status to reviewed."""
     req = get_request_by_pk(pk=request_pk)
     if not req:
-        raise Http404("Запрос не найден")
-
-    if req.author != request.user and not can_handle_requests(request.user, req.project):
-        return HttpResponseForbidden("Нет доступа к этому запросу")
+        raise Http404()
 
     text = request.POST.get("text", "").strip()
     if text:
         add_comment(req=req, author=request.user, text=text)
 
-        if can_handle_requests(request.user, req.project) and req.status == RequestStatus.PENDING:
-            update_request_status(req=req, status=RequestStatus.REVIEWED)
+    detail_path = reverse("project_requests:request_detail", kwargs={"request_pk": req.pk})
+    
+    setattr(request, "path", detail_path)
 
-    return render(
-        request,
-        "requests/partials/_request_messages_list.html",
-        {
-            "req": req,
-            "messages_list": get_request_comments(req),
-        },
-    )
+    context = _get_messages_context(req, page_number=1)
+    
+    return render(request, "requests/partials/_request_messages_list.html", context)
 
 
 @login_required
@@ -289,4 +289,3 @@ def request_create(request: HttpRequest, username: str, slug: str) -> HttpRespon
             "form": form,
         },
     )
-

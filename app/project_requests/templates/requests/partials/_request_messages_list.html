@@ -1,22 +1,19 @@
-<span id="request-status-badge-{{ req.pk }}" hx-swap-oob="true" class="badge rounded-all px-3 py-2 border fs-7 d-inline-flex align-items-center gap-1
-    {% if req.status == 'converted' %}bg-success-subtle text-success border-success-subtle
-    {% elif req.status == 'reviewed' %}bg-warning-subtle text-warning border-warning-subtle
-    {% elif req.status == 'declined' %}bg-danger-subtle text-danger border-danger-subtle
-    {% else %}bg-info-subtle text-info border-info-subtle{% endif %}">
-    
-    {% if req.status == 'converted' %}<i class="bi bi-check-circle-fill"></i>
-    {% elif req.status == 'reviewed' %}<i class="bi bi-eye-fill"></i>
-    {% elif req.status == 'declined' %}<i class="bi bi-dash-circle-fill"></i>
-    {% else %}<i class="bi bi-hourglass-split"></i>{% endif %}
-    
-    {{ req.get_status_display }}
-</span>
+<div id="request-top-line-{{ req.pk }}" hx-swap-oob="true" style="height: 4px;" class="
+    {% if req.status == 'converted' %}bg-success
+    {% elif req.status == 'reviewed' %}bg-warning
+    {% elif req.status == 'declined' %}bg-danger
+    {% else %}bg-primary{% endif %}">
+</div>
 
-{% for msg in messages_list %}
-    {% include 'requests/partials/_request_message_item.html' with msg=msg %}
-{% empty %}
-    <div class="text-center py-4 text-muted small">
-        <i class="bi bi-chat-quote fs-3 d-block mb-1 opacity-50"></i>
-        Пока нет сообщений. Начните обсуждение!
-    </div>
-{% endfor %}
+<div class="d-flex flex-column gap-2 mb-3">
+    {% for msg in messages_list %}
+        {% include 'requests/partials/_request_message_item.html' with msg=msg %}
+    {% empty %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-chat-quote fs-3 d-block mb-1 opacity-50"></i>
+            Пока нет сообщений. Начните обсуждение!
+        </div>
+    {% endfor %}
+</div>
+
+{% include "partials/_paginator.html" with page_obj=page_obj hx_target="#messages-list-wrapper" %}
