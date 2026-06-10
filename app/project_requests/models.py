@@ -17,7 +17,7 @@ class TaskRequest(models.Model):
         return reverse('project_requests:request_detail', kwargs={'request_pk': self.pk})
 
 
-class RequestComment(models.Model):
+class RequestMessage(models.Model):
     request = models.ForeignKey(TaskRequest, on_delete=models.CASCADE, related_name='messages')
     author = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
     text = models.TextField()

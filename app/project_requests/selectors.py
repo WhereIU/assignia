@@ -6,7 +6,7 @@ from django.db.models import Q
 from project_members.permissions import can_handle_requests
 from project_requests.constants import RequestStatus
 
-from .models import RequestComment, TaskRequest
+from .models import RequestMessage, TaskRequest
 
 if TYPE_CHECKING:
     from projects.models import Project
@@ -31,9 +31,9 @@ def get_requests_by_author(project: Project, author: User) -> QuerySet[TaskReque
     )
 
 
-def get_request_comments(req: TaskRequest) -> QuerySet[RequestComment]:
-    """Return comments by request."""
-    return RequestComment.objects.filter(request=req).order_by("created_at")
+def get_request_comments(req: TaskRequest) -> QuerySet[RequestMessage]:
+    """Return messages by request."""
+    return RequestMessage.objects.filter(request=req).order_by("created_at")
 
 
 def get_request_status_choices() -> list[tuple[str, str]]:

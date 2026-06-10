@@ -17,7 +17,7 @@ from .selectors import (
     get_request_comments,
 )
 from .services import (
-    add_comment,
+    add_message,
     convert_request_to_task,
     create_request,
     decline_request,
@@ -207,7 +207,7 @@ def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
 
     text = request.POST.get("text", "").strip()
     if text:
-        add_comment(req=req, author=request.user, text=text)
+        add_message(req=req, author=request.user, text=text)
 
     detail_path = reverse("project_requests:request_detail", kwargs={"request_pk": req.pk})
     

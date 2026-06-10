@@ -1,13 +1,12 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from django.urls import reverse
 from django.db import transaction
 
 from core.services import create_notification
 
 from .constants import RequestStatus
-from .models import RequestComment, TaskRequest
+from .models import RequestMessage, TaskRequest
 
 if TYPE_CHECKING:
     from projects.models import Project
@@ -26,9 +25,9 @@ def create_request(
     )
 
 
-def add_comment(*, req: TaskRequest, author: User, text: str) -> RequestComment:
-    """Add comment to request."""
-    return RequestComment.objects.create(request=req, author=author, text=text)
+def add_message(*, req: TaskRequest, author: User, text: str) -> RequestMessage:
+    """Add message to request."""
+    return RequestMessage.objects.create(request=req, author=author, text=text)
 
 
 def decline_request(*, req: TaskRequest) -> TaskRequest:

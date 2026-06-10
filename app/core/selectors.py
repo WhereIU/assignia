@@ -1,12 +1,6 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from django.db.models import Prefetch
-
-from projects.models import Invitation
-from project_tasks.models import TaskComment
-from project_requests.models import TaskRequest
-
 from .models import Notification
 
 if TYPE_CHECKING:
