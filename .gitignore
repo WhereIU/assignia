@@ -11,7 +11,9 @@ app/staticfiles/
 *pytest_cache
 
 # ansible
-ansible/*.ini
+ansible/**/*.ini
+ansible/**/hosts*
+ansible/**/inventory*
 
 # Large files
 *.tar
