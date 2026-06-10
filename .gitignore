@@ -24,7 +24,7 @@ env/
 
 
 # Certs
-*/nginx/certs/
+nginx/certs/
 
 # Docker
 docker-compose.override.yml
