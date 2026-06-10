@@ -29,6 +29,40 @@
         update: yes
       when: deploy_method == "git"
 
+    - name: Ensure certs directory exists
+      ansible.builtin.file:
+        path: /opt/assignia/nginx/certs
+        state: directory
+        mode: '0755'
+
+    - name: Upload SSL certificates for .online
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_ONLINE_FULLCHAIN') }}"
+        dest: /opt/assignia/nginx/certs/assignia.online.fullchain.pem
+        mode: '0600'
+      when: lookup('env', 'SSL_ONLINE_FULLCHAIN') != ""
+
+    - name: Upload SSL key for .online
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_ONLINE_KEY') }}"
+        dest: /opt/assignia/nginx/certs/assignia.online.key
+        mode: '0600'
+      when: lookup('env', 'SSL_ONLINE_KEY') != ""
+
+    - name: Upload SSL certificate for .ru
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_RU_FULLCHAIN') }}"
+        dest: /opt/assignia/nginx/certs/assignia.ru.fullchain.pem
+        mode: '0600'
+      when: lookup('env', 'SSL_RU_FULLCHAIN') != ""
+
+    - name: Upload SSL key for .ru
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_RU_KEY') }}"
+        dest: /opt/assignia/nginx/certs/assignia.ru.key
+        mode: '0600'
+      when: lookup('env', 'SSL_RU_KEY') != ""
+
     - name: Build docker images
       command: docker compose -f docker-compose.prod.yml build
       args:
