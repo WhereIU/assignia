@@ -1,8 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
-from django.shortcuts import redirect, render
-from django.urls import reverse
+from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 
 from common.selectors import get_paginated_page
 from common.services import message_success, message_error
@@ -125,18 +125,23 @@ def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
 
 
 @login_required
+@require_http_methods(["POST"])
 def request_convert(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Convert request into task."""
     req = get_request_by_pk(pk=request_pk)
-    if not req:
-        raise Http404("Запрос не найден")
-
-    if not can_handle_requests(request.user, req.project):
+    if not req or not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    task = convert_request_to_task(req=req, actor=request.user)
-    message_success(request, f"Задача «{task.name}» создана!")
-    return render(request, "requests/partials/_request_card.html", {"req": req, "is_tech_support": True})
+    convert_request_to_task(req=req, actor=request.user)
+    message_success(request, "Запрос успешно конвертирован в задачу!")
+    
+    return render(
+        request,
+        "requests/partials/_request_card.html",
+        {
+            "req": req,
+            "is_tech_support": True,
+        }
+    )
 
 
 @login_required
@@ -157,26 +162,31 @@ def request_delete(request: HttpRequest, request_pk: int) -> HttpResponse:
 
     message_success(request, "Запрос удалён")
     response = HttpResponse(status=200)
-    response["HX-Redirect"] = f"/projects/{project.owner.username}/{project.slug}/?tab=requests"
+    
+    project_url = reverse("projects:project_detail", kwargs={"username": project.owner.username, "slug": project.slug})
+    response["HX-Redirect"] = f"{project_url}?tab=requests"
+    
     return response
 
 
 @login_required
 @require_http_methods(["POST"])
 def request_decline(request: HttpRequest, request_pk: int) -> HttpResponse:
-    """Decline pending request."""
     req = get_request_by_pk(pk=request_pk)
-    if not req:
-        raise Http404("Запрос не найден")
-
-    if not can_handle_requests(request.user, req.project):
+    if not req or not can_handle_requests(request.user, req.project):
         return HttpResponseForbidden("Недостаточно прав")
-    if req.status != RequestStatus.PENDING:
-        return HttpResponse("Запрос уже обработан", status=400)
 
     decline_request(req=req)
     message_success(request, "Запрос отклонён")
-    return render(request, "requests/partials/_request_card.html", {"req": req, "is_tech_support": True})
+    
+    return render(
+        request,
+        "requests/partials/_request_card.html",
+        {
+            "req": req,
+            "is_tech_support": True,
+        }
+    )
 
 
 @login_required
@@ -204,6 +214,32 @@ def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
         {
             "req": req,
             "messages_list": get_request_comments(req),
+        },
+    )
+
+
+@login_required
+def request_action_confirm(request: HttpRequest, request_pk: int, action_type: str) -> HttpResponse:
+    """Render action confirm."""
+    req = get_request_by_pk(pk=request_pk)
+    if not req:
+        raise Http404("Запрос не найден")
+
+    if action_type in ["convert", "decline"]:
+        if not can_handle_requests(request.user, req.project):
+            return HttpResponseForbidden("Нет доступа")
+    elif action_type == "delete":
+        if req.author != request.user:
+            return HttpResponseForbidden("Вы не автор запроса")
+    else:
+        raise Http404("Неизвестное действие")
+
+    return render(
+        request,
+        "requests/partials/_action_confirm.html",
+        {
+            "req": req,
+            "action_type": action_type,
         },
     )
 
@@ -253,3 +289,4 @@ def request_create(request: HttpRequest, username: str, slug: str) -> HttpRespon
             "form": form,
         },
     )
+

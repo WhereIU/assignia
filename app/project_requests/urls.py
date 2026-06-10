@@ -13,7 +13,8 @@ urlpatterns = [
     path('request/<int:request_pk>/convert/', views.request_convert, name='request_convert'),
     path('request/<int:request_pk>/delete/', views.request_delete, name='request_delete'),
     path('request/<int:request_pk>/decline/', views.request_decline, name='request_decline'),
-
+    path("request/<int:request_pk>/confirm/<str:action_type>/", views.request_action_confirm, name="request_action_confirm"),
+    
     path('request/<int:request_pk>/message/add/', views.request_message_add, name='request_message_add'),
 
     path('form/<str:username>/<str:slug>/create/', views.request_create, name='request_create_form'),
