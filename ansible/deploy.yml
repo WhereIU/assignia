@@ -18,7 +18,9 @@
       ansible.builtin.copy:
         content: "{{ lookup('env', 'ENV_FILE_CONTENT') }}"
         dest: /opt/assignia/.env.prod
-      when: (deploy_method | default('copy')) == 'copy' and lookup('env', 'ENV_FILE_CONTENT') != ""
+      when:
+        - (deploy_method | default('copy')) == 'copy'
+        - lookup('env', 'ENV_FILE_CONTENT') != ""
 
     # Git method
     - name: Clone or update repository
@@ -27,7 +29,7 @@
         dest: /opt/assignia
         version: main
         update: yes
-      when: deploy_method == "git"
+      when: (deploy_method | default('copy')) == 'git'
 
     - name: Ensure certs directory exists
       ansible.builtin.file:
