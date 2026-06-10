@@ -27,7 +27,7 @@ def notifications(request: HttpRequest) -> HttpResponse:
     notifications_queryset = get_notifications_for_user(request.user)
     page_number = request.GET.get("page", 1)
     
-    page_obj = get_paginated_page(notifications_queryset, page=page_number, per_page=5)
+    page_obj = get_paginated_page(notifications_queryset, page=page_number, per_page=7)
     
     unread_ids = [n.id for n in page_obj if not n.is_read]
     if unread_ids:
