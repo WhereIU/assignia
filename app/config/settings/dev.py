@@ -1,8 +1,5 @@
 from .base import *
 
-# MODE
-DEBUG = True
-
 # SECURITY
 SECURE_SSL_REDIRECT = False
 SESSION_COOKIE_SECURE = False

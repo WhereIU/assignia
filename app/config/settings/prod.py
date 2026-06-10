@@ -1,7 +1,7 @@
 from .base import *
 
 # MODE
-DEBUG=1
+DEBUG=0
 
 # SECURITY
 SECURE_SSL_REDIRECT = True
