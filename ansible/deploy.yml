@@ -2,7 +2,7 @@
   hosts: assignia_server
 
   tasks:
-    # Copy method
+    # Copy method (default)
     - name: Copy project files to server
       ansible.builtin.copy:
         src: "{{ item }}"
@@ -12,7 +12,7 @@
         - ../app
         - ../nginx
         - ../docker
-      when: deploy_method == "copy"
+      when: (deploy_method | default('copy')) == 'copy'
 
     - name: Create .env.prod from secret
       ansible.builtin.copy:
