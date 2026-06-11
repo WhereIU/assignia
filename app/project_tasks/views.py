@@ -1,7 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_POST, require_http_methods
 from django.urls import reverse
 
 from common.selectors import get_page_filters
@@ -147,31 +147,35 @@ def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
 
 
 @login_required
-@require_http_methods(["POST"])
+@require_POST
 def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Take task for execution."""
+    """Take_task."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
 
     if not is_project_member(request.user, task.project):
-        return HttpResponseForbidden("Вы не участник проекта")
-        
-    if task.status == TaskStatus.DONE or task.is_deleted:
-        return HttpResponse("Нельзя взять выполненную или удаленную задачу", status=400)
-
-    if is_user_assigned_to_task(task, request.user):
-        return HttpResponse("Вы уже взяли эту задачу", status=400)
+        return HttpResponseForbidden("Нет доступа")
 
     take_task(task=task, user=request.user)
 
+    if "task-card-container" in request.headers.get("HX-Target", ""):
+        return render(
+            request,
+            "tasks/partials/_task_card.html",
+            {
+                "task": task,
+                "is_privileged": is_privileged(request.user, task.project),
+                "is_assignee": True,
+            },
+        )
+    
     return render(
         request,
-        "tasks/partials/_task_card.html",
+        "tasks/partials/_task_item.html",
         {
             "task": task,
-            "is_privileged": is_privileged(request.user, task.project),
-            "is_assignee": True,
+            "user": request.user,
         },
     )
 
