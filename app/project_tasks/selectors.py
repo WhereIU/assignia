@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
-from project_tasks.constants import TaskStatus
+from django.utils import timezone
 
+from .constants import PriorityLevel, RiskLevel, TaskStatus
 from .models import Task, TaskComment
 
 if TYPE_CHECKING:
@@ -39,3 +40,11 @@ def get_available_tasks_for_projects(project_ids: list[int]) -> QuerySet[Task]:
         assignments__isnull=True,
         is_deleted=False,
     )
+
+def get_form_choices_context() -> dict:
+    return {
+        "status_choices": TaskStatus.choices,
+        "priority_choices": PriorityLevel.choices,
+        "risk_choices": RiskLevel.choices,
+        "now": timezone.now(),
+    }

@@ -1,0 +1,149 @@
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 650px;">
+    <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light border-0 py-3">
+            <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                <i class="bi {% if task %}bi-pencil-square text-primary{% else %}bi-plus-square text-success{% endif %}"></i>
+                {% if task %}Редактирование задачи{% else %}Новая задача проекта{% endif %}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% if task %}{% url 'project_tasks:task_save' task.pk %}{% else %}{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}{% endif %}" 
+              hx-target="{% if task %}#task-main-card{% else %}this{% endif %}"
+              hx-swap="outerHTML"
+              hx-on::before-request="
+                  const mEl = document.getElementById('modal-container');
+                  const m = bootstrap.Modal.getInstance(mEl);
+                  if (m) { m.hide(); }">
+            {% csrf_token %}
+            
+            <div class="modal-body py-4" style="max-height: 75vh;">
+                <div class="row g-3">
+                    
+                    <div class="col-12">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <label class="form-label fw-semibold text-secondary small mb-0">Название задачи</label>
+                            <span id="task-name-counter" class="text-muted small" style="font-size: 0.75rem;">0 / 64</span>
+                        </div>
+                        <input type="text" id="id_task_name" name="name" class="form-control" 
+                               value="{% if task %}{{ task.name }}{% endif %}" 
+                               required maxlength="64" placeholder="Кратко опишите задачу">
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Статус</label>
+                        <select name="status" class="form-select">
+                            {% for key, label in status_choices %}
+                                <option value="{{ key }}" {% if task and task.status == key %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Приоритет</label>
+                        <select name="priority" class="form-select">
+                            {% for key, label in priority_choices %}
+                                <option value="{{ key }}" {% if task and task.priority == key %}selected{% elif not task and key == 3 %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">Дедлайн</label>
+                        <input type="datetime-local" name="deadline" class="form-control" 
+                            min="{{ now|date:'Y-m-d\TH:i' }}"
+                            max="3000-12-31T23:59"
+                            value="{% if task and task.deadline %}{{ task.deadline|date:'Y-m-d\TH:i' }}{% endif %}">
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Шанс риска (1-5)</label>
+                        <select name="risk_chance" class="form-select">
+                            {% for key, label in risk_choices %}
+                                <option value="{{ key }}" {% if task and task.risk_chance == key %}selected{% elif not task and key == 2 %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label class="form-label fw-semibold text-secondary small">Последствия риска (1-5)</label>
+                        <select name="risk_impact" class="form-select">
+                            {% for key, label in risk_choices %}
+                                <option value="{{ key }}" {% if task and task.risk_impact == key %}selected{% elif not task and key == 2 %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="col-12">
+                        <label class="form-label fw-semibold text-secondary small">Описание</label>
+                        <textarea name="description" class="form-control" rows="3" maxlength="1000" placeholder="Подробное описание задачи">{% if task %}{{ task.description }}{% endif %}</textarea>
+                    </div>
+
+                    {% if task %}
+                        <hr class="my-3 opacity-25">
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold text-dark small"><i class="bi bi-people me-1"></i> Исполнители</label>
+                            <input type="text" class="form-control form-control-sm" name="assignee_search" placeholder="Поиск участника проекта..."
+                                   hx-get="{% url 'project_tasks:task_member_search' task.pk %}"
+                                   hx-trigger="keyup changed delay:250ms"
+                                   hx-target="#assignee-search-results"
+                                   hx-swap="innerHTML">
+                            <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                            <div id="selected-assignees" class="mt-2">
+                                {% include 'tasks/partials/_selected_assignees.html' with task=task %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-semibold text-dark small"><i class="bi bi-compass me-1"></i> Направления</label>
+                            <input type="text" class="form-control form-control-sm" name="direction_search" placeholder="Поиск направления..."
+                                   hx-get="{% url 'project_tasks:task_direction_search' task.pk %}"
+                                   hx-trigger="keyup changed delay:250ms"
+                                   hx-target="#direction-search-results"
+                                   hx-swap="innerHTML">
+                            <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                            <div id="selected-directions" class="mt-2">
+                                {% include 'directions/partials/_selected_directions.html' with task=task %}
+                            </div>
+                        </div>
+
+                        <div class="col-12 mt-3">
+                            <label class="form-label fw-semibold text-dark small"><i class="bi bi-shield-lock me-1"></i> Команды</label>
+                            <input type="text" class="form-control form-control-sm" name="team_search" placeholder="Поиск команды..."
+                                   hx-get="{% url 'project_tasks:task_team_search' task.pk %}" 
+                                   hx-trigger="keyup changed delay:250ms" 
+                                   hx-target="#team-search-results" 
+                                   hx-swap="innerHTML">
+                            <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                            <div id="selected-teams" class="mt-2">
+                                {% include 'teams/partials/_selected_teams.html' with task=task %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn {% if task %}btn-primary{% else %}btn-success{% endif %} fw-medium px-4 shadow-sm">
+                    {% if task %}Сохранить{% else %}Создать задачу{% endif %}
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    (function() {
+        const input = document.getElementById('id_task_name');
+        const counter = document.getElementById('task-name-counter');
+        if (input && counter) {
+            const updateCounter = () => {
+                counter.textContent = `${input.value.length} / 64`;
+            };
+            input.addEventListener('input', updateCounter);
+            updateCounter();
+        }
+    })();
+</script>

@@ -1,0 +1,64 @@
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px;">
+    <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light border-0 py-3">
+            <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-kanban text-success"></i> Новая задача проекта
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}" 
+              hx-target="this"
+              hx-swap="outerHTML"
+              hx-on::before-request="
+                  const mEl = document.getElementById('modal-container');
+                  const m = bootstrap.Modal.getInstance(mEl);
+                  if (m) { m.hide(); }">
+            {% csrf_token %}
+            
+            <div class="modal-body py-4" style="max-height: 75vh;">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">{{ form.name.label }}</label>
+                    {{ form.name }}
+                    {% if form.name.errors %}
+                        <script>document.getElementsByName('name')[0].classList.add('is-invalid');</script>
+                        <div class="invalid-feedback d-block mt-1">
+                            {% for error in form.name.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">{{ form.description.label }}</label>
+                    {{ form.description }}
+                    {% if form.description.errors %}
+                        <script>document.getElementsByName('description')[0].classList.add('is-invalid');</script>
+                        <div class="invalid-feedback d-block mt-1">
+                            {% for error in form.description.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.priority.label }}</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.risk_chance.label }}</label>
+                        {{ form.risk_chance }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.risk_impact.label }}</label>
+                        {{ form.risk_impact }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-success fw-medium px-4 shadow-sm">Создать</button>
+            </div>
+        </form>
+    </div>
+</div>

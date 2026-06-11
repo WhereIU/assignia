@@ -1,8 +1,7 @@
 from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
-from django.shortcuts import redirect, render
+from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
-from django.urls import reverse
 
 from common.selectors import get_page_filters
 from common.services import message_success
@@ -23,6 +22,7 @@ from .selectors import (
     get_task_by_pk,
     get_task_comments,
     get_tasks_by_project,
+    get_form_choices_context,
 )
 from .services import (
     apply_tasks_filters,
@@ -46,10 +46,18 @@ from .services import (
 
 @login_required
 def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render tasks tab."""
+    """Handle tasks tab."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
+
+    if not is_project_member(request.user, project):
+        return HttpResponseForbidden("Нет доступа к задачам проекта")
+
+    if request.headers.get("HX-Target") == "tasks-list-wrapper":
+        template = "tasks/partials/_tasks_list.html"
+    else:
+        template = "tasks/partials/_tasks_tab.html"
 
     tasks = get_tasks_by_project(project)
     filters = get_page_filters(request)
@@ -58,29 +66,22 @@ def tasks_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     page = request.GET.get("page", 1)
     page_obj = get_paginated_page(tasks, page, per_page=10)
 
-    is_member = is_project_member(request.user, project)
-
-    template = (
-        "tasks/partials/_tasks_container.html"
-        if request.headers.get("HX-Target") == "task-list-inner"
-        else "tasks/partials/_tasks_tab.html"
-    )
-
     return render(
         request,
         template,
         {
             "project": project,
             "page_obj": page_obj,
-            "is_member": is_member,
             "filters": filters,
+            "status_choices": TaskStatus.choices,
+            "priority_choices": PriorityLevel.choices,
         },
     )
 
 
 @login_required
 def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Create new task in project."""
+    """Create a new task."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -89,34 +90,32 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
         return HttpResponseForbidden("Вы не участник проекта")
 
     if request.method == "POST":
+        data = request.POST.dict()
+
         form = TaskCreateForm(request.POST)
         if form.is_valid():
-            task = create_task(
+            create_task(
                 form=form,
                 project=project,
                 creator=request.user,
                 assignee_ids=request.POST.getlist("assignee_ids"),
             )
-            message_success(request, f"Задача «{task.name}» создана!")
+            message_success(request, "Задача успешно создана")
+            response = HttpResponse(status=200)
+            response["HX-Trigger"] = "tasksChanged"
+            return response
             
-            success_url = reverse(
-                "projects:project_detail",
-                kwargs={"username": username, "slug": slug}
-            ) + "?tab=tasks"
-        
-            if request.headers.get("HX-Request"):
-                response = HttpResponse()
-                response["HX-Redirect"] = success_url
-                return response
-
-            return redirect(success_url)
-    else:
-        form = TaskCreateForm()
+        return render(
+            request,
+            "tasks/partials/_task_form.html",
+            {"form": form, "project": project, **get_form_choices_context()},
+            status=422
+        )
 
     return render(
         request,
-        "tasks/task_create.html",
-        {"form": form, "project": project},
+        "tasks/partials/_task_form.html",
+        {"project": project, **get_form_choices_context()},
     )
 
 
@@ -168,7 +167,7 @@ def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
 
 @login_required
 def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Render task edit."""
+    """Handle edit task."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
@@ -176,24 +175,20 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
     if not is_privileged(request.user, task.project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    project_members = get_project_memberships(task.project)
-
     return render(
         request,
-        "tasks/partials/_task_edit.html",
+        "tasks/partials/_task_form.html",
         {
             "task": task,
             "project": task.project,
-            "project_members": project_members,
-            'status_choices': TaskStatus.choices,
+            **get_form_choices_context()
         },
     )
-
 
 @login_required
 @require_http_methods(["POST"])
 def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Save changes to task."""
+    """Save changes of task."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
@@ -204,9 +199,9 @@ def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
     update_task(
         task=task,
         data=request.POST,
-        assignee_ids=request.POST.getlist("assignee_ids"),
+        assignee_ids=request.POST.getlist("assignee_ids") if "assignee_ids" in request.POST else None,
     )
-    message_success(request, "Задача сохранена")
+    message_success(request, "Изменения сохранены")
 
     return render(
         request,
