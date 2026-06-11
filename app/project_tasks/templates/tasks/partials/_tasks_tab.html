@@ -8,8 +8,9 @@
                 <h3 class="h4 mb-0 fw-bold text-dark">Задачи проекта</h3>
             </div>
             
-           <button  hx-get="{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}"
+            <button hx-get="{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}"
                     hx-target="#modal-container"
+                    hx-swap="innerHTML"
                     class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 shadow-sm fw-medium"
                     data-bs-toggle="modal"
                     data-bs-target="#modal-container">

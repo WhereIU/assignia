@@ -11,7 +11,6 @@ urlpatterns = [
     path('task/<int:task_pk>/', views.task_detail, name='task_detail'),
     path('task/<int:task_pk>/take/', views.task_take, name='task_take'),
     path('task/<int:task_pk>/edit/', views.task_edit, name='task_edit'),
-    path('task/<int:task_pk>/save/', views.task_save, name='task_save'),
     path('task/<int:task_pk>/delete/', views.task_delete, name='task_delete'),
     path('task/<int:task_pk>/delete/confirm/', views.task_delete_confirm, name='task_delete_confirm'),
     path('task/<int:task_pk>/status/update/', views.task_update_status, name='task_update_status'),
@@ -26,7 +25,7 @@ urlpatterns = [
     
     path('task/<int:task_pk>/comment/add/', views.task_comment_add, name='task_comment_add'),
 
-    path('task/<int:task_pk>/search-members/', views.task_member_search, name='member_search'),
-    path('task/<int:task_pk>/search-directions/', views.task_direction_search, name='direction_search'),
-    path('task/<int:task_pk>/search-teams/', views.task_team_search, name='team_search'),
+    path('task/<int:task_pk>/search-members/', views.task_member_search, name='task_member_search'),
+    path('task/<int:task_pk>/search-directions/', views.task_direction_search, name='task_direction_search'),
+    path('task/<int:task_pk>/search-teams/', views.task_team_search, name='task_team_search'),
 ]

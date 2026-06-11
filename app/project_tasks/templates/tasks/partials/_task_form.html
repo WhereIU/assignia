@@ -8,13 +8,10 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
         
-        <form hx-post="{% if task %}{% url 'project_tasks:task_save' task.pk %}{% else %}{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}{% endif %}" 
-              hx-target="{% if task %}#task-main-card{% else %}this{% endif %}"
+        <form hx-post="{% if task %}{% url 'tasks:task_save' task.pk %}{% else %}{% url 'tasks:task_create' username=project.owner.username slug=project.slug %}{% endif %}" 
+              hx-target="{% if task %}#task-card-container-{{ task.pk }}{% else %}this{% endif %}"
               hx-swap="outerHTML"
-              hx-on::before-request="
-                  const mEl = document.getElementById('modal-container');
-                  const m = bootstrap.Modal.getInstance(mEl);
-                  if (m) { m.hide(); }">
+              hx-on::after-request="if(event.detail.successful && event.detail.elt === this) { const m = bootstrap.Modal.getInstance(document.getElementById('modal-container')); if(m) { m.hide(); } }">
             {% csrf_token %}
             
             <div class="modal-body py-4" style="max-height: 75vh;">
@@ -27,7 +24,8 @@
                         </div>
                         <input type="text" id="id_task_name" name="name" class="form-control" 
                                value="{% if task %}{{ task.name }}{% endif %}" 
-                               required maxlength="64" placeholder="Кратко опишите задачу">
+                               required maxlength="64" placeholder="Кратко опишите задачу"
+                               oninput="document.getElementById('task-name-counter').textContent = this.value.length + ' / 64'">
                     </div>
 
                     <div class="col-md-4">
@@ -51,9 +49,8 @@
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">Дедлайн</label>
                         <input type="datetime-local" name="deadline" class="form-control" 
-                            min="{{ now|date:'Y-m-d\TH:i' }}"
-                            max="3000-12-31T23:59"
-                            value="{% if task and task.deadline %}{{ task.deadline|date:'Y-m-d\TH:i' }}{% endif %}">
+                               max="3000-12-31T23:59"
+                               value="{% if task and task.deadline %}{{ task.deadline|date:'Y-m-d\TH:i' }}{% endif %}">
                     </div>
 
                     <div class="col-md-6">
@@ -82,40 +79,46 @@
                     {% if task %}
                         <hr class="my-3 opacity-25">
 
-                        <div class="col-12">
+                        <div class="col-12 position-relative">
                             <label class="form-label fw-semibold text-dark small"><i class="bi bi-people me-1"></i> Исполнители</label>
                             <input type="text" class="form-control form-control-sm" name="assignee_search" placeholder="Поиск участника проекта..."
-                                   hx-get="{% url 'project_tasks:task_member_search' task.pk %}"
+                                   hx-get="{% url 'tasks:task_member_search' task.pk %}"
                                    hx-trigger="keyup changed delay:250ms"
                                    hx-target="#assignee-search-results"
-                                   hx-swap="innerHTML">
-                            <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                                   hx-swap="innerHTML"
+                                   autocomplete="off"
+                                   onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                            <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
                             <div id="selected-assignees" class="mt-2">
                                 {% include 'tasks/partials/_selected_assignees.html' with task=task %}
                             </div>
                         </div>
 
-                        <div class="col-12 mt-3">
+                        <div class="col-12 mt-3 position-relative">
                             <label class="form-label fw-semibold text-dark small"><i class="bi bi-compass me-1"></i> Направления</label>
                             <input type="text" class="form-control form-control-sm" name="direction_search" placeholder="Поиск направления..."
-                                   hx-get="{% url 'project_tasks:task_direction_search' task.pk %}"
+                                   hx-get="{% url 'tasks:task_direction_search' task.pk %}"
                                    hx-trigger="keyup changed delay:250ms"
                                    hx-target="#direction-search-results"
-                                   hx-swap="innerHTML">
-                            <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                                   hx-swap="innerHTML"
+                                   autocomplete="off"
+                                   onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                            <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
                             <div id="selected-directions" class="mt-2">
                                 {% include 'directions/partials/_selected_directions.html' with task=task %}
                             </div>
                         </div>
 
-                        <div class="col-12 mt-3">
+                        <div class="col-12 mt-3 position-relative">
                             <label class="form-label fw-semibold text-dark small"><i class="bi bi-shield-lock me-1"></i> Команды</label>
                             <input type="text" class="form-control form-control-sm" name="team_search" placeholder="Поиск команды..."
-                                   hx-get="{% url 'project_tasks:task_team_search' task.pk %}" 
+                                   hx-get="{% url 'tasks:task_team_search' task.pk %}" 
                                    hx-trigger="keyup changed delay:250ms" 
                                    hx-target="#team-search-results" 
-                                   hx-swap="innerHTML">
-                            <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 3rem); max-width: 590px;"></div>
+                                   hx-swap="innerHTML"
+                                   autocomplete="off"
+                                   onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                            <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
                             <div id="selected-teams" class="mt-2">
                                 {% include 'teams/partials/_selected_teams.html' with task=task %}
                             </div>
@@ -133,17 +136,3 @@
         </form>
     </div>
 </div>
-
-<script>
-    (function() {
-        const input = document.getElementById('id_task_name');
-        const counter = document.getElementById('task-name-counter');
-        if (input && counter) {
-            const updateCounter = () => {
-                counter.textContent = `${input.value.length} / 64`;
-            };
-            input.addEventListener('input', updateCounter);
-            updateCounter();
-        }
-    })();
-</script>

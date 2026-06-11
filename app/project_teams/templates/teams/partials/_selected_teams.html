@@ -1,14 +1,15 @@
-{% for team in task.teams.all %}
-    <span class="badge bg-secondary me-1 mb-1">
-        {{ team.name }}
-        <button type="button"
-                hx-post="{% url 'tasks:team_remove_from_task' task.pk %}"
-                hx-vals='{"team_id": "{{ team.id }}"}'
-                hx-target="#selected-teams"
-                hx-swap="innerHTML"
-                class="btn-close btn-close-white ms-1" aria-label="Удалить"
-                style="font-size: 0.5rem;"></button>
-    </span>
-{% empty %}
-    <span class="text-muted small">не назначены</span>
-{% endfor %}
+<div class="d-flex flex-wrap gap-1.5 align-items-center">
+    {% for team in task.teams.all %}
+        <span class="badge bg-light text-success border border-success-subtle d-flex align-items-center gap-1 py-1.5 px-2.5 rounded-pill shadow-sm">
+            <span>{{ team.name }}</span>
+            <span class="text-danger cursor-pointer ms-1 small-icon"
+                  hx-post="{% url 'tasks:team_remove_from_task' task.pk %}"
+                  hx-vals='{"team_id": "{{ team.id }}"}'
+                  hx-target="#selected-teams"
+                  hx-swap="innerHTML"
+                  style="font-size: 0.85rem; line-height: 1;">&times;</span>
+        </span>
+    {% empty %}
+        <span class="text-muted small italic">Команды не привязаны</span>
+    {% endfor %}
+</div>

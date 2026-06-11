@@ -22,11 +22,6 @@
                     <span class="badge bg-light text-success border border-success-subtle rounded-pill px-2.5 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
                         Задача проекта
                     </span>
-                    {% if task.is_deleted %}
-                        <span class="badge bg-danger-subtle text-danger rounded-pill px-2.5 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
-                            Удалена
-                        </span>
-                    {% endif %}
                 </div>
                 <h3 class="fw-bold text-dark mb-0 mt-2 d-flex align-items-center gap-2">
                     {{ task.name }} <span class="text-secondary-subtle fs-5">#{{ task.pk }}</span>
