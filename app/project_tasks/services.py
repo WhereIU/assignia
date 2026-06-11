@@ -1,5 +1,6 @@
-from typing import Any, Dict, List, Optional
+from typing import List, Optional
 
+from django.db import transaction
 from django.contrib.auth import get_user_model
 from django.db.models import Q, Case, When, IntegerField, QuerySet
 
@@ -8,7 +9,7 @@ from project_directions.selectors import get_directions_by_project
 from project_teams.selectors import get_teams_by_project
 from users.models import User
 
-from .constants import TaskStatus, RiskLevel
+from .constants import TaskStatus, RiskLevel, PriorityLevel
 from .models import Task, TaskAssignment, TaskComment
 
 
@@ -34,54 +35,9 @@ def create_task(
     return task
 
 
-def update_task(
-    *,
-    task: Task,
-    data: Dict[str, Any],
-    assignee_ids: Optional[List[int]] = None,
-) -> Task:
-    """Update task fields from data and sync assignees."""
-    task.name = data.get("name", task.name)
-    task.status = data.get("status", task.status)
-    task.priority = int(data.get("priority", task.priority))
-    task.risk_chance = int(data.get("risk_chance", task.risk_chance))
-    task.risk_impact = int(data.get("risk_impact", task.risk_impact))
-    task.description = data.get("description", task.description)
-    deadline = data.get("deadline")
-    task.deadline = deadline if deadline else None
-    task.save()
-
-    if assignee_ids is not None:
-        _sync_assignees(task, assignee_ids)
-
-    return task
-
-
 def delete_task(*, task: Task) -> Task:
     """Delete task."""
     task.delete()
-
-
-def update_task_status(*, task: Task, status: TaskStatus) -> Task:
-    """Update status of task."""
-    task.status = status
-    task.save(update_fields=["status"])
-    return task
-
-
-def update_task_priority(*, task: Task, priority: int) -> Task:
-    """Update priority of task."""
-    task.priority = priority
-    task.save(update_fields=["priority"])
-    return task
-
-
-def update_task_risk(*, task: Task, chance: int, impact: int) -> Task:
-    """Update risk chance and impact of task."""
-    task.risk_chance = chance
-    task.risk_impact = impact
-    task.save(update_fields=["risk_chance", "risk_impact"])
-    return task
 
 
 def take_task(*, task: Task, user: User) -> Task:
@@ -212,3 +168,47 @@ def _sync_assignees(task: Task, assignee_ids: List[int]) -> None:
             continue
         if is_project_member(user, task.project):
             TaskAssignment.objects.get_or_create(task=task, user=user)
+
+
+@transaction.atomic
+def update_task(task: Task, data: dict) -> None:
+    """Update task."""
+
+    if 'name' in data:
+        task.name = data.get('name')
+    if 'description' in data:
+        task.description = data.get('description')
+        
+    if 'deadline' in data:
+        task.deadline = data.get('deadline') or None
+
+    if 'status' in data:
+        new_status = data.get('status')
+        if new_status in TaskStatus.values:
+            task.status = new_status
+
+    if 'priority' in data:
+        try:
+            new_priority = int(data.get('priority'))
+            if new_priority in PriorityLevel.values:
+                task.priority = new_priority
+        except (TypeError, ValueError):
+            pass
+
+    if 'risk_chance' in data:
+        try:
+            new_chance = int(data.get('risk_chance'))
+            if new_chance in RiskLevel.values:
+                task.risk_chance = new_chance
+        except (TypeError, ValueError):
+            pass
+
+    if 'risk_impact' in data:
+        try:
+            new_impact = int(data.get('risk_impact'))
+            if new_impact in RiskLevel.values:
+                task.risk_impact = new_impact
+        except (TypeError, ValueError):
+            pass
+
+    task.save()

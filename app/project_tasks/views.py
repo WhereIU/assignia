@@ -38,9 +38,6 @@ from .services import (
     remove_direction_from_task,
     add_team_to_task,
     remove_team_from_task,
-    update_task_status,
-    update_task_priority,
-    update_task_risk,
 )
 
 
@@ -144,6 +141,7 @@ def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
         "project": task.project,
         "is_privileged": privileged_user,
         "is_assignee": is_assignee,
+        "status_choices": TaskStatus.choices,
     })
     return render(request, "tasks/task_detail.html", context)
 
@@ -181,7 +179,7 @@ def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["GET", "POST"])
 def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Handle edit task."""
+    """Edit task data."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
@@ -190,15 +188,41 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponseForbidden("Недостаточно прав")
 
     if request.method == "POST":
-        form = TaskCreateForm(request.POST, instance=task)
-        if form.is_valid():
-            update_task(
-                task=task,
-                data=request.POST,
-                assignee_ids=request.POST.getlist("assignee_ids") if "assignee_ids" in request.POST else None,
+        is_full_form = "name" in request.POST
+        if is_full_form:
+            form = TaskCreateForm(request.POST, instance=task)
+            if form.is_valid():
+                update_task(task=task, data=request.POST)
+                message_success(request, "Изменения сохранены")
+                
+                is_assignee = task.assignments.filter(user=request.user).exists()
+                return render(
+                    request,
+                    "tasks/partials/_task_card.html",
+                    {
+                        "task": task,
+                        "is_assignee": is_assignee,
+                        "is_privileged": True,
+                        "project_members": get_project_memberships(task.project),
+                        "status_choices": TaskStatus.choices,
+                    },
+                )
+            
+            return render(
+                request,
+                "tasks/partials/_task_edit_form.html",
+                {
+                    "form": form, 
+                    "task": task, 
+                    "project": task.project, 
+                    "status_choices": TaskStatus.choices,
+                    **get_form_choices_context()
+                },
+                status=422
             )
-            message_success(request, "Изменения сохранены")
-
+        else:
+            update_task(task=task, data=request.POST)
+            
             is_assignee = task.assignments.filter(user=request.user).exists()
             return render(
                 request,
@@ -207,16 +231,9 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
                     "task": task,
                     "is_assignee": is_assignee,
                     "is_privileged": True,
-                    "project_members": get_project_memberships(task.project),
+                    "status_choices": TaskStatus.choices,
                 },
             )
-            
-        return render(
-            request,
-            "tasks/partials/_task_edit_form.html",
-            {"form": form, "task": task, "project": task.project, **get_form_choices_context()},
-            status=422
-        )
 
     form = TaskCreateForm(instance=task)
     return render(
@@ -226,6 +243,7 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
             "form": form,
             "task": task,
             "project": task.project,
+            "status_choices": TaskStatus.choices,
             **get_form_choices_context()
         },
     )
@@ -256,100 +274,6 @@ def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
     response = HttpResponse(status=200)
     response["HX-Redirect"] = redirect_url
     return response
-
-
-@login_required
-@require_http_methods(["POST"])
-def task_update_status(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Update status of task."""
-    task = get_task_by_pk(pk=task_pk)
-    if not task:
-        raise Http404("Задача не найдена")
-
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    new_status = request.POST.get("status")
-    if new_status not in TaskStatus.values:
-        return HttpResponse("Неверный статус", status=400)
-
-    update_task_status(task=task, status=new_status)
-    
-    return render(
-        request,
-        "tasks/partials/_task_card.html",
-        {
-            "task": task,
-            "is_privileged": True,
-            "is_assignee": is_user_assigned_to_task(task, request.user),
-        },
-    )
-
-
-@login_required
-@require_http_methods(["POST"])
-def task_update_priority(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Update priority of task."""
-    task = get_task_by_pk(pk=task_pk)
-    if not task:
-        raise Http404("Задача не найдена")
-
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    try:
-        new_priority = int(request.POST.get("priority"))
-        if new_priority not in PriorityLevel.values:
-            raise ValueError
-    except (TypeError, ValueError):
-        return HttpResponse("Неверный приоритет", status=400)
-
-    update_task_priority(task=task, priority=new_priority)
-    
-    return render(
-        request,
-        "tasks/partials/_task_card.html",
-        {
-            "task": task,
-            "is_privileged": True,
-            "is_assignee": is_user_assigned_to_task(task, request.user),
-        },
-    )
-
-
-@login_required
-@require_http_methods(["POST"])
-def task_update_risk(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Update risk chance and impact of task."""
-    task = get_task_by_pk(pk=task_pk)
-    if not task:
-        raise Http404("Задача не найдена")
-
-    if not is_privileged(request.user, task.project):
-        return HttpResponseForbidden("Недостаточно прав")
-
-    try:
-        risk_chance = int(request.POST.get("risk_chance"))
-        risk_impact = int(request.POST.get("risk_impact"))
-        if (
-            risk_chance not in RiskLevel.values
-            or risk_impact not in RiskLevel.values
-        ):
-            raise ValueError
-    except (TypeError, ValueError):
-        return HttpResponse("Неверные значения рисков", status=400)
-
-    update_task_risk(task=task, chance=risk_chance, impact=risk_impact)
-    
-    return render(
-        request,
-        "tasks/partials/_task_card.html",
-        {
-            "task": task,
-            "is_privileged": True,
-            "is_assignee": is_user_assigned_to_task(task, request.user),
-        },
-    )
 
 
 @login_required

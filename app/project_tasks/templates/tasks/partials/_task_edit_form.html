@@ -35,6 +35,15 @@
                     {% endif %}
                 </div>
                 
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Статус задачи</label>
+                    <select class="form-select form-select-sm fw-medium" name="status">
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
                 <div class="row g-3 mb-2">
                     <div class="col-md-4">
                         <label class="form-label fw-semibold text-secondary small">{{ form.priority.label }}</label>

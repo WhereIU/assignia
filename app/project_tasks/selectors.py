@@ -44,6 +44,7 @@ def get_available_tasks_for_projects(project_ids: list[int]) -> QuerySet[Task]:
         is_deleted=False,
     )
 
+
 def get_form_choices_context() -> dict:
     return {
         "status_choices": TaskStatus.choices,
