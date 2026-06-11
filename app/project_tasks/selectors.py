@@ -2,6 +2,9 @@ from __future__ import annotations
 from typing import Optional, TYPE_CHECKING
 
 from django.utils import timezone
+from django.urls import reverse
+
+from common.selectors import get_paginated_page
 
 from .constants import PriorityLevel, RiskLevel, TaskStatus
 from .models import Task, TaskComment
@@ -47,4 +50,18 @@ def get_form_choices_context() -> dict:
         "priority_choices": PriorityLevel.choices,
         "risk_choices": RiskLevel.choices,
         "now": timezone.now(),
+    }
+
+
+def get_task_comments_context(task, page_number=1) -> dict:
+    comments_queryset = get_task_comments(task).order_by("-created_at")
+    page_obj = get_paginated_page(queryset=comments_queryset, page=page_number, per_page=10)
+    
+    fixed_path = reverse("project_tasks:task_detail", kwargs={"task_pk": task.pk})
+    
+    return {
+        "task": task,
+        "comments": page_obj.object_list,
+        "page_obj": page_obj,
+        "fixed_path": fixed_path,
     }

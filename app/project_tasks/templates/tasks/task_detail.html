@@ -1,31 +1,13 @@
 {% extends 'projects/project_base.html' %}
-{% block title %}{{ task.title }}{% endblock %}
+{% block title %}Задача #{{ task.pk }}{% endblock %}
 
 {% block project_navbar_tabs %}
     <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
-    <li class="nav-item"><span class="nav-link text-white-50">{{ task.name }}</span></li>
+    <li class="nav-item"><span class="nav-link text-white-50">Задача #{{ task.pk }}</span></li>
 {% endblock %}
 
 {% block content %}
-<div id="task-main-container">
-  {% include 'tasks/partials/_task_view.html' %}
-</div>
+{% include 'tasks/partials/_task_card.html' with task=task %}
 
-<h3>Комментарии</h3>
-<div id="comments-list">
-  {% include 'partials/_comments.html' with comments=comments %}
-</div>
-
-{% if user.is_authenticated %}
-<form hx-post="{% url 'project_tasks:task_comment_add' task.pk %}"
-      hx-target="#comments-list"
-      hx-swap="innerHTML"
-      hx-on::after-request="this.reset()">
-  {% csrf_token %}
-  <div class="mb-3">
-    <textarea class="form-control" name="text" rows="2" placeholder="Ваш комментарий..."></textarea>
-  </div>
-  <button type="submit" class="btn btn-primary btn-sm">Отправить</button>
-</form>
-{% endif %}
+{% include 'tasks/partials/_task_comments.html' %}
 {% endblock %}

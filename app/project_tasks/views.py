@@ -2,12 +2,12 @@ from django.contrib.auth.decorators import login_required
 from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.decorators.http import require_http_methods
+from django.urls import reverse
 
 from common.selectors import get_page_filters
 from common.services import message_success
 from common.selectors import get_paginated_page 
 from project_members.permissions import (
-    can_access_project,
     is_privileged,
     is_project_member,
     can_delete_task_or_error,
@@ -20,7 +20,7 @@ from .constants import TaskStatus, PriorityLevel, RiskLevel
 from .forms import TaskCreateForm
 from .selectors import (
     get_task_by_pk,
-    get_task_comments,
+    get_task_comments_context,
     get_tasks_by_project,
     get_form_choices_context,
 )
@@ -90,8 +90,6 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
         return HttpResponseForbidden("Вы не участник проекта")
 
     if request.method == "POST":
-        data = request.POST.dict()
-
         form = TaskCreateForm(request.POST)
         if form.is_valid():
             create_task(
@@ -119,27 +117,25 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     )
 
 
+@login_required
 def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Render task detail page."""
+    """Task detail."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
 
-    project = task.project
-    if not can_access_project(request.user, project):
-        return HttpResponseForbidden("У вас нет доступа к этой задаче")
+    if not is_project_member(request.user, task.project):
+        return HttpResponseForbidden("Нет доступа")
 
-    comments = get_task_comments(task)
-    context = {
-        "task": task,
-        "project": project,
-        "comments": comments,
-        "is_privileged": is_privileged(request.user, project),
-    }
+    page = request.GET.get("page", 1)
+    context = get_task_comments_context(task, page_number=page)
 
-    if context["is_privileged"]:
-        context["project_members"] = get_project_memberships(project)
+    if request.headers.get("HX-Target") == "messages-list-wrapper":
+        return render(request, "tasks/partials/_task_comments_list.html", context)
 
+    context.update({
+        "project": task.project,
+    })
     return render(request, "tasks/task_detail.html", context)
 
 
@@ -343,12 +339,13 @@ def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
     text = request.POST.get("text", "").strip()
     if text:
         add_task_comment(task=task, author=request.user, text=text)
-    comments = get_task_comments(task)
-    return render(
-        request,
-        "partials/_comments.html",
-        {"task": task, "comments": comments},
-    )
+
+    detail_path = reverse("project_tasks:task_detail", kwargs={"task_pk": task.pk})
+    setattr(request, "path", detail_path)
+
+    context = get_task_comments_context(task, page_number=1)
+    
+    return render(request, "tasks/partials/_task_comments_list.html", context)
 
 
 @login_required

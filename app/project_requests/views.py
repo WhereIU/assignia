@@ -14,7 +14,7 @@ from .selectors import (
     get_filtered_requests_for_project,
     get_request_status_choices,
     get_request_by_pk,
-    get_request_comments,
+    get_messages_context,
 )
 from .services import (
     add_message,
@@ -26,19 +26,7 @@ from .services import (
 from .forms import TaskRequestForm
 
 
-def _get_messages_context(req, page_number=1) -> dict:
-    messages_queryset = get_request_comments(req=req).order_by("-created_at")
-    
-    page_obj = get_paginated_page(queryset=messages_queryset, page=page_number, per_page=10)
-    
-    fixed_path = reverse("project_requests:request_detail", kwargs={"request_pk": req.pk})
-    
-    return {
-        "req": req,
-        "messages_list": page_obj.object_list,
-        "page_obj": page_obj,
-        "fixed_path": fixed_path,
-    }
+
 
 
 def _render_requests_tab(request: HttpRequest, project) -> HttpResponse:
@@ -121,7 +109,7 @@ def request_detail(request: HttpRequest, request_pk: int) -> HttpResponse:
         return HttpResponseForbidden("Нет доступа")
 
     page = request.GET.get("page", 1)
-    context = _get_messages_context(req, page_number=page)
+    context = get_messages_context(req, page_number=page)
 
     if request.headers.get("HX-Target") == "messages-list-wrapper":
         return render(request, "requests/partials/_request_messages_list.html", context)
@@ -213,7 +201,7 @@ def request_message_add(request: HttpRequest, request_pk: int) -> HttpResponse:
     
     setattr(request, "path", detail_path)
 
-    context = _get_messages_context(req, page_number=1)
+    context = get_messages_context(req, page_number=1)
     
     return render(request, "requests/partials/_request_messages_list.html", context)
 
