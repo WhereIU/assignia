@@ -31,3 +31,7 @@ class User(AbstractUser):
     def __str__(self):
         return self.username
         
+    class Meta:
+        constraints = [
+            models.CheckConstraint(check=~models.Q(email=''), name='email_not_empty')
+        ]
