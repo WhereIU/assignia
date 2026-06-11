@@ -65,3 +65,9 @@ def get_task_comments_context(task, page_number=1) -> dict:
         "page_obj": page_obj,
         "fixed_path": fixed_path,
     }
+
+def is_user_assigned_to_task(task: Task, user: User) -> bool:
+    """Return True if user is assigned to the task."""
+    if not user.is_authenticated:
+        return False
+    return task.assignments.filter(user=user).exists()

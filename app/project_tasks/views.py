@@ -23,6 +23,7 @@ from .selectors import (
     get_task_comments_context,
     get_tasks_by_project,
     get_form_choices_context,
+    is_user_assigned_to_task,
 )
 from .services import (
     apply_tasks_filters,
@@ -129,12 +130,18 @@ def task_detail(request: HttpRequest, task_pk: int) -> HttpResponse:
 
     page = request.GET.get("page", 1)
     context = get_task_comments_context(task, page_number=page)
+    
+    privileged_user = is_privileged(request.user, task.project)
+    
+    is_assignee = is_user_assigned_to_task(task, request.user)
 
     if request.headers.get("HX-Target") == "messages-list-wrapper":
         return render(request, "tasks/partials/_task_comments_list.html", context)
 
     context.update({
         "project": task.project,
+        "is_privileged": privileged_user,
+        "is_assignee": is_assignee,
     })
     return render(request, "tasks/task_detail.html", context)
 
@@ -149,15 +156,23 @@ def task_take(request: HttpRequest, task_pk: int) -> HttpResponse:
 
     if not is_project_member(request.user, task.project):
         return HttpResponseForbidden("Вы не участник проекта")
-    if task.status != TaskStatus.NEW or task.assignments.exists():
-        return HttpResponse("Задача уже занята или не новая", status=400)
+        
+    if task.status == TaskStatus.DONE or task.is_deleted:
+        return HttpResponse("Нельзя взять выполненную или удаленную задачу", status=400)
+
+    if is_user_assigned_to_task(task, request.user):
+        return HttpResponse("Вы уже взяли эту задачу", status=400)
 
     take_task(task=task, user=request.user)
 
     return render(
         request,
-        "tasks/partials/_task_item.html",
-        {"task": task, "show_take_button": False},
+        "tasks/partials/_task_card.html",
+        {
+            "task": task,
+            "is_privileged": is_privileged(request.user, task.project),
+            "is_assignee": True,
+        },
     )
 
 
@@ -223,15 +238,14 @@ def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponse(error, status=400)
 
     delete_task(task=task)
-    message_success(request, "Задача удалена")
+    message_success(request, "Задача успешно удалена")
 
     return render(
         request,
-        "tasks/partials/_task_view.html",
+        "tasks/partials/_task_card.html",
         {
             "task": task,
             "is_privileged": is_privileged(request.user, task.project),
-            "project_members": get_project_memberships(task.project),
         },
     )
 
@@ -248,15 +262,14 @@ def task_restore(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponseForbidden("Недостаточно прав")
 
     restore_task(task=task)
-    message_success(request, "Задача восстановлена")
+    message_success(request, "Задача успешно восстановлена")
 
     return render(
         request,
-        "tasks/partials/_task_view.html",
+        "tasks/partials/_task_card.html",
         {
             "task": task,
             "is_privileged": True,
-            "project_members": get_project_memberships(task.project),
         },
     )
 
@@ -277,7 +290,16 @@ def task_update_status(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponse("Неверный статус", status=400)
 
     update_task_status(task=task, status=new_status)
-    return render(request, "tasks/partials/_task_item.html", {"task": task})
+    
+    return render(
+        request,
+        "tasks/partials/_task_card.html",
+        {
+            "task": task,
+            "is_privileged": True,
+            "is_assignee": is_user_assigned_to_task(task, request.user),
+        },
+    )
 
 
 @login_required
@@ -299,7 +321,16 @@ def task_update_priority(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponse("Неверный приоритет", status=400)
 
     update_task_priority(task=task, priority=new_priority)
-    return render(request, "tasks/partials/_task_item.html", {"task": task})
+    
+    return render(
+        request,
+        "tasks/partials/_task_card.html",
+        {
+            "task": task,
+            "is_privileged": True,
+            "is_assignee": is_user_assigned_to_task(task, request.user),
+        },
+    )
 
 
 @login_required
@@ -325,7 +356,16 @@ def task_update_risk(request: HttpRequest, task_pk: int) -> HttpResponse:
         return HttpResponse("Неверные значения рисков", status=400)
 
     update_task_risk(task=task, chance=risk_chance, impact=risk_impact)
-    return render(request, "tasks/partials/_task_item.html", {"task": task})
+    
+    return render(
+        request,
+        "tasks/partials/_task_card.html",
+        {
+            "task": task,
+            "is_privileged": True,
+            "is_assignee": is_user_assigned_to_task(task, request.user),
+        },
+    )
 
 
 @login_required
