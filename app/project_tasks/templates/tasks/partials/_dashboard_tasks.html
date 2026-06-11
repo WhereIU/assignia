@@ -1,0 +1,17 @@
+<div class="position-relative">
+    <div class="d-flex flex-column gap-2 mb-3">
+        {% for task in page_obj %}
+            {% include 'tasks/partials/_task_item.html' with task=task %}
+        {% empty %}
+            <div class="text-center py-5 bg-body-tertiary rounded-3 border border-dashed border-secondary-subtle">
+                <div class="text-muted mb-2">
+                    <i class="bi bi-clipboard-x display-6 opacity-50"></i>
+                </div>
+                <span class="text-secondary fw-medium">Задачи не найдены</span>
+                <p class="text-muted small mb-0">Измените критерии фильтрации или создайте новую задачу</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% include 'partials/_paginator.html' with hx_target='#task-list-inner' hx_include='#task-filter-form' %}
+</div>

@@ -3,6 +3,6 @@
         {% include 'core/partials/_dashboard_navbar.html' %}
     </div>
     {% include 'tasks/partials/_task_filters.html' with filters=filters %}
-    {% include 'tasks/partials/_tasks_list.html' with tasks=page_obj show_take_button=show_take_button %}
-    {% include 'partials/_paginator.html' with hx_target='#task-list-inner' hx_include='#task-filter-form' %}
+    {% include 'tasks/partials/_dashboard_tasks.html' with tasks=page_obj show_take_button=show_take_button %}
+
 </div>
