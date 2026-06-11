@@ -24,7 +24,7 @@ def get_teams_by_direction(direction: Direction, is_deleted: bool = False) -> Qu
 
 def get_team_members(team: Team) -> QuerySet:
     """Return members by team."""
-    return team.members.all()
+    return team.members.all().order_by("username")
 
 
 def get_teams_by_project(project: Project, is_deleted: bool = False) -> QuerySet[Team]:
@@ -33,8 +33,16 @@ def get_teams_by_project(project: Project, is_deleted: bool = False) -> QuerySet
         direction__project=project, is_deleted=is_deleted
     ).distinct()
 
+
 def filter_teams_by_search(teams_queryset: QuerySet, search_query: str) -> QuerySet:
     """Filter teams by search."""
     if search_query:
         return teams_queryset.filter(name__icontains=search_query)
     return teams_queryset
+
+
+def filter_team_members_by_search(queryset: QuerySet, query: str) -> QuerySet:
+    """Filter team members by search."""
+    if query:
+        return queryset.filter(username__icontains=query)
+    return queryset

@@ -1,5 +1,6 @@
 from users.models import User
-from project_members.permissions import is_project_member
+from project_members.permissions import is_project_member, can_be_added_to_team
+
 from .models import Team
 
 
@@ -34,13 +35,13 @@ def restore_team(*, team: Team) -> Team:
     return team
 
 
-def add_member_to_team(*, team: Team, user: User) -> None:
-    """Add user to team."""
-    if not is_project_member(user, team.direction.project):
-        raise ValueError("Пользователь не участник проекта")
+def add_member_to_team(team: Team, user: User) -> None:
+    """Add member into team."""
+    if not can_be_added_to_team(user, team.direction.project):
+        raise ValueError("Пользователь не может быть добавлен в эту команду")
+
     team.members.add(user)
 
-
-def remove_member_from_team(*, team: Team, user: User) -> None:
-    """Remove user from team."""
+def remove_member_from_team(team: Team, user: User) -> None:
+    """Remove member from team."""
     team.members.remove(user)

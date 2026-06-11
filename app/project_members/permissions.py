@@ -95,6 +95,10 @@ def can_delete_task_or_error(user, task) -> Optional[str]:
     return None
 
 
+def can_be_added_to_team(user, project) -> bool:
+    """Check if user can be added into team."""
+    return is_project_member(user, project)
+
 def is_project_owner(user, project) -> bool:
     """Check whether user has owner membership"""
     return get_member_role(user, project) in ProjectRole.OWNER
