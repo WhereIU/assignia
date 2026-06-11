@@ -30,7 +30,6 @@ from .services import (
     create_task,
     update_task,
     delete_task,
-    restore_task,
     take_task,
     add_task_comment,
     assign_user_to_task,
@@ -228,50 +227,28 @@ def task_save(request: HttpRequest, task_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Soft-delete task."""
+    """Permanently delete task."""
     task = get_task_by_pk(pk=task_pk)
     if not task:
         raise Http404("Задача не найдена")
 
-    error = can_delete_task_or_error(request.user, task)
-    if error:
-        return HttpResponse(error, status=400)
-
-    delete_task(task=task)
-    message_success(request, "Задача успешно удалена")
-
-    return render(
-        request,
-        "tasks/partials/_task_card.html",
-        {
-            "task": task,
-            "is_privileged": is_privileged(request.user, task.project),
-        },
-    )
-
-
-@login_required
-@require_http_methods(["POST"])
-def task_restore(request: HttpRequest, task_pk: int) -> HttpResponse:
-    """Restore soft-deleted task."""
-    task = get_task_by_pk(pk=task_pk)
-    if not task:
-        raise Http404("Задача не найдена")
-
-    if not is_privileged(request.user, task.project):
+    project = task.project
+    if not is_privileged(request.user, project):
         return HttpResponseForbidden("Недостаточно прав")
 
-    restore_task(task=task)
-    message_success(request, "Задача успешно восстановлена")
+    delete_task(task=task)
 
-    return render(
-        request,
-        "tasks/partials/_task_card.html",
-        {
-            "task": task,
-            "is_privileged": True,
-        },
+    message_success(request, f"Задача «{task.name}» удалена безвозвратно")
+
+    project_url = reverse(
+        "projects:project_detail", 
+        kwargs={"username": project.owner.username, "slug": project.slug}
     )
+    redirect_url = f"{project_url}?tab=tasks"
+    
+    response = HttpResponse(status=200)
+    response["HX-Redirect"] = redirect_url
+    return response
 
 
 @login_required
@@ -577,5 +554,22 @@ def task_team_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
     return render(
         request,
         "teams/partials/_selected_teams.html",
+        {"task": task},
+    )
+
+
+@login_required
+def task_delete_confirm(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Render soft-delete confirmation."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+        
+    if not is_privileged(request.user, task.project):
+        return HttpResponseForbidden("Недостаточно прав")
+
+    return render(
+        request,
+        "tasks/partials/_task_delete_confirm.html",
         {"task": task},
     )

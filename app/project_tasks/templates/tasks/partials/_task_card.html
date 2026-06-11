@@ -131,22 +131,13 @@
                         </button>
                     {% endif %}
 
-                    {% if is_privileged and not task.is_deleted %}
-                        <button hx-post="{% url 'project_tasks:task_delete' task_pk=task.pk %}"
-                                hx-target="#task-card-container-{{ task.pk }}"
-                                hx-swap="outerHTML"
-                                hx-confirm="Вы уверены, что хотите удалить эту задачу?"
-                                class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
+                    {% if is_privileged %}
+                        <button hx-get="{% url 'project_tasks:task_delete_confirm' task_pk=task.pk %}"
+                                hx-target="#modal-container"
+                                class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all"
+                                data-bs-toggle="modal"
+                                data-bs-target="#modal-container">
                             <i class="bi bi-trash3"></i> Удалить задачу
-                        </button>
-                    {% endif %}
-
-                    {% if is_privileged and task.is_deleted %}
-                        <button hx-post="{% url 'project_tasks:task_restore' task_pk=task.pk %}"
-                                hx-target="#task-card-container-{{ task.pk }}"
-                                hx-swap="outerHTML"
-                                class="btn btn-outline-success btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
-                            <i class="bi bi-arrow-counterclockwise"></i> Восстановить задачу
                         </button>
                     {% endif %}
                 </div>

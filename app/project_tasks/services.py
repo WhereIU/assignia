@@ -58,17 +58,8 @@ def update_task(
 
 
 def delete_task(*, task: Task) -> Task:
-    """Soft-delete task."""
-    task.is_deleted = True
-    task.save(update_fields=["is_deleted"])
-    return task
-
-
-def restore_task(*, task: Task) -> Task:
-    """Restore soft-deleted task."""
-    task.is_deleted = False
-    task.save(update_fields=["is_deleted"])
-    return task
+    """Delete task."""
+    task.delete()
 
 
 def update_task_status(*, task: Task, status: TaskStatus) -> Task:
