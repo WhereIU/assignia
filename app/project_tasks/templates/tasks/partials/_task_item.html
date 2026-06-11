@@ -11,25 +11,45 @@
                     <p class="text-muted small mb-2 text-break">{{ task.description|truncatechars:120 }}</p>
                 {% endif %}
 
-                <div class="d-flex flex-wrap gap-1 align-items-center text-muted small">
+                <div class="d-flex flex-wrap gap-2 align-items-center text-muted small">
                     <span class="badge rounded-all border px-2 py-1 bg-light text-dark">
                         <i class="bi bi-arrow-up-circle text-danger"></i> P: {{ task.priority }}
                     </span>
                     
                     {% if task.deadline %}
-                        <span class="ms-1"><i class="bi bi-calendar-event"></i> до {{ task.deadline|date:"d.m.Y" }}</span>
+                        <span><i class="bi bi-calendar-event"></i> до {{ task.deadline|date:"d.m.Y" }}</span>
                         <span>·</span>
                     {% endif %}
 
-                    {% if task.assignments.exists %}
-                        <span class="d-inline-flex align-items-center gap-1">
-                            <i class="bi bi-person-check"></i>
+                    {% if task.assignments.all %}
+                        <span class="d-inline-flex align-items-center gap-1 me-1">
+                            <i class="bi bi-person-check text-success"></i>
                             {% for assignment in task.assignments.all %}
                                 {{ assignment.user.username }}{% if not forloop.last %}, {% endif %}
                             {% endfor %}
                         </span>
                     {% else %}
-                        <span class="text-warning"><i class="bi bi-person-dash"></i> Без исполнителя</span>
+                        <span class="text-warning me-1"><i class="bi bi-person-dash"></i> Без исполнителя</span>
+                    {% endif %}
+
+                    {% if task.directions.all %}
+                        <span>·</span>
+                        <span class="d-inline-flex align-items-center gap-1 text-secondary" title="Направления">
+                            <i class="bi bi-compass"></i>
+                            {% for direction in task.directions.all %}
+                                {{ direction.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </span>
+                    {% endif %}
+
+                    {% if task.teams.all %}
+                        <span>·</span>
+                        <span class="d-inline-flex align-items-center gap-1 text-primary-emphasis" title="Команды">
+                            <i class="bi bi-shield-lock"></i>
+                            {% for team in task.teams.all %}
+                                {{ team.name }}{% if not forloop.last %}, {% endif %}
+                            {% endfor %}
+                        </span>
                     {% endif %}
                 </div>
             </div>
