@@ -288,7 +288,7 @@ def team_members(request: HttpRequest, team_pk: int) -> HttpResponse:
     members_queryset = get_team_members(team)
     members_queryset = filter_team_members_by_search(members_queryset, search_query)
     
-    page_obj = get_paginated_page(members_queryset, page, per_page=12)
+    page_obj = get_paginated_page(members_queryset, page, per_page=8)
 
     context = {
         "team": team,
