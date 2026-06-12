@@ -2,6 +2,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from django.utils import timezone
+
+from project_members.selectors import search_project_memberships
+from project_teams.selectors import get_teams_by_project
+
 from .constants import PriorityLevel, RiskLevel, TaskStatus
 
 if TYPE_CHECKING:
@@ -77,3 +81,35 @@ def get_available_actions_for_task(task: Task, user: User, perms: ProjectTasksPe
         "can_comment": (is_assignee or perms.can_manage_tasks) and is_active,
         "is_assignee": is_assignee,
     }
+
+
+
+
+def get_assignable_task_members(task: Task, query: str) -> QuerySet:
+    """Return project memberships available."""
+    memberships = search_project_memberships(task.project, query)
+    
+    already_assigned_ids = task.assignments.values_list('user_id', flat=True)
+    return memberships.exclude(user_id__in=already_assigned_ids)[:10]
+
+
+def get_assignable_task_directions(task: Task, query: str) -> QuerySet:
+    """Return project directions available."""
+    directions = task.project.directions.filter(is_deleted=False)
+    
+    if query:
+        directions = directions.filter(name__icontains=query)
+        
+    already_linked_ids = task.directions.values_list('id', flat=True)
+    return directions.exclude(id__in=already_linked_ids)[:10]
+
+
+def get_assignable_task_teams(task: Task, query: str) -> QuerySet:
+    """Return project teams available."""
+    teams = get_teams_by_project(task.project, is_deleted=False)
+    
+    if query:
+        teams = teams.filter(name__icontains=query)
+        
+    already_linked_ids = task.teams.values_list('id', flat=True)
+    return teams.exclude(id__in=already_linked_ids)[:10]

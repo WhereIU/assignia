@@ -5,8 +5,7 @@
                 hx-post="{% url 'tasks:assignee_add' task.pk %}"
                 hx-vals='{"user_id": "{{ membership.user.id }}"}'
                 hx-target="#selected-assignees"
-                hx-swap="innerHTML"
-                hx-on::after-request="document.getElementById('assignee-search-results').innerHTML = ''; document.getElementsByName('assignee_search')[0].value = '';">
+                hx-swap="innerHTML">
             <span class="text-dark fw-medium">@{{ membership.user.username }}</span>
             <i class="bi bi-plus-circle text-primary"></i>
         </button>
@@ -22,8 +21,7 @@
                 hx-post="{% url 'tasks:direction_add_to_task' task.pk %}"
                 hx-vals='{"direction_id": "{{ direction.id }}"}'
                 hx-target="#selected-directions"
-                hx-swap="innerHTML"
-                hx-on::after-request="document.getElementById('direction-search-results').innerHTML = ''; document.getElementsByName('direction_search')[0].value = '';">
+                hx-swap="innerHTML">
             <span class="text-dark fw-medium">{{ direction.name }}</span>
             <i class="bi bi-plus-circle text-primary"></i>
         </button>
@@ -39,8 +37,7 @@
                 hx-post="{% url 'tasks:team_add_to_task' task.pk %}"
                 hx-vals='{"team_id": "{{ team.id }}"}'
                 hx-target="#selected-teams"
-                hx-swap="innerHTML"
-                hx-on::after-request="document.getElementById('team-search-results').innerHTML = ''; document.getElementsByName('team_search')[0].value = '';">
+                hx-swap="innerHTML">
             <span class="text-dark fw-medium">{{ team.name }}</span>
             <i class="bi bi-plus-circle text-primary"></i>
         </button>

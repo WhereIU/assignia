@@ -13,12 +13,12 @@ urlpatterns = [
     path('task/<int:task_pk>/edit/', views.task_edit, name='task_edit'),
     path('task/<int:task_pk>/delete/', views.task_delete, name='task_delete'),
     path('task/<int:task_pk>/delete/confirm/', views.task_delete_confirm, name='task_delete_confirm'),
-    path('task/<int:task_pk>/assignees/add/', views.task_assignee_add, name='assignee_add'),
-    path('task/<int:task_pk>/assignees/remove/', views.task_assignee_remove, name='assignee_remove'),
-    path('task/<int:task_pk>/directions/add/', views.task_direction_add, name='direction_add_to_task'),
-    path('task/<int:task_pk>/directions/remove/', views.task_direction_remove, name='direction_remove_from_task'),
-    path('task/<int:task_pk>/teams/add/', views.task_team_add, name='team_add_to_task'),
-    path('task/<int:task_pk>/teams/remove/', views.task_team_remove, name='team_remove_from_task'),
+    path('task/<int:task_pk>/assignees/add/', views.assignee_add, name='assignee_add'),
+    path('task/<int:task_pk>/assignees/remove/', views.assignee_remove, name='assignee_remove'),
+    path('task/<int:task_pk>/directions/add/', views.direction_add_to_task, name='direction_add_to_task'),
+    path('task/<int:task_pk>/directions/remove/', views.direction_remove_from_task, name='direction_remove_from_task'),
+    path('task/<int:task_pk>/teams/add/', views.team_add_to_task, name='team_add_to_task'),
+    path('task/<int:task_pk>/teams/remove/', views.team_remove_from_task, name='team_remove_from_task'),
     
     path('task/<int:task_pk>/comment/add/', views.task_comment_add, name='task_comment_add'),
 

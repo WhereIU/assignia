@@ -1,6 +1,6 @@
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
-from django.http import Http404, HttpRequest, HttpResponse
+from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
 from django.shortcuts import render
 from django.views.decorators.http import require_POST, require_http_methods
 from django.urls import reverse
@@ -20,10 +20,20 @@ from .selectors import (
     get_task_risk_choices,
     get_task_priority_choices,
     get_available_actions_for_task,
+    get_assignable_task_members,
+    get_assignable_task_directions,
+    get_assignable_task_teams,
 )
 from .services import (
+    add_direction_to_task,
+    add_task_comment,
+    add_team_to_task,
     apply_tasks_filters,
+    assign_user_to_task,
     create_task,
+    remove_direction_from_task,
+    remove_team_from_task,
+    remove_user_from_task,
     update_task,
     delete_task,
     take_task,
@@ -251,3 +261,420 @@ def task_delete(request: HttpRequest, task_pk: int) -> HttpResponse:
     response = HttpResponse(status=200)
     response["HX-Redirect"] = f"{project_url}?tab=tasks"
     return response
+
+
+@login_required
+@require_POST
+def assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add assignee to task and reset search input via HTMX trigger."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    user_id = request.POST.get("user_id")
+    if user_id:
+        error = assign_user_to_task(task=task, user_id=int(user_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "tasks/partials/_selected_assignees.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def assignee_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove assignee from task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    user_id = request.POST.get("user_id")
+    if user_id:
+        remove_user_from_task(task=task, user_id=int(user_id))
+
+    response = render(
+        request,
+        "tasks/partials/_selected_assignees.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def direction_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add direction to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    direction_id = request.POST.get("direction_id")
+    if direction_id:
+        error = add_direction_to_task(task=task, direction_id=int(direction_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "directions/partials/_selected_directions.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def direction_remove_from_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove direction from task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    direction_id = request.POST.get("direction_id")
+    if direction_id:
+        remove_direction_from_task(task=task, direction_id=int(direction_id))
+
+    response = render(
+        request,
+        "directions/partials/_selected_directions.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def team_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add team to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    team_id = request.POST.get("team_id")
+    if team_id:
+        error = add_team_to_task(task=task, team_id=int(team_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "teams/partials/_selected_teams.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def team_remove_from_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove team from task and reset search input via HTMX trigger."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    team_id = request.POST.get("team_id")
+    if team_id:
+        remove_team_from_task(task=task, team_id=int(team_id))
+
+    response = render(
+        request,
+        "teams/partials/_selected_teams.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+def task_delete_confirm(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Render task permanent deletion confirmation."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+        
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        raise PermissionDenied("Недостаточно прав")
+
+    return render(
+        request,
+        "tasks/partials/_task_delete_confirm.html",
+        {"task": task},
+    )
+
+
+@login_required
+def task_member_search(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Search project members for task assignment."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        raise PermissionDenied("Недостаточно прав")
+
+    query = request.GET.get("assignee_search", "").strip()
+    members = get_assignable_task_members(task, query)
+
+    return render(
+        request,
+        "tasks/partials/_search_results.html",
+        {"members": members, "task": task},
+    )
+
+
+@login_required
+def task_direction_search(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Search project directions for task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        raise PermissionDenied("Недостаточно прав")
+
+    query = request.GET.get("direction_search", "").strip()
+    directions = get_assignable_task_directions(task, query)
+
+    return render(
+        request,
+        "tasks/partials/_search_results.html",
+        {"directions": directions, "task": task},
+    )
+
+
+@login_required
+def task_team_search(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Search project teams for task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        raise PermissionDenied("Недостаточно прав")
+
+    query = request.GET.get("team_search", "").strip()
+    teams = get_assignable_task_teams(task, query)
+
+    return render(
+        request,
+        "tasks/partials/_search_results.html",
+        {"teams": teams, "task": task},
+    )
+
+
+@login_required
+@require_POST
+def direction_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add direction to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    direction_id = request.POST.get("direction_id")
+    if direction_id:
+        error = add_direction_to_task(task=task, direction_id=int(direction_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "directions/partials/_selected_directions.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def direction_remove_from_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove direction from task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    direction_id = request.POST.get("direction_id")
+    if direction_id:
+        remove_direction_from_task(task=task, direction_id=int(direction_id))
+
+    response = render(
+        request,
+        "directions/partials/_selected_directions.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def team_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add team to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    team_id = request.POST.get("team_id")
+    if team_id:
+        error = add_team_to_task(task=task, team_id=int(team_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "teams/partials/_selected_teams.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def team_remove_from_task(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove team from task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    team_id = request.POST.get("team_id")
+    if team_id:
+        remove_team_from_task(task=task, team_id=int(team_id))
+
+    response = render(
+        request,
+        "teams/partials/_selected_teams.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def assignee_add(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add assignee to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    user_id = request.POST.get("user_id")
+    if user_id:
+        error = assign_user_to_task(task=task, user_id=int(user_id))
+        if error:
+            return HttpResponse(error, status=400)
+
+    response = render(
+        request,
+        "tasks/partials/_selected_assignees.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_POST
+def assignee_remove(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Remove assignee from task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_manage_tasks:
+        return HttpResponseForbidden("Недостаточно прав для управления задачей")
+
+    user_id = request.POST.get("user_id")
+    if user_id:
+        remove_user_from_task(task=task, user_id=int(user_id))
+
+    response = render(
+        request,
+        "tasks/partials/_selected_assignees.html",
+        {"task": task},
+    )
+    response["HX-Trigger"] = "taskComponentsChanged"
+    return response
+
+
+@login_required
+@require_http_methods(["POST"])
+def task_comment_add(request: HttpRequest, task_pk: int) -> HttpResponse:
+    """Add comment to task."""
+    task = get_task_by_pk(pk=task_pk)
+    if not task:
+        raise Http404("Задача не найдена")
+
+    perms = ProjectTasksPermissions(request.user, task.project)
+    if not perms.can_view_tasks:
+        raise PermissionDenied("Нет доступа к комментариям этой задачи")
+
+    text = request.POST.get("text", "").strip()
+    if text:
+        add_task_comment(task=task, author=request.user, text=text)
+
+    detail_path = reverse("project_tasks:task_detail", kwargs={"task_pk": task.pk})
+    setattr(request, "path", detail_path)
+
+    context = get_task_comments_context(task, page_number=1)
+    
+    return render(request, "tasks/partials/_task_comments_list.html", context)

@@ -64,7 +64,7 @@
 
                 <hr class="my-4 opacity-25">
 
-                <div class="col-12 position-relative mb-3">
+<div class="col-12 position-relative mb-3">
                     <label class="form-label fw-semibold text-dark small"><i class="bi bi-people me-1"></i> Исполнители</label>
                     <input type="text" class="form-control form-control-sm" name="assignee_search" placeholder="Поиск участника проекта..."
                            hx-get="{% url 'project_tasks:task_member_search' task.pk %}"
@@ -72,8 +72,11 @@
                            hx-target="#assignee-search-results"
                            hx-swap="innerHTML"
                            autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
                            onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
-                    <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
+                    <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
                     <div id="selected-assignees" class="mt-2">
                         {% include 'tasks/partials/_selected_assignees.html' with task=task %}
                     </div>
@@ -87,10 +90,13 @@
                            hx-target="#direction-search-results"
                            hx-swap="innerHTML"
                            autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
                            onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
-                    <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
+                    <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
                     <div id="selected-directions" class="mt-2">
-                        {% include 'directions/partials/_selected_directions.html' with task=task %}
+                        {% include 'tasks/partials/_selected_directions.html' with task=task %}
                     </div>
                 </div>
 
@@ -102,13 +108,15 @@
                            hx-target="#team-search-results" 
                            hx-swap="innerHTML"
                            autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
                            onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
-                    <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"></div>
+                    <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
                     <div id="selected-teams" class="mt-2">
-                        {% include 'teams/partials/_selected_teams.html' with task=task %}
+                        {% include 'tasks/partials/_selected_teams.html' with task=task %}
                     </div>
                 </div>
-            </div>
             
             <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
