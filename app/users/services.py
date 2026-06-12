@@ -10,6 +10,7 @@ from django.core.mail import send_mail
 from django.urls import reverse
 from django.contrib.auth.hashers import make_password
 
+
 if TYPE_CHECKING:
     from .models import User
 
