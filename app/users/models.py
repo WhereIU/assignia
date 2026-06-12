@@ -33,5 +33,8 @@ class User(AbstractUser):
         
     class Meta:
         constraints = [
-            models.CheckConstraint(check=~models.Q(email=''), name='email_not_empty')
+            models.CheckConstraint(
+                condition=~models.Q(email=''), 
+                name='email_not_empty'
+            )
         ]

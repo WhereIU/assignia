@@ -15,6 +15,8 @@ class ProjectPermissions(ProjectMembersPermissions):
     @property
     def can_manage_invitations(self) -> bool:
         """Can send, cancel or view invitations."""
+        if self.is_owner:
+            return True
         if not self.is_member:
             return False
         return self.role_weight >= self._get_role_weight(ProjectRole.HR_ANALYST)
@@ -22,6 +24,8 @@ class ProjectPermissions(ProjectMembersPermissions):
     @property
     def can_manage_settings(self) -> bool:
         """Can update project settings."""
+        if self.is_owner:
+            return True
         if not self.is_member:
             return False
         return self.role_weight >= self._get_role_weight(ProjectRole.ADMIN)
