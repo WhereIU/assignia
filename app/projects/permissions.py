@@ -1,8 +1,8 @@
-from project_members.permissions import ProjectBasePermissions
+from project_members.permissions import ProjectMembersPermissions
 from project_members.constants import ProjectRole
 
 
-class ProjectPermissions(ProjectBasePermissions):
+class ProjectPermissions(ProjectMembersPermissions):
     """Permissions class for project."""
 
     @property
@@ -30,3 +30,29 @@ class ProjectPermissions(ProjectBasePermissions):
     def can_delete_project(self) -> bool:
         """Can delete project."""
         return self.is_owner
+    
+    @property
+    def is_owner(self) -> bool:
+        return self.project.owner == self.user
+
+    @property
+    def can_assign_role(self, role_to_assign: str) -> bool:
+        """
+        Check if user can assign role to target.
+        """
+        if self.is_owner:
+            return role_to_assign != 'owner'
+            
+        if not self.membership:
+            return False
+            
+        current_role = self.membership.role
+
+        if current_role == 'admin':
+            return role_to_assign in ['manager', 'developer', 'guest']
+
+        if current_role == 'manager':
+
+            return role_to_assign in ['developer', 'guest']
+
+        return False

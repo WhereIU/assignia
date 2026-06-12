@@ -11,11 +11,10 @@ if TYPE_CHECKING:
 
 def get_notifications_for_user(user: User) -> QuerySet[Notification]:
     """
-    Return queryset of notifcations for user.
+    Return queryset of notifications for user.
     """
-
     return (
         Notification.objects.filter(recipient=user)
         .order_by("-created_at")
-        .prefetch_related("target_object")
+        .prefetch_related("target_object") 
     )

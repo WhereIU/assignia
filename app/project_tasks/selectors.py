@@ -7,11 +7,12 @@ from project_members.selectors import search_project_memberships
 from project_teams.selectors import get_teams_by_project
 
 from .constants import PriorityLevel, RiskLevel, TaskStatus
+from .models import Task
 
 if TYPE_CHECKING:
     from django.db.models import QuerySet
     from users.models import User
-    from .models import Task
+
     from .permissions import ProjectTasksPermissions
 
 
@@ -83,8 +84,6 @@ def get_available_actions_for_task(task: Task, user: User, perms: ProjectTasksPe
     }
 
 
-
-
 def get_assignable_task_members(task: Task, query: str) -> QuerySet:
     """Return project memberships available."""
     memberships = search_project_memberships(task.project, query)
@@ -113,3 +112,18 @@ def get_assignable_task_teams(task: Task, query: str) -> QuerySet:
         
     already_linked_ids = task.teams.values_list('id', flat=True)
     return teams.exclude(id__in=already_linked_ids)[:10]
+
+
+def get_available_tasks_for_projects(project_ids: list[int]) -> QuerySet[Task]:
+    """Return non‑deleted tasks for project IDS."""
+    return Task.objects.filter(
+        project__in=project_ids,
+        status=TaskStatus.NEW,
+        assignments__isnull=True,
+        is_deleted=False,
+    )
+
+
+def get_tasks_assigned_to_user(user: User) -> QuerySet[Task]:
+    """Return non‑deleted tasks assigned by user."""
+    return Task.objects.filter(assignments__user=user, is_deleted=False)

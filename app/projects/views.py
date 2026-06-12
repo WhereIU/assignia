@@ -124,7 +124,7 @@ def project_create(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-@require_POST
+@require_http_methods(["POST", "DELETE"])
 def project_delete(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     """Project delete."""
     project = get_project(username=username, slug=slug)
@@ -170,7 +170,11 @@ def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpRespo
     if not perms.can_manage_invitations:
         raise PermissionDenied("Недостаточно прав для управления приглашениями")
 
-    form = ProjectInvitationForm(initial={"role": get_default_invitation_role()})
+    form = ProjectInvitationForm(
+        perms=perms, 
+        initial={"role": get_default_invitation_role()}
+    )
+    
     return _render_invitation_form(request, project, username, slug, form=form)
 
 
@@ -186,7 +190,7 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
     if not perms.can_manage_invitations:
         raise PermissionDenied("Недостаточно прав для отправки приглашений")
 
-    form = ProjectInvitationForm(request.POST)
+    form = ProjectInvitationForm(request.POST, perms=perms)
     if not form.is_valid():
         message_error(request, "Исправьте ошибки в форме")
         return _render_invitation_form(request, project, username, slug, form=form, status=422)
@@ -202,8 +206,8 @@ def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpRespo
         return _render_invitation_form(request, project, username, slug, form=form, status=422)
 
     message_success(request, f"Приглашение отправлено {recipient.username}")
-    
-    empty_form = ProjectInvitationForm(initial={"role": role})
+
+    empty_form = ProjectInvitationForm(perms=perms, initial={"role": role})
     response = _render_invitation_form(request, project, username, slug, form=empty_form)
     response["HX-Trigger"] = "membersChanged"
     return response
@@ -382,6 +386,7 @@ def project_update(request: HttpRequest, username: str, slug: str) -> HttpRespon
         raise PermissionDenied("Недостаточно прав")
 
     form = ProjectUpdateForm(request.POST, instance=project, user=request.user)
+
     if not form.is_valid():
         message_error(request, "Заполните обязательные поля корректно")
         return render(
@@ -394,8 +399,14 @@ def project_update(request: HttpRequest, username: str, slug: str) -> HttpRespon
     update_project(project=project, **form.cleaned_data)
     message_success(request, "Настройки проекта обновлены")
 
-    return redirect(
-        "projects:project_settings_tab",
-        username=username,
-        slug=slug,
+    response = render(
+        request, 
+        "projects/partials/_project_settings.html", 
+        {
+            "project": project,
+            "can_delete_project": perms.can_delete_project
+        },
     )
+    
+    response["HX-Trigger"] = "projectUpdated"
+    return response

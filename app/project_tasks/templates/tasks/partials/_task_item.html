@@ -30,9 +30,7 @@
                                 <span class="text-nowrap">{{ assignment.user.username }}{% if not forloop.last %}, {% endif %}</span>
                             {% endfor %}
                         </span>
-                    {% align_self-start }
-                    {% else %}
-                        <span class="text-warning text-nowrap"><i class="bi bi-person-dash"></i> Без исполнителя</span>
+                    {% else %} <span class="text-warning text-nowrap"><i class="bi bi-person-dash"></i> Без исполнителя</span>
                     {% endif %}
 
                     {% if task.directions.all %}

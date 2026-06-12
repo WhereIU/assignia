@@ -22,5 +22,7 @@ def mark_notifications_as_read(user: User, notification_ids: Sequence[int]) -> i
     """
     if not notification_ids:
         return 0
-        
-    return user.notifications.filter(id__in=notification_ids).update(is_read=True)
+    return Notification.objects.filter(
+        recipient=user, 
+        id__in=notification_ids
+    ).update(is_read=True)

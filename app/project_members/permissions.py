@@ -69,8 +69,12 @@ class ProjectMembersPermissions(ProjectBasePermissions):
 
     def can_add_target_role(self, target_role: str) -> bool:
         """Check if user can assign a specific role to a new or existing member."""
+        if target_role == ProjectRole.OWNER:
+                return False
+
         if not self.can_manage_members:
             return False
+            
         return self.role_weight > self._get_role_weight(target_role)
 
     def can_edit_member(self, target_membership: Optional[ProjectMembership]) -> bool:

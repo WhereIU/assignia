@@ -4,9 +4,7 @@ from django.shortcuts import redirect, render
 
 from common.selectors import get_page_filters, get_paginated_page
 from project_members.selectors import get_memberships_for_user
-from projects.selectors import (
-    get_recent_public_projects,
-)
+from projects.selectors import get_recent_public_projects
 from project_tasks.selectors import get_available_tasks_for_projects, get_tasks_assigned_to_user
 from project_tasks.services import apply_tasks_filters
 
@@ -60,29 +58,28 @@ def dashboard(request: HttpRequest) -> HttpResponse:
     filters = get_page_filters(request)
     tasks = apply_tasks_filters(tasks, filters)
 
+    page_number = request.GET.get("page", 1)
+    page_obj = get_paginated_page(tasks, page=page_number, per_page=5)
+
+    context = {
+        "user_projects": user_projects,
+        "page_obj": page_obj,
+        "show_take_button": active_tab != "assigned",
+        "filters": filters,
+        "active_tab": active_tab,
+    }
+
     if request.headers.get("HX-Target") == "task-list-inner":
-        page_number = request.GET.get("page", 1)
-        page_obj = get_paginated_page(tasks, page=page_number, per_page=5)
-        
         return render(
             request,
             "core/partials/_dashboard_tab.html",
-            {
-                "page_obj": page_obj,
-                "show_take_button": active_tab != "assigned",
-                "filters": filters,
-                "active_tab": active_tab,
-            },
+            context,
         )
 
     return render(
         request,
         "core/dashboard.html",
-        {
-            "user_projects": user_projects,
-            "filters": filters,
-            "active_tab": active_tab,
-        },
+        context,
     )
 
 

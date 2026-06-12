@@ -6,7 +6,7 @@ from project_members.constants import ProjectRole
 from users.selectors import get_user_by_username 
 
 from .models import Project
-
+from .permissions import ProjectPermissions
 
 User = get_user_model()
 
@@ -91,9 +91,16 @@ class ProjectInvitationForm(forms.Form):
     )
 
     def __init__(self, *args, **kwargs):
+        self.perms: ProjectPermissions = kwargs.pop('perms', None)
+    
+        if self.perms is None:
+            raise ValueError("ProjectInvitationForm requires 'perms' parameter (ProjectPermissions instance).")
+
         super().__init__(*args, **kwargs)
+        
         self.fields['role'].choices = [
-            (key, value) for key, value in ProjectRole.choices if key != 'owner'
+            (key, value) for key, value in ProjectRole.choices
+            if self.perms.can_add_target_role(key)
         ]
 
     def clean_username(self):
@@ -101,7 +108,7 @@ class ProjectInvitationForm(forms.Form):
         if not username:
             raise forms.ValidationError("Укажите имя пользователя")
             
-        recipient = get_user_by_username(username)
+        recipient = get_user_by_username(username) 
         if recipient is None:
             raise forms.ValidationError("Пользователь не найден")
 

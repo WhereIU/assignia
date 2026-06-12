@@ -23,6 +23,11 @@ def get_membership(user: User, project: Project) -> Optional[ProjectMembership]:
     return ProjectMembership.objects.filter(user=user, project=project).select_related("user").first()
 
 
+def get_memberships_for_user(user: User) -> QuerySet[ProjectMembership]:
+    """Return memberships for user."""
+    return ProjectMembership.objects.filter(user=user).select_related("project")
+
+
 def get_membership_by_user_pk(project: Project, user_pk: int) -> Optional[ProjectMembership]:
     """Return membership by project and user PK."""
     return ProjectMembership.objects.filter(project=project, user__pk=user_pk).select_related("user").first()
