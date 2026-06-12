@@ -38,7 +38,7 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           options: |
             --user ${{ secrets.SSH_USER }}
-            --extra-vars '{"ansible_hosts": ${{ secrets.ANSIBLE_HOSTS }}, "deploy_method": "copy"}'
+            --extra-vars "ansible_hosts=${{ secrets.ANSIBLE_HOSTS }} deploy_method=copy"
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
           SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
