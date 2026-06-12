@@ -1,0 +1,19 @@
+<form method="get" action="{% url 'projects:available_projects' %}">
+    <div class="search-hint-wrapper">
+        <div class="input-group">
+            <span class="input-group-text"><i class="bi bi-search"></i></span>
+            <input type="text" name="q" class="form-control"
+                   placeholder="Поиск..."
+                   value="{{ query }}">
+            <button type="submit" class="btn btn-outline-secondary">Найти</button>
+        </div>
+        <div class="search-hints small text-muted">
+            <div>Можно использовать квалификаторы:</div>
+            <code>owner:{user}</code><br>
+            <code>is:[public|private|open|done]</code><br>
+            <code>in:[name|description|all] {value}</code><br>
+            <code>status:[new|pending|in_progress|done|cancelled]</code><br>
+            <code>priority:[>=3]</code>
+        </div>
+    </div>
+</form>

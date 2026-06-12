@@ -1,0 +1,16 @@
+{% load request_ui %}
+
+<div id="request-top-line-{{ req.pk }}" hx-swap-oob="true" style="height: 4px;" class="{{ req.status|status_css }}"></div>
+
+<div class="d-flex flex-column gap-2 mb-3">
+    {% for msg in messages_list %}
+        {% include 'partials/_chat_message_item.html' with author=msg.author created_at=msg.created_at text=msg.text project_owner=req.project.owner %}
+    {% empty %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-chat-quote fs-3 d-block mb-1 opacity-50"></i>
+            Пока нет сообщений. Начните обсуждение!
+        </div>
+    {% endfor %}
+</div>
+
+{% include "partials/_paginator.html" with page_obj=page_obj hx_target="#messages-list-wrapper" %}

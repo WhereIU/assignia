@@ -1,0 +1,13 @@
+{% for direction in task.directions.all %}
+    <span class="badge bg-light text-dark border d-flex align-items-center gap-1 py-1.5 px-2.5 rounded-pill shadow-sm">
+        <span>{{ direction.name }}</span>
+        <span class="text-danger cursor-pointer ms-1 small-icon"
+                hx-post="{% url 'tasks:direction_remove_from_task' task.pk %}"
+                hx-vals='{"direction_id": "{{ direction.id }}"}'
+                hx-target="#selected-directions"
+                hx-swap="innerHTML"
+                style="font-size: 0.85rem; line-height: 1;">&times;</span>
+    </span>
+{% empty %}
+    <span class="text-muted small italic">Направления не выбраны</span>
+{% endfor %}

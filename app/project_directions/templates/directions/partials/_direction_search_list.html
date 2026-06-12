@@ -1,0 +1,5 @@
+{% for direction in directions %}
+    {% include 'directions/partials/_direction_search_item.html' %}
+{% empty %}
+    <div class="text-muted small px-2 py-1">Ничего не найдено</div>
+{% endfor %}

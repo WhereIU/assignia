@@ -1,0 +1,40 @@
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">Редактирование направления</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'project_directions:direction_update' direction_pk=direction.pk %}" 
+            hx-target="this" 
+            hx-swap="outerHTML"
+            hx-on::before-request="
+                const mEl = document.getElementById('modal-container');
+                const m = bootstrap.Modal.getInstance(mEl);
+                if (m) { m.hide(); }">
+            {% csrf_token %}
+            
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">{{ form.name.label }}</label>
+                    <input type="text" name="name" class="form-control {% if form.name.errors %}is-invalid{% endif %}" value="{{ form.name.value|default:direction.name }}" required>
+                    {% if form.name.errors %}
+                        <div class="invalid-feedback">{{ form.name.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-medium small">{{ form.description.label }}</label>
+                    <textarea name="description" class="form-control {% if form.description.errors %}is-invalid{% endif %}" rows="3">{{ form.description.value|default:direction.description|default:'' }}</textarea>
+                    {% if form.description.errors %}
+                        <div class="invalid-feedback">{{ form.description.errors|join:", " }}</div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary btn-sm">Сохранить изменения</button>
+            </div>
+        </form>
+    </div>
+</div>

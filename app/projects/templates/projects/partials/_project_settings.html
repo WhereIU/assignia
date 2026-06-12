@@ -1,0 +1,46 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h5 class="mb-0">Настройки проекта</h5>
+    <button class="btn btn-primary btn-sm"
+            hx-get="{% url 'projects:project_settings_form' username=project.owner.username slug=project.slug %}"
+            hx-target="#modal-container"
+            hx-swap="innerHTML">
+        <i class="bi bi-pencil me-1"></i> Редактировать
+    </button>
+</div>
+
+<div class="card border-0 shadow-sm mb-5">
+    <div class="card-body p-4">
+        <dl class="row mb-0 g-3">
+            <dt class="col-sm-3 text-muted">Название</dt>
+            <dd class="col-sm-9 fw-semibold">{{ project.name }}</dd>
+            
+            <dt class="col-sm-3 text-muted">Описание</dt>
+            <dd class="col-sm-9 text-secondary">{{ project.description|default:"Отсутствует описание" }}</dd>
+            
+            <dt class="col-sm-3 text-muted">Публичность</dt>
+            <dd class="col-sm-9">
+                {% if project.is_public %}
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-2.5 py-1">Публичный</span>
+                {% else %}
+                    <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-2.5 py-1">Приватный</span>
+                {% endif %}
+            </dd>
+        </dl>
+    </div>
+</div>
+
+{% if can_delete_project %}
+<div class="card border-danger-subtle bg-danger-subtle bg-opacity-10 shadow-sm">
+    <div class="card-body p-4">
+        <h5 class="text-danger fw-bold mb-2">Зона повышенной опасности</h5>
+        <p class="text-muted small mb-4">Удаление проекта приведёт к безвозвратной потере всех данных.</p>
+        
+        <button class="btn btn-danger btn-sm px-3"
+                hx-get="{% url 'projects:project_delete_confirm' username=project.owner.username slug=project.slug %}"
+                hx-target="#modal-container"
+                hx-swap="innerHTML">
+            <i class="bi bi-trash3 me-1"></i> Удалить проект
+        </button>
+    </div>
+</div>
+{% endif %}

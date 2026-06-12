@@ -1,0 +1,77 @@
+- name: Deploy Assignia
+  hosts: assignia_server
+
+  tasks:
+    # Copy method (default)
+    - name: Copy project files to server
+      ansible.builtin.copy:
+        src: "{{ item }}"
+        dest: /opt/assignia/
+      loop:
+        - ../docker-compose.prod.yml
+        - ../app
+        - ../requirements.txt  
+        - ../nginx
+        - ../docker
+      when: (deploy_method | default('copy')) == 'copy'
+
+    - name: Create .env.prod from secret
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'ENV_FILE_CONTENT') }}"
+        dest: /opt/assignia/.env.prod
+      when:
+        - (deploy_method | default('copy')) == 'copy'
+        - lookup('env', 'ENV_FILE_CONTENT') != ""
+
+    # Git method
+    - name: Clone or update repository
+      ansible.builtin.git:
+        repo: "git@github.com:WhereIU/assignia.git"
+        dest: /opt/assignia
+        version: main
+        update: yes
+      when: (deploy_method | default('copy')) == 'git'
+
+    - name: Ensure certs directory exists
+      ansible.builtin.file:
+        path: /opt/assignia/nginx/certs
+        state: directory
+        mode: '0755'
+
+    - name: Upload SSL certificates for .online
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_ONLINE_FULLCHAIN') }}"
+        dest: /opt/assignia/nginx/certs/assignia.online.fullchain.pem
+        mode: '0600'
+      when: lookup('env', 'SSL_ONLINE_FULLCHAIN') != ""
+
+    - name: Upload SSL key for .online
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_ONLINE_KEY') }}"
+        dest: /opt/assignia/nginx/certs/assignia.online.key
+        mode: '0600'
+      when: lookup('env', 'SSL_ONLINE_KEY') != ""
+
+    - name: Upload SSL certificate for .ru
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_RU_FULLCHAIN') }}"
+        dest: /opt/assignia/nginx/certs/assignia.ru.fullchain.pem
+        mode: '0600'
+      when: lookup('env', 'SSL_RU_FULLCHAIN') != ""
+
+    - name: Upload SSL key for .ru
+      ansible.builtin.copy:
+        content: "{{ lookup('env', 'SSL_RU_KEY') }}"
+        dest: /opt/assignia/nginx/certs/assignia.ru.key
+        mode: '0600'
+      when: lookup('env', 'SSL_RU_KEY') != ""
+
+    - name: Build docker images
+      command: docker compose -f docker-compose.prod.yml build
+      args:
+        chdir: /opt/assignia
+
+    - name: Start services
+      command: docker compose -f docker-compose.prod.yml up -d
+      args:
+        chdir: /opt/assignia

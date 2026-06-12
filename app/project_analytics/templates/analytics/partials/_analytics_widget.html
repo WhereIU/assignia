@@ -1,0 +1,41 @@
+<div id="analytics-card-{{ block_id }}" class="card shadow-sm border-0 h-100">
+    <div class="card-header bg-light border-0 d-flex justify-content-between align-items-center py-3">
+        <span class="text-secondary fw-semibold small text-uppercase tracking-wider">
+            {% if widget_type == 'teams' %}<i class="bi bi-grid-3x3-gap me-2"></i>Аналитика команд{% else %}<i class="bi bi-people me-2"></i>Эффективность участников{% endif %}
+        </span>
+        
+        <div class="dropdown">
+            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">
+                Сменить вид
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 {% if widget_type == 'teams' %}active{% endif %}" 
+                    href="#"
+                    hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}"
+                    hx-target="#analytics-card-{{ block_id }}"
+                    hx-swap="outerHTML">
+                        <i class="bi bi-grid-3x3-gap"></i> Статистика команд
+                    </a>
+                </li>
+                <li>
+                    <a class="dropdown-item d-flex align-items-center gap-2 {% if widget_type == 'participants' %}active{% endif %}" 
+                    href="#"
+                    hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}"
+                    hx-target="#analytics-card-{{ block_id }}"
+                    hx-swap="outerHTML">
+                        <i class="bi bi-people"></i> Продуктивность участников
+                    </a>
+                </li>
+            </ul>
+        </div>
+    </div>
+    
+    <div class="card-body p-4">
+        {% if widget_type == 'teams' %}
+            {% include 'analytics/partials/_teams_analytic.html' %}
+        {% else %}
+            {% include 'analytics/partials/_participants_analytic.html' %}
+        {% endif %}
+    </div>
+</div>

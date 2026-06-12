@@ -1,0 +1,43 @@
+<div class="modal-dialog">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h5 class="modal-title">
+                {% if team %}Редактирование команды «{{ team.name }}»{% else %}Добавление новой команды{% endif %}
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        <form hx-post="{{ submit_url }}" 
+            hx-target="this"
+            hx-swap="outerHTML"
+            hx-on::before-request="
+                const modalEl = document.getElementById('modal-container');
+                const modal = bootstrap.Modal.getInstance(modalEl);
+                if (modal) { modal.hide(); }">
+            {% csrf_token %}
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">{{ form.name.label }}</label>
+                    
+                    <div class="position-relative">
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <script>
+                                document.getElementsByName('name')[0].classList.add('is-invalid');
+                            </script>
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="modal-footer">
+                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-success btn-sm">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>

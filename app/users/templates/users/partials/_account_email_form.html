@@ -1,0 +1,21 @@
+<div class="card shadow-sm mb-3">
+    <div class="card-body">
+        <h5 class="mb-2">Сменить email</h5>
+        <form hx-post="{% url 'users:account' %}" hx-target="#email-container" hx-swap="innerHTML">
+            {% csrf_token %}
+            <div class="mb-2">
+                <label class="form-label">Новый email</label>
+                <br>
+                {{ email_form.email }}
+                {% if email_form.email.errors %}
+                    <div class="invalid-feedback d-block">{{ email_form.email.errors|striptags }}</div>
+                {% endif %}
+            </div>
+            <button type="submit" name="change_email" class="btn btn-primary btn-sm">Сохранить</button>
+            <button type="button" class="btn btn-outline-secondary btn-sm"
+                    hx-get="{% url 'users:account_email_display' %}" hx-target="#email-container" hx-swap="innerHTML">
+                Отмена
+            </button>
+        </form>
+    </div>
+</div>

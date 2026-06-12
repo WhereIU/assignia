@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% block title %}Дашборд{% endblock %}
+
+{% block navbar_toggler %}
+<button class="navbar-toggler btn btn-dark btn-sm border-0 p-2 ms-2" type="button" data-bs-toggle="collapse" data-bs-target="#projectNav" aria-controls="projectNav" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon" style="width: 1.25rem; height: 1.25rem;"></span>
+</button>
+{% endblock %}
+
+{% block navbar_left %}
+<div class="w-100 mt-2 mt-lg-0" id="dashboard-navbar-nav">
+    {% include 'core/partials/_dashboard_navbar.html' %}
+</div>
+{% endblock %}
+
+{% block content %}
+<h1 class="mb-4">Дашборд</h1>
+
+<div id="tab-content">
+    <div id="task-list-inner"
+        hx-target="#task-list-inner"
+        hx-get="{% url 'core:dashboard' %}"
+        hx-trigger="load"
+        hx-swap="innerHTML">
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,48 @@
+<div class="modal-header border-bottom-0 pb-0">
+    <h5 class="modal-title fw-bold">Пригласить в проект</h5>
+    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+</div>
+
+<form hx-post="{{ submit_url }}"
+      hx-target="#modal-content"
+      hx-swap="innerHTML"
+      novalidate>
+    {% csrf_token %}
+    
+    <div class="modal-body py-3">
+        <div class="mb-3">
+            <label class="form-label small fw-semibold text-secondary">{{ form.username.label }}</label>
+            <div class="input-group">
+                <span class="input-group-text bg-light text-secondary"><i class="bi bi-person"></i></span>
+                <input type="text" 
+                       name="username" 
+                       class="form-control {% if form.username.errors %}is-invalid{% endif %}" 
+                       placeholder="{{ form.username.field.widget.attrs.placeholder|default:'Введите username...' }}"
+                       value="{{ form.username.value|default_if_none:'' }}"
+                       maxlength="32"
+                       required>
+            </div>
+            {% if form.username.errors %}
+                <div class="invalid-feedback d-block mt-1">{{ form.username.errors|join:", " }}</div>
+            {% endif %}
+        </div>
+
+        <div class="mb-2">
+            <label class="form-label small fw-semibold text-secondary">{{ form.role.label }}</label>
+            <div class="position-relative">
+                {{ form.role }}
+            </div>
+            {% if form.role.errors %}
+                <div class="invalid-feedback d-block mt-1">{{ form.role.errors|join:", " }}</div>
+            {% endif %}
+            <small class="form-text text-muted mt-1 d-block">Доступный список ролей зависит от ваших текущих полномочий в проекте.</small>
+        </div>
+    </div>
+
+    <div class="modal-footer border-top-0 pt-0">
+        <button type="button" class="btn btn-outline-secondary btn-sm px-3" data-bs-dismiss="modal">Закрыть</button>
+        <button type="submit" class="btn btn-success btn-sm px-4">
+            <i class="bi bi-send me-1"></i> Отправить приглашение
+        </button>
+    </div>
+</form>

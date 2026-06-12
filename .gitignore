@@ -1,0 +1,40 @@
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+media/
+app/staticfiles/
+
+# Cashe
+*pytest_cache
+
+# ansible
+ansible/**/*.ini
+ansible/**/hosts*
+ansible/**/inventory*
+
+# Large files
+*.tar
+
+# Environment
+.env
+.env.prod
+venv/
+env/
+.venv/
+
+
+# Certs
+nginx/certs/
+
+# Docker
+docker-compose.override.yml
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~

@@ -1,0 +1,59 @@
+<ul class="list-group shadow-sm mb-4">
+    {% for note in notifications %}
+    <li class="list-group-item d-flex justify-content-between align-items-center p-3 {% if note.content_type.model == 'invitation' and note.target_object.status != 'pending' %}text-muted bg-light{% endif %}">
+        <div>
+            {% if not note.is_read %}
+                <span class="badge bg-danger me-2">Новое</span>
+            {% endif %}
+            
+            {% if note.content_type.model == 'invitation' and note.target_object %}
+                <span class="fw-bold">{{ note.text }}</span>
+                <br><small class="text-muted"><i class="bi bi-clock me-1"></i>{{ note.created_at|date:"d.m.Y H:i" }}</small>
+                
+                {% if note.target_object.status == 'pending' or note.target_object.status == 'PENDING' %}
+                    <div class="mt-2 action-buttons">
+                        <button hx-post="{% url 'projects:invitation_accept' note.target_object.pk %}?variant=inline"
+                                hx-target="closest .list-group-item"
+                                hx-swap="outerHTML"
+                                hx-disabled-element="this"
+                                class="btn btn-success btn-sm me-2 shadow-sm">
+                            Принять
+                        </button>
+                        <button hx-post="{% url 'projects:invitation_decline' note.target_object.pk %}?variant=inline"
+                                hx-target="closest .list-group-item"
+                                hx-swap="outerHTML"
+                                hx-disabled-element="this"
+                                class="btn btn-outline-danger btn-sm shadow-sm">
+                            Отклонить
+                        </button>
+                    </div>
+                {% else %}
+                    <div class="mt-1">
+                        {% if note.target_object.status == 'accepted' or note.target_object.status == 'ACCEPTED' %}
+                            <span class="badge bg-success-subtle text-success border border-success-subtle px-2">Принято</span>
+                        {% elif note.target_object.status == 'declined' or note.target_object.status == 'DECLINED' %}
+                            <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle px-2">Отклонено</span>
+                        {% else %}
+                            <span class="badge bg-light text-muted border px-2">Отозвано</span>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+            {% else %}
+                {% if note.target_url != '#' %}
+                    <a href="{{ note.target_url }}" class="text-decoration-none fw-medium link-primary">{{ note.text }}</a>
+                {% else %}
+                    <span class="fw-medium text-dark">{{ note.text }}</span>
+                {% endif %}
+                <br><small class="text-muted"><i class="bi bi-clock me-1"></i>{{ note.created_at|date:"d.m.Y H:i" }}</small>
+            {% endif %}
+        </div>
+    </li>
+    {% empty %}
+        <div class="p-5 text-center text-muted bg-white rounded border shadow-sm my-3">
+            <i class="bi bi-bell-slash text-secondary display-4 d-block mb-3 opacity-50"></i>
+            <p class="mb-0 fw-medium">У вас пока нет уведомлений</p>
+            <small class="text-muted">Здесь будут появляться системные сообщения.</small>
+        </div>
+    {% endfor %}
+</ul>

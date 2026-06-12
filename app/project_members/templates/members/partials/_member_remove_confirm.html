@@ -1,0 +1,24 @@
+<div class="modal-dialog modal-dialog-centered modal-sm">
+    <div class="modal-content border-0 shadow">
+        <div class="modal-header border-bottom-0 pb-0 justify-content-center">
+            <h5 class="modal-title fw-bold text-danger">Исключить?</h5>
+        </div>
+        
+        <form hx-post="{% url 'project_members:member_remove' username=project.owner.username slug=project.slug user_pk=target.user.pk %}"
+              hx-target="#tab-content"
+              hx-swap="innerHTML">
+            {% csrf_token %}
+            
+            <div class="modal-body text-center py-2">
+                <p class="small text-muted mb-0">
+                    Удалить пользователя <strong>{{ target.user.username }}</strong> из проекта?
+                </p>
+            </div>
+
+            <div class="modal-footer border-top-0 pt-0 justify-content-center gap-2">
+                <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-danger btn-sm px-3" data-bs-dismiss="modal">Удалить</button>
+            </div>
+        </form>
+    </div>
+</div>

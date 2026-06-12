@@ -1,0 +1,45 @@
+<form hx-get="{{ request.path }}" 
+      hx-target="#task-list-inner" 
+      hx-swap="innerHTML" 
+      hx-trigger="keyup changed delay:1200ms from:input[type=search], change from:select, search, submit"
+      onsubmit="event.preventDefault();"
+      class="mb-3 mt-0">
+    
+    <div class="row g-2 align-items-center">
+        <div class="col-auto">
+            <select name="status" class="form-select form-select-sm">
+                <option value="">Все статусы</option>
+                {% for value, label in status_choices %}
+                    <option value="{{ value }}" {% if filters.status == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="priority" class="form-select form-select-sm">
+                <option value="">Любой приоритет</option>
+                {% for value, label in priority_choices %}
+                    <option value="{{ value }}" {% if filters.priority == value|stringformat:"s" %}selected{% endif %}>
+                        {{ label }} {% if value == 5 %}(критический){% elif value == 1 %}(низкий){% endif %}
+                    </option>
+                {% endfor %}
+            </select>
+        </div>
+        
+        <div class="col-auto">
+            <select name="risk" class="form-select form-select-sm">
+                <option value="">Любой риск</option>
+                <option value="high" {% if filters.risk == "high" %}selected{% endif %}>
+                    Высокий (&ge; {% for value, label in risk_choices %}{% if value == 4 %}{{ label }}{% endif %}{% endfor %})
+                </option>
+                <option value="low" {% if filters.risk == "low" %}selected{% endif %}>
+                    Низкий (&le; {% for value, label in risk_choices %}{% if value == 3 %}{{ label }}{% endif %}{% endfor %})
+                </option>
+            </select>
+        </div>
+        
+        <div class="col-12 col-sm-auto" style="min-width: 250px;">
+            {% include 'partials/_search_input.html' with placeholder='Поиск по задачам...' search_value=filters.q %}
+        </div>
+    </div>
+</form>

@@ -1,0 +1,42 @@
+{% extends 'base.html' %}
+{% block title %}Assignia{% endblock %}
+
+{% block content %}
+<div class="text-center py-5">
+    <h1 class="display-4">Assignia</h1>
+    <p class="lead">Распределение задач с учётом ролей, рисков и аналитики</p>
+    <div class="mt-4">
+        <a href="{% url 'users:register' %}" class="btn btn-success btn-lg me-2">Регистрация</a>
+        <a href="{% url 'users:login' %}" class="btn btn-outline-primary btn-lg">Войти</a>
+    </div>
+</div>
+
+{% if public_projects %}
+    <h2>Вам может понравиться</h2>
+    <div class="row">
+        {% for project in public_projects %}
+            <div class="col-md-4 mb-3">
+                {% include 'projects/partials/_project_card.html' with project=project %}
+            </div>
+        {% endfor %}
+    </div>
+{% endif %}
+
+<div class="row text-center mt-5">
+    <div class="col-md-4">
+        <i class="bi bi-people fs-1"></i>
+        <h5>Ролевая модель</h5>
+        <p>Гость, участник, менеджер, администратор, владелец</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-graph-up fs-1"></i>
+        <h5>Аналитика</h5>
+        <p>Статистика по направлениям и участникам</p>
+    </div>
+    <div class="col-md-4">
+        <i class="bi bi-shield-check fs-1"></i>
+        <h5>Оценка рисков</h5>
+        <p>Шанс и последствия рисков по задачам</p>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,85 @@
+<div class="mb-3 d-flex align-items-center gap-3">
+    <button class="btn btn-sm btn-outline-secondary rounded-circle d-inline-flex align-items-center justify-content-center"
+            style="width: 32px; height: 32px;"
+            hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+            hx-target="#tab-content"
+            hx-swap="innerHTML"
+            title="Назад к командам">
+        <i class="bi bi-arrow-left"></i>
+    </button>
+    
+    <div>
+        <h4 class="mb-1">Состав команды «{{ team.name }}»</h4>
+        <small class="text-body-secondary">Направление: {{ direction.name }}</small>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0 position-relative"> 
+    <div class="card-body p-0">
+        <div class="p-3 border-bottom bg-light-subtle rounded-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
+            
+            <form hx-get="{% url 'project_teams:team_members' team_pk=team.pk %}"
+                  hx-target="#team-members-list-wrapper"
+                  hx-swap="innerHTML"
+                  class="flex-grow-1 mb-0"
+                  style="max-width: 400px;">
+                <div class="input-group input-group-sm">
+                    <span class="input-group-text bg-white text-secondary border-end-0">
+                        <i class="bi bi-search"></i>
+                    </span>
+                    <input type="text"
+                           id="member-search-input"
+                           name="member_search"
+                           class="form-control border-start-0 ps-0"
+                           value="{{ search_query|default:'' }}"
+                           placeholder="Поиск участников в команде...">
+                    <button class="btn btn-primary px-3" type="submit">Найти</button>
+                </div>
+            </form>
+
+            {% if can_manage %}
+            <div class="d-flex justify-content-md-end position-relative">
+                <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 px-3"
+                        onclick="const container = document.getElementById('add-member-drop-container'); container.style.display = container.style.display === 'none' ? 'block' : 'none'; if(container.style.display === 'block') { document.getElementById('project-member-search-input').focus(); }">
+                    <i class="bi bi-person-plus"></i> Добавить участника
+                </button>
+                
+                <div id="add-member-drop-container" 
+                     class="position-absolute end-0 top-100 mt-2 p-3 bg-white border rounded shadow" 
+                     style="display: none; width: 350px; z-index: 1050;">
+                    
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <h6 class="mb-0 text-secondary small fw-bold">Поиск в проекте</h6>
+                        <button type="button" class="btn-close small" style="font-size: 0.75rem;"
+                                onclick="document.getElementById('add-member-drop-container').style.display='none';"></button>
+                    </div>
+
+                    <div class="mb-2">
+                        <input type="text" 
+                               id="project-member-search-input"
+                               name="member_search_project" 
+                               class="form-control form-control-sm" 
+                               placeholder="Введите имя..."
+                               hx-get="{% url 'project_teams:team_member_search' team_pk=team.pk %}"
+                               hx-trigger="keyup changed delay:200ms"
+                               hx-target="#search-project-results"
+                               hx-swap="innerHTML">
+                    </div>
+
+                    <div id="search-project-results"></div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div id="team-members-list-wrapper"
+             class="p-3"
+             hx-get="{% url 'project_teams:team_members' team_pk=team.pk %}"
+             hx-trigger="teamMembersChanged from:body"
+             hx-include="#member-search-input"
+             hx-swap="innerHTML">
+            
+            {% include 'teams/partials/_team_members_inner_list.html' %}
+        </div>
+    </div>
+</div>

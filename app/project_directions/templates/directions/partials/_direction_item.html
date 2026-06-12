@@ -1,0 +1,80 @@
+<div class="col">
+    <div class="card h-100 shadow-sm border-{% if show_deleted %}danger{% else %}light{% endif %} position-relative">
+        <div class="card-body d-flex flex-column justify-content-between">
+            
+            <div class="d-flex justify-content-between align-items-start">
+                <div class="text-truncate pe-3">
+                    <h6 class="card-title mb-1 text-dark fw-bold text-truncate" title="{{ direction.name }}">{{ direction.name }}</h6>
+                    {% if direction.description %}
+                        <p class="text-muted small mb-0 text-wrap text-truncate" style="-webkit-line-clamp: 2; display: -webkit-box; -webkit-box-orient: vertical; min-height: 38px;">
+                            {{ direction.description }}
+                        </p>
+                    {% else %}
+                        <p class="text-muted small mb-0 text-secondary opacity-50 fst-italic" style="min-height: 38px;">Без описания</p>
+                    {% endif %}
+                </div>
+
+                <div class="dropdown">
+                    <button class="btn btn-link text-muted p-0 lh-1" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-three-dots-vertical fs-5"></i>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm border-light-subtle">
+                    {% if not show_deleted %}
+                        <li>
+                            <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
+                            hx-get="{% url 'project_teams:teams_tab' direction_pk=direction.pk %}"
+                            hx-target="#tab-content" hx-swap="innerHTML" style="cursor: pointer;">
+                                <i class="bi bi-people me-2 text-secondary"></i> Команды
+                            </a>
+                        </li>
+                        {% endif %}
+                        {% if can_manage %}
+                            {% if not show_deleted %}
+                                <li><hr class="dropdown-divider opacity-50"></li>
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
+                                    hx-get="{% url 'project_directions:direction_edit_form' direction_pk=direction.pk %}"
+                                    hx-target="#modal-container" hx-swap="innerHTML" data-bs-toggle="modal" data-bs-target="#modal-container" style="cursor: pointer;">
+                                        <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider opacity-50"></li>
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small text-danger d-flex align-items-center" 
+                                    hx-get="{% url 'project_directions:direction_delete_confirm' direction_pk=direction.pk %}"
+                                    hx-target="#modal-container" hx-swap="innerHTML" data-bs-toggle="modal" data-bs-target="#modal-container" style="cursor: pointer;">
+                                        <i class="bi bi-trash me-2"></i> Удалить в архив
+                                    </a>
+                                </li>
+                            {% else %}
+                                <li><hr class="dropdown-divider opacity-50"></li>
+                                <li>
+                                    <button type="button" class="dropdown-menu-item dropdown-item small text-success d-flex align-items-center" 
+                                    hx-post="{% url 'project_directions:direction_restore' direction_pk=direction.pk %}"
+                                    hx-swap="none">
+                                        <i class="bi bi-arrow-counterclockwise me-2"></i> Восстановить
+                                    </button>
+                                </li>
+                                <li><hr class="dropdown-divider opacity-50"></li>
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small text-danger fw-bold d-flex align-items-center" 
+                                    hx-post="{% url 'project_directions:direction_hard_delete' direction_pk=direction.pk %}"
+                                    hx-swap="none" style="cursor: pointer;">
+                                        <i class="bi bi-exclamation-octagon me-2"></i> Удалить навсегда
+                                    </a>
+                                </li>
+                            {% endif %}
+                        {% endif %}
+                    </ul>
+                </div>
+            </div>
+
+            {% if show_deleted %}
+                <div class="mt-3 pt-2 border-top text-center">
+                    <span class="badge bg-danger-subtle text-danger px-2 py-1 small">В архиве удалённых</span>
+                </div>
+            {% endif %}
+
+        </div>
+    </div>
+</div>

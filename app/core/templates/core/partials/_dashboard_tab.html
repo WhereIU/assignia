@@ -1,0 +1,8 @@
+<div id="dashboard-tab-wrapper" hx-vals='{"tab": "{{ active_tab }}"}'>
+    <div id="dashboard-navbar-nav" hx-swap-oob="true">
+        {% include 'core/partials/_dashboard_navbar.html' %}
+    </div>
+    {% include 'tasks/partials/_task_filters.html' with filters=filters %}
+    {% include 'tasks/partials/_dashboard_tasks.html' with tasks=page_obj show_take_button=show_take_button %}
+
+</div>

@@ -1,0 +1,65 @@
+<div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+        
+        <div class="modal-header 
+            {% if action_type == 'convert' %}bg-success text-white
+            {% elif action_type == 'decline' %}bg-danger text-white
+            {% elif action_type == 'delete' %}bg-dark text-white{% endif %}">
+            <h5 class="modal-title fw-bold">
+                {% if action_type == 'convert' %}<i class="bi bi-gear-fill me-2"></i>Создание задачи
+                {% elif action_type == 'decline' %}<i class="bi bi-x-circle me-2"></i>Отклонить запрос
+                {% elif action_type == 'delete' %}<i class="bi bi-trash3 me-2"></i>Удаление запроса{% endif %}
+            </h5>
+            <button type="button" class="btn-close {% if action_type != 'none' %}btn-close-white{% endif %}" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+
+        <div class="modal-body p-4">
+            {% if action_type == 'convert' %}
+                <p class="mb-0">Вы уверены, что хотите конвертировать запрос <strong>#{{ req.pk }}</strong> в полноценную задачу проекта?</p>
+            {% elif action_type == 'decline' %}
+                <p class="mb-0">Вы действительно хотите отклонить запрос <strong>#{{ req.pk }}</strong> от пользователя @{{ req.author.username }}?</p>
+            {% elif action_type == 'delete' %}
+                <p class="text-danger fw-medium mb-1"><i class="bi bi-exclamation-triangle-fill"></i> Внимание! Это действие необратимо.</p>
+                <p class="mb-0 text-muted small">Ваш запрос #{{ req.pk }} будет навсегда удален.</p>
+            {% endif %}
+        </div>
+
+        <div class="modal-footer bg-light-subtle">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+            
+            {% if action_type == 'convert' %}
+                <button hx-post="{% url 'project_requests:request_convert' request_pk=req.pk %}" 
+                        hx-target="#request-card-container-{{ req.pk }}"
+                        hx-swap="outerHTML"
+                        hx-on::before-request="
+                            const modalEl = document.getElementById('modal-container');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) { modal.hide(); }"
+                        class="btn btn-success px-3">
+                    Да, создать задачу
+                </button>
+            {% elif action_type == 'decline' %}
+                <button hx-post="{% url 'project_requests:request_decline' request_pk=req.pk %}" 
+                        hx-target="#request-card-container-{{ req.pk }}"
+                        hx-swap="outerHTML"
+                        hx-on::before-request="
+                            const modalEl = document.getElementById('modal-container');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) { modal.hide(); }"
+                        class="btn btn-danger px-3">
+                    Отклонить запрос
+                </button>
+            {% elif action_type == 'delete' %}
+                <button hx-post="{% url 'project_requests:request_delete' request_pk=req.pk %}" 
+                        hx-on::before-request="
+                            const modalEl = document.getElementById('modal-container');
+                            const modal = bootstrap.Modal.getInstance(modalEl);
+                            if (modal) { modal.hide(); }"
+                        class="btn btn-danger px-3">
+                    Удалить навсегда
+                </button>
+            {% endif %}
+        </div>
+
+    </div>
+</div>

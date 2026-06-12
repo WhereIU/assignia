@@ -1,0 +1,81 @@
+{% extends 'base.html' %}
+{% load static %}
+{% block title %}Создать проект{% endblock %}
+
+{% block navbar_left %}
+<ul class="navbar-nav me-auto align-items-center">
+    <li class="nav-item">
+        <span class="nav-link text-white-50">Новый проект</span>
+    </li>
+</ul>
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h2 class="card-title mb-3">Новый проект</h2>
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">{{ form.name.label }}</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">{{ form.name.errors|striptags }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">До 32 символов.</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.slug.id_for_label }}" class="form-label">{{ form.slug.label }}</label>
+                        {{ form.slug }}
+                        {% if form.slug.errors %}
+                            <div class="invalid-feedback d-block">{{ form.slug.errors|striptags }}</div>
+                        {% endif %}
+                        <div class="form-text mt-2">
+                            <span class="badge bg-light text-dark p-2 border border-secondary-subtle">
+                                <i class="bi bi-link-45deg me-1 text-muted"></i>
+                                {% if request.user %}{{ request.user.username }}{% else %}user{% endif %}/<span id="slug-preview" class="fw-bold text-primary">{% if form.slug.value %}{{ form.slug.value }}{% else %}my-new-project{% endif %}</span>/
+                            </span>
+                        </div>
+                        <small class="form-text text-muted">{{ form.slug.help_text }}</small>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="{{ form.description.id_for_label }}" class="form-label">{{ form.description.label }}</label>
+                        {{ form.description }}
+                        {% if form.description.errors %}
+                            <div class="invalid-feedback d-block">{{ form.description.errors|striptags }}</div>
+                        {% endif %}
+                        <small class="form-text text-muted">Краткое описание (до 300 символов).</small>
+                    </div>
+
+                    <div class="form-check mb-4">
+                        {{ form.is_public }}
+                        <label class="form-check-label fw-semibold" for="{{ form.is_public.id_for_label }}">
+                            {{ form.is_public.label }}
+                        </label>
+                        {% if form.is_public.errors %}
+                            <div class="invalid-feedback d-block">{{ form.is_public.errors|striptags }}</div>
+                        {% endif %}
+                        <div class="form-text">Публичный проект виден всем. Приватный - только приглашённым участникам. Добавление происходит строго по приглашениям.</div>
+                    </div>
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-plus-lg me-1"></i> Создать проект
+                        </button>
+                        <a href="{% url 'core:dashboard' %}" class="btn btn-outline-secondary">Отмена</a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+    <script src="{% static 'js/slug-generator.js' %}"></script>
+{% endblock %}

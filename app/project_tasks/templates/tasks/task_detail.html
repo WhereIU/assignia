@@ -1,0 +1,12 @@
+{% extends 'projects/project_base.html' %}
+{% block title %}Задача #{{ task.pk }}{% endblock %}
+
+{% block project_navbar_tabs %}
+    <li class="nav-item"><span class="navbar-text text-secondary">/</span></li>
+    <li class="nav-item"><span class="nav-link text-white-50">Задача #{{ task.pk }}</span></li>
+{% endblock %}
+
+{% block content %}
+    {% include 'tasks/partials/_task_card.html' with task=task actions=actions %}
+    {% include 'tasks/partials/_task_comments.html' with task=task comments=comments page_obj=page_obj %}
+{% endblock %}

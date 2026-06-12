@@ -1,0 +1,5 @@
+{% for team in teams %}
+    {% include 'teams/partials/_team_search_item' with team=team %}
+{% empty %}
+    <div class="text-muted small px-2 py-1">Ничего не найдено</div>
+{% endfor %}

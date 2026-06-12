@@ -1,0 +1,15 @@
+{% extends 'users/settings_base.html' %}
+{% block title %}Аккаунт{% endblock %}
+
+{% block settings_content %}
+<div class="row">
+    <div class="col-lg-8">
+        <div id="email-container">
+            {% include 'users/partials/_account_email_display.html' %}
+        </div>
+        <div id="password-container">
+            {% include 'users/partials/_account_password_display.html' %}
+        </div>
+    </div>
+</div>
+{% endblock %}

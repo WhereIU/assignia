@@ -1,0 +1,10 @@
+<div class="list-group shadow-sm border-0">
+    {% for member in page_obj %}
+        {% include "members/partials/_member_item.html" %}
+    {% empty %}
+        <div class="list-group-item text-center text-muted py-4">
+            Участники не найдены
+        </div>
+    {% endfor %}
+    {% include "partials/_paginator.html" with hx_target="#members-table-wrapper" hx_include="#members-search-input" %}
+</div>

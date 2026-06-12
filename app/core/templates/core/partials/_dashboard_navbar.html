@@ -1,0 +1,16 @@
+<ul class="navbar-nav flex-column flex-lg-row align-items-start align-items-lg-center gap-2 gap-lg-3 me-auto">
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'assigned' or not active_tab %}active{% endif %}"
+           hx-get="{% url 'core:dashboard' %}?tab=assigned"
+           hx-target="#task-list-inner"
+           hx-swap="innerHTML"
+           href="#">Мои задачи</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link {% if active_tab == 'available' %}active{% endif %}"
+           hx-get="{% url 'core:dashboard' %}?tab=available"
+           hx-target="#task-list-inner"
+           hx-swap="innerHTML"
+           href="#">Доступные задачи</a>
+    </li>
+</ul>

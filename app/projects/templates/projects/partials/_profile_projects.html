@@ -1,0 +1,24 @@
+<div class="row">
+    {% for project in projects %}
+        <div class="col-xl-4 col-md-6 mb-4">
+            {% include 'projects/partials/_project_card.html' with project=project profile_user=profile_user %}
+        </div>
+    {% empty %}
+        <div class="col-12">
+            <div class="card border-0 bg-body-tertiary shadow-none">
+                <div class="card-body text-muted py-5 text-center">
+                    <i class="bi bi-folder-x text-secondary fs-2 d-block mb-2"></i>
+                    {% if search_query %}
+                        Ничего не найдено по запросу «<strong>{{ search_query }}</strong>»
+                    {% else %}
+                        У пользователя пока нет публичных проектов.
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    {% endfor %}
+</div>
+
+{% if projects.has_other_pages %}
+    {% include 'partials/_paginator.html' with page_obj=projects hx_target='#projects-container' hx_include='closest form' %}
+{% endif %}

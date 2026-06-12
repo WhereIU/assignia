@@ -1,0 +1,54 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    command: >
+      sh -c "while ! nc -z db 5432; do sleep 0.1; done;
+             python manage.py migrate --noinput;
+             python manage.py runserver 0.0.0.0:8000"
+    volumes:
+      - ./app:/app
+      - static_volume:/app/staticfiles
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    environment:
+      DJANGO_SETTINGS_MODULE: config.settings.dev
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    networks:
+      - assignia-network
+
+  db:
+    image: postgres:16-alpine
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 5s
+      retries: 20
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - assignia-network
+    #ports:
+    #  - "5433:5432" # pgAdmin
+
+  redis:
+    image: redis:7.4-alpine
+    networks:
+      - assignia-network
+
+networks:
+  assignia-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  static_volume:

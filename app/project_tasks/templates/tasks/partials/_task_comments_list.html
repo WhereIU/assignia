@@ -1,0 +1,12 @@
+<div class="d-flex flex-column gap-2 mb-3">
+    {% for comment in comments %}
+        {% include 'partials/_chat_message_item.html' with author=comment.author created_at=comment.created_at text=comment.text project_owner=task.project.owner %}
+    {% empty %}
+        <div class="text-center py-4 text-muted small">
+            <i class="bi bi-chat-quote fs-3 d-block mb-1 opacity-50"></i>
+            Комментариев пока нет. Начните обсуждение!
+        </div>
+    {% endfor %}
+</div>
+
+{% include "partials/_paginator.html" with page_obj=page_obj hx_target="#messages-list-wrapper" %}

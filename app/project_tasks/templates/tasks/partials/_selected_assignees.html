@@ -1,0 +1,13 @@
+{% for assignment in task.assignments.all %}
+    <span class="badge bg-light text-dark border d-flex align-items-center gap-1 py-1.5 px-2.5 rounded-pill shadow-sm">
+        <span>@{{ assignment.user.username }}</span>
+        <span class="text-danger cursor-pointer ms-1 small-icon"
+                hx-post="{% url 'tasks:assignee_remove' task.pk %}"
+                hx-vals='{"user_id": "{{ assignment.user.id }}"}'
+                hx-target="#selected-assignees"
+                hx-swap="innerHTML"
+                style="font-size: 0.85rem; line-height: 1;">&times;</span>
+    </span>
+{% empty %}
+    <span class="text-muted small italic">Исполнители не назначены</span>
+{% endfor %}

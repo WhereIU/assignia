@@ -1,0 +1,56 @@
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-body p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <div class="p-2 bg-primary-subtle text-primary rounded border border-primary-subtle">
+                    <i class="bi bi-headset fs-5"></i>
+                </div>
+                <h3 class="h4 mb-0 fw-bold text-dark">
+                    {% if can_handle %}Все запросы техподдержки{% else %}Мои запросы{% endif %}
+                </h3>
+            </div>
+            
+            <button class="btn btn-primary d-inline-flex align-items-center gap-2 px-3 shadow-sm fw-medium"
+                    hx-get="{% url 'project_requests:request_create' username=project.owner.username slug=project.slug %}"
+                    hx-target="#modal-container" 
+                    hx-swap="innerHTML"
+                    hx-on::after-on-load="const mEl = document.getElementById('modal-container'); (bootstrap.Modal.getInstance(mEl) || new bootstrap.Modal(mEl)).show();">
+                <i class="bi bi-plus-lg"></i> Создать запрос
+            </button>
+        </div>
+
+        <form class="row g-2 mb-4 align-items-center" 
+              hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
+              hx-target="#requests-list-wrapper"
+              hx-swap="innerHTML"
+              hx-trigger="submit, change">
+            
+            <div class="col-md-5 col-lg-4">
+                <select name="status" class="form-select form-select-sm border rounded">
+                    <option value="">Все статусы</option>
+                    {% for status in status_choices %}
+                        <option value="{{ status.value }}" {% if status_filter == status.value %}selected{% endif %}>{{ status.label }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="col-md-7 col-lg-8">
+                <div class="input-group input-group-sm border rounded">
+                    <span class="input-group-text bg-white border-0 text-muted"><i class="bi bi-search"></i></span>
+                    <input type="text" name="search" value="{{ search_query }}" 
+                           class="form-control border-0 ps-0" 
+                           placeholder="Поиск по описанию или автору...">
+                    <button class="btn btn-primary btn-sm px-3 rounded-end" type="submit">Найти</button>
+                </div>
+            </div>
+        </form>
+
+        <div id="requests-list-wrapper" 
+             hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}" 
+             hx-trigger="requestsChanged from:body" 
+             hx-target="this" 
+             hx-swap="innerHTML">
+            {% include 'requests/partials/_requests_list.html' %}
+        </div>
+    </div>
+</div>

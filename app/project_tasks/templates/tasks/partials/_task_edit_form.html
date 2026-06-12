@@ -1,0 +1,127 @@
+<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px;">
+    <div class="modal-content border-0 shadow-lg">
+        <div class="modal-header bg-light border-0 py-3">
+            <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                <i class="bi bi-pencil text-primary"></i> Редактирование задачи
+            </h5>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+        </div>
+        
+        <form hx-post="{% url 'project_tasks:task_edit' task.pk %}" 
+              hx-target="#task-card-container-{{ task.pk }}"
+              hx-swap="outerHTML">
+            {% csrf_token %}
+            {% load task_ui %}
+            
+            <div class="modal-body py-4" style="max-height: 75vh;">
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">{{ form.name.label }}</label>
+                    {% if form.name.errors %}
+                        {{ form.name|add_class:"is-invalid" }}
+                        <div class="invalid-feedback d-block mt-1">
+                            {% for error in form.name.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.name }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">{{ form.description.label }}</label>
+                    {% if form.description.errors %}
+                        {{ form.description|add_class:"is-invalid" }}
+                        <div class="invalid-feedback d-block mt-1">
+                            {% for error in form.description.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
+                        </div>
+                    {% else %}
+                        {{ form.description }}
+                    {% endif %}
+                </div>
+                
+                <div class="mb-3">
+                    <label class="form-label fw-semibold text-secondary small">Статус задачи</label>
+                    <select class="form-select form-select-sm fw-medium" name="status">
+                        {% for value, label in status_choices %}
+                            <option value="{{ value }}" {% if task.status == value %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="row g-3 mb-2">
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.priority.label }}</label>
+                        {{ form.priority }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.risk_chance.label }}</label>
+                        {{ form.risk_chance }}
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label fw-semibold text-secondary small">{{ form.risk_impact.label }}</label>
+                        {{ form.risk_impact }}
+                    </div>
+                </div>
+
+                <hr class="my-4 opacity-25">
+
+<div class="col-12 position-relative mb-3">
+                    <label class="form-label fw-semibold text-dark small"><i class="bi bi-people me-1"></i> Исполнители</label>
+                    <input type="text" class="form-control form-control-sm" name="assignee_search" placeholder="Поиск участника проекта..."
+                           hx-get="{% url 'project_tasks:task_member_search' task.pk %}"
+                           hx-trigger="keyup changed delay:250ms"
+                           hx-target="#assignee-search-results"
+                           hx-swap="innerHTML"
+                           autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
+                           onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                    <div id="assignee-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
+                    <div id="selected-assignees" class="mt-2">
+                        {% include 'tasks/partials/_selected_assignees.html' with task=task %}
+                    </div>
+                </div>
+
+                <div class="col-12 position-relative mb-3">
+                    <label class="form-label fw-semibold text-dark small"><i class="bi bi-compass me-1"></i> Направления</label>
+                    <input type="text" class="form-control form-control-sm" name="direction_search" placeholder="Поиск направления..."
+                           hx-get="{% url 'project_tasks:task_direction_search' task.pk %}"
+                           hx-trigger="keyup changed delay:250ms"
+                           hx-target="#direction-search-results"
+                           hx-swap="innerHTML"
+                           autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
+                           onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                    <div id="direction-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
+                    <div id="selected-directions" class="mt-2">
+                        {% include 'tasks/partials/_selected_directions.html' with task=task %}
+                    </div>
+                </div>
+
+                <div class="col-12 position-relative mb-2">
+                    <label class="form-label fw-semibold text-dark small"><i class="bi bi-shield-lock me-1"></i> Команды</label>
+                    <input type="text" class="form-control form-control-sm" name="team_search" placeholder="Поиск команды..."
+                           hx-get="{% url 'project_tasks:task_team_search' task.pk %}" 
+                           hx-trigger="keyup changed delay:250ms" 
+                           hx-target="#team-search-results" 
+                           hx-swap="innerHTML"
+                           autocomplete="off"
+                           hx-on:task-components-changed="this.value = '';"
+                           onkeydown="if(event.keyCode === 13) { event.preventDefault(); return false; }">
+                    <div id="team-search-results" class="list-group mt-1 position-absolute shadow-sm z-3" 
+                         style="width: calc(100% - 0.5rem); max-height: 200px; overflow-y: auto;"
+                         hx-on:task-components-changed="this.innerHTML = '';"></div>
+                    <div id="selected-teams" class="mt-2">
+                        {% include 'tasks/partials/_selected_teams.html' with task=task %}
+                    </div>
+                </div>
+            
+            <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
+                <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
+                <button type="submit" class="btn btn-primary fw-medium px-4 shadow-sm" data-bs-dismiss="modal">Сохранить</button>
+            </div>
+        </form>
+    </div>
+</div>

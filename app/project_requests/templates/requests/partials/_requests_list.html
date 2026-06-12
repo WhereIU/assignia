@@ -1,0 +1,17 @@
+<div class="position-relative">
+    <div class="d-flex flex-column gap-2 mb-3">
+        {% for req in page_obj %}
+            {% include 'requests/partials/_request_item.html' with req=req project=project %}
+        {% empty %}
+            <div class="text-center py-5 bg-body-tertiary rounded-3 border border-dashed border-secondary-subtle">
+                <div class="text-muted mb-2">
+                    <i class="bi bi-chat-left-dots display-6 opacity-50"></i>
+                </div>
+                <span class="text-secondary fw-medium">Запросы не найдены</span>
+                <p class="text-muted small mb-0">Измените критерии поиска или создайте новое обращение</p>
+            </div>
+        {% endfor %}
+    </div>
+
+    {% include "partials/_paginator.html" with hx_target="#requests-list-wrapper" %}
+</div>

@@ -1,0 +1,12 @@
+{% for member in members %}
+    <button type="button" class="list-group-item list-group-item-action py-2 px-3 small d-flex align-items-center justify-content-between"
+            hx-post="{% url 'project_teams:team_member_add' team_pk=team.pk %}"
+            hx-vals='{"user_id": "{{ member.user.pk }}"}'
+            hx-target="#team-members-container"
+            hx-swap="outerHTML">
+        <span><i class="bi bi-plus-circle-fill text-success me-2"></i>{{ member.user.username }}</span>
+        <span class="text-muted fs-8">{{ member.get_role_display }}</span>
+    </button>
+{% empty %}
+    <div class="list-group-item text-muted small px-3 py-2 bg-light">Ничего не найдено</div>
+{% endfor %}
