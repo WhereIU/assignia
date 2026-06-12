@@ -14,8 +14,8 @@
     </div>
 </div>
 
-<div class="card shadow-sm border-0 position-relative"> <div class="card-body p-0">
-        
+<div class="card shadow-sm border-0 position-relative"> 
+    <div class="card-body p-0">
         <div class="p-3 border-bottom bg-light-subtle rounded-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
             
             <form hx-get="{% url 'project_teams:team_members' team_pk=team.pk %}"
@@ -37,6 +37,7 @@
                 </div>
             </form>
 
+            {% if can_manage %}
             <div class="d-flex justify-content-md-end position-relative">
                 <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 px-3"
                         onclick="const container = document.getElementById('add-member-drop-container'); container.style.display = container.style.display === 'none' ? 'block' : 'none'; if(container.style.display === 'block') { document.getElementById('project-member-search-input').focus(); }">
@@ -68,6 +69,7 @@
                     <div id="search-project-results"></div>
                 </div>
             </div>
+            {% endif %}
         </div>
 
         <div id="team-members-list-wrapper"

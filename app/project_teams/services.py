@@ -1,10 +1,14 @@
-from users.models import User
-from project_members.permissions import is_project_member, can_be_added_to_team
+from __future__ import annotations
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from users.models import User
+    from project_directions.models import Direction
 
 from .models import Team
 
 
-def create_team(*, direction, name: str) -> Team:
+def create_team(*, direction: Direction, name: str) -> Team:
     """Create new team in direction."""
     return Team.objects.create(direction=direction, name=name)
 
@@ -37,10 +41,8 @@ def restore_team(*, team: Team) -> Team:
 
 def add_member_to_team(team: Team, user: User) -> None:
     """Add member into team."""
-    if not can_be_added_to_team(user, team.direction.project):
-        raise ValueError("Пользователь не может быть добавлен в эту команду")
-
     team.members.add(user)
+
 
 def remove_member_from_team(team: Team, user: User) -> None:
     """Remove member from team."""

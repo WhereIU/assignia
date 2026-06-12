@@ -12,7 +12,7 @@
                         hx-post="{% url 'project_teams:team_member_add' team_pk=team.pk user_pk=membership.user.pk %}"
                         hx-target="#team-members-list-wrapper"
                         hx-swap="innerHTML"
-                        hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'
+                        hx-vals='{"csrfmiddlewaretoken": "{{ csrf_token }}"}'
                         hx-on::after-request="document.getElementById('add-member-drop-container').style.display='none'; document.getElementById('project-member-search-input').value=''; document.getElementById('search-project-results').innerHTML='';">
                     <i class="bi bi-plus"></i>
                 </button>

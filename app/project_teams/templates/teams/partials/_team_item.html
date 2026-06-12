@@ -22,39 +22,44 @@
                                     <i class="bi bi-people me-2 text-secondary"></i> Участники
                                 </a>
                             </li>
-                            <li>
-                                <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
-                                   hx-get="{% url 'project_teams:team_edit_form' direction_pk=direction.pk team_pk=team.pk %}"
-                                   hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
-                                    <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-menu-item dropdown-item small text-danger d-flex align-items-center" 
-                                   hx-get="{% url 'project_teams:team_delete_confirm' team_pk=team.pk %}"
-                                   hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
-                                    <i class="bi bi-trash me-2"></i> Удалить временно
-                                </a>
-                            </li>
+                            
+                            {% if can_manage %}
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small d-flex align-items-center" 
+                                       hx-get="{% url 'project_teams:team_edit_form' direction_pk=direction.pk team_pk=team.pk %}"
+                                       hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
+                                        <i class="bi bi-pencil me-2 text-secondary"></i> Редактировать
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small text-danger d-flex align-items-center" 
+                                       hx-get="{% url 'project_teams:team_delete_confirm' team_pk=team.pk %}"
+                                       hx-target="#modal-container" hx-swap="innerHTML" style="cursor: pointer;">
+                                        <i class="bi bi-trash me-2"></i> Удалить временно
+                                    </a>
+                                </li>
+                            {% endif %}
                         {% else %}
-                            <li>
-                                <a class="dropdown-menu-item dropdown-item small text-success d-flex align-items-center" 
-                                   hx-post="{% url 'project_teams:team_restore' team_pk=team.pk %}"
-                                   hx-swap="none" 
-                                   style="cursor: pointer;">
-                                    <i class="bi bi-arrow-counterclockwise me-2"></i> Восстановить
-                                </a>
-                            </li>
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <a class="dropdown-menu-item dropdown-item small text-danger fw-bold d-flex align-items-center" 
-                                   hx-post="{% url 'project_teams:team_hard_delete' team_pk=team.pk %}"
-                                   hx-swap="none"
-                                   style="cursor: pointer;">
-                                    <i class="bi bi-exclamation-octagon me-2"></i> Удалить полностью
-                                </a>
-                            </li>
+                            {% if can_manage %}
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small text-success d-flex align-items-center" 
+                                       hx-post="{% url 'project_teams:team_restore' team_pk=team.pk %}"
+                                       hx-swap="none" 
+                                       style="cursor: pointer;">
+                                        <i class="bi bi-arrow-counterclockwise me-2"></i> Восстановить
+                                    </a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-menu-item dropdown-item small text-danger fw-bold d-flex align-items-center" 
+                                       hx-post="{% url 'project_teams:team_hard_delete' team_pk=team.pk %}"
+                                       hx-swap="none"
+                                       style="cursor: pointer;">
+                                        <i class="bi bi-exclamation-octagon me-2"></i> Удалить полностью
+                                    </a>
+                                </li>
+                            {% endif %}
                         {% endif %}
                     </ul>
                 </div>

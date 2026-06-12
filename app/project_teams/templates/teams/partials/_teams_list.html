@@ -1,6 +1,6 @@
 <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-3">
     {% for team in page_obj %}
-        {% include 'teams/partials/_team_item.html' with team=team show_deleted=show_deleted %}
+        {% include 'teams/partials/_team_item.html' with team=team show_deleted=show_deleted direction=direction can_manage=can_manage %}
     {% empty %}
         <div class="col-12 text-center py-4">
             <span class="text-muted">Ни одной команды</span>
