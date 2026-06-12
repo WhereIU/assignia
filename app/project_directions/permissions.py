@@ -13,7 +13,7 @@ class ProjectDirectionsPermissions(ProjectBasePermissions):
 
     @property
     def can_manage_directions(self) -> bool:
-        """Who can manage directions."""
+        """Can manage directions."""
         if not self.is_member:
             return False
-        return self.member_role in (ProjectRole.ADMIN, ProjectRole.OWNER)
+        return self.role_weight >= self._get_role_weight(ProjectRole.ADMIN)
