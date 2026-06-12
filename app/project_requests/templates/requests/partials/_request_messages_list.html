@@ -1,9 +1,6 @@
-<div id="request-top-line-{{ req.pk }}" hx-swap-oob="true" style="height: 4px;" class="
-    {% if req.status == 'converted' %}bg-success
-    {% elif req.status == 'reviewed' %}bg-warning
-    {% elif req.status == 'declined' %}bg-danger
-    {% else %}bg-primary{% endif %}">
-</div>
+{% load request_ui %}
+
+<div id="request-top-line-{{ req.pk }}" hx-swap-oob="true" style="height: 4px;" class="{{ req.status|status_css }}"></div>
 
 <div class="d-flex flex-column gap-2 mb-3">
     {% for msg in messages_list %}

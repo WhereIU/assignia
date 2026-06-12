@@ -25,7 +25,7 @@
         </div>
 
         <div class="modal-footer bg-light-subtle">
-            <button type="button" class="btn btn-sm btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Отмена</button>
             
             {% if action_type == 'convert' %}
                 <button hx-post="{% url 'project_requests:request_convert' request_pk=req.pk %}" 
@@ -35,7 +35,7 @@
                             const modalEl = document.getElementById('modal-container');
                             const modal = bootstrap.Modal.getInstance(modalEl);
                             if (modal) { modal.hide(); }"
-                        class="btn btn-sm btn-success px-3">
+                        class="btn btn-success px-3">
                     Да, создать задачу
                 </button>
             {% elif action_type == 'decline' %}
@@ -46,7 +46,7 @@
                             const modalEl = document.getElementById('modal-container');
                             const modal = bootstrap.Modal.getInstance(modalEl);
                             if (modal) { modal.hide(); }"
-                        class="btn btn-sm btn-danger px-3">
+                        class="btn btn-danger px-3">
                     Отклонить запрос
                 </button>
             {% elif action_type == 'delete' %}
@@ -55,7 +55,7 @@
                             const modalEl = document.getElementById('modal-container');
                             const modal = bootstrap.Modal.getInstance(modalEl);
                             if (modal) { modal.hide(); }"
-                        class="btn btn-sm btn-danger px-3">
+                        class="btn btn-danger px-3">
                     Удалить навсегда
                 </button>
             {% endif %}

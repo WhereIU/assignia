@@ -1,3 +1,4 @@
+{% load request_ui %}
 <a href="{% url 'project_requests:request_detail' request_pk=req.pk %}"
    class="card text-decoration-none border shadow-sm-hover mb-2 transition-all text-reset">
     <div class="card-body p-3">
@@ -18,17 +19,8 @@
             </div>
             
             <div class="order-1 order-md-2 align-self-start ms-md-auto">
-                <span class="badge rounded-all border px-2 py-1.5 fs-7 d-inline-flex align-items-center gap-1 text-nowrap
-                    {% if req.status == 'converted' %}bg-success-subtle text-success border-success-subtle
-                    {% elif req.status == 'reviewed' %}bg-warning-subtle text-warning border-warning-subtle
-                    {% elif req.status == 'declined' %}bg-danger-subtle text-danger border-danger-subtle
-                    {% else %}bg-info-subtle text-info border-info-subtle{% endif %}">
-                    
-                    {% if req.status == 'converted' %}<i class="bi bi-check-circle-fill"></i>
-                    {% elif req.status == 'reviewed' %}<i class="bi bi-eye-fill"></i>
-                    {% elif req.status == 'declined' %}<i class="bi bi-dash-circle-fill"></i>
-                    {% else %}<i class="bi bi-hourglass-split"></i>{% endif %}
-                    
+                <span class="badge rounded-all border px-2 py-1.5 fs-7 d-inline-flex align-items-center gap-1 text-nowrap {{ req.status|status_css }}">
+                    <i class="bi {{ req.status|status_icon }}"></i>
                     {{ req.get_status_display }}
                 </span>
             </div>

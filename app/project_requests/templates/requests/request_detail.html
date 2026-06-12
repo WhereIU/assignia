@@ -7,8 +7,6 @@
 {% endblock %}
 
 {% block content %}
-{% include 'requests/partials/_request_card.html' with req=req is_teach_support=is_tech_support %}
-
-{% include 'requests/partials/_request_messages.html' with messages_list=messages_list %}
-
+    {% include 'requests/partials/_request_card.html' with req=req actions=actions %}
+    {% include 'requests/partials/_request_messages.html' with messages_list=messages_list %}
 {% endblock %}

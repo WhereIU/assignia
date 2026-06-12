@@ -1,11 +1,8 @@
+{% load request_ui %}
+
 <div id="request-card-container-{{ req.pk }}" class="card border-0 shadow-sm overflow-hidden mb-4 rounded-4" style="background: #ffffff;">
     
-    <div style="height: 4px;" class="
-        {% if req.status == 'converted' %}bg-success
-        {% elif req.status == 'reviewed' %}bg-warning
-        {% elif req.status == 'declined' %}bg-danger
-        {% else %}bg-primary{% endif %}">
-    </div>
+    <div style="height: 4px;" class="{{ req.status|status_css }}"></div>
 
     <div class="card-body p-4">
         
@@ -29,24 +26,14 @@
             </div>
             
             <div class="col-sm-4 text-sm-end">
-                <span id="request-status-badge-{{ req.pk }}" class="badge rounded-pill px-3 py-2 border fs-7 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm
-                    {% if req.status == 'converted' %}bg-success-subtle text-success border-success-subtle
-                    {% elif req.status == 'reviewed' %}bg-warning-subtle text-warning border-warning-subtle
-                    {% elif req.status == 'declined' %}bg-danger-subtle text-danger border-danger-subtle
-                    {% else %}bg-primary-subtle text-primary border-primary-subtle{% endif %}">
-                    
-                    {% if req.status == 'converted' %}<i class="bi bi-check-circle-fill"></i>
-                    {% elif req.status == 'reviewed' %}<i class="bi bi-eye-fill"></i>
-                    {% elif req.status == 'declined' %}<i class="bi bi-dash-circle-fill"></i>
-                    {% else %}<i class="bi bi-hourglass-split animate-spin"></i>{% endif %}
-                    
+                <span id="request-status-badge-{{ req.pk }}" class="badge rounded-pill px-3 py-2 border fs-7 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm {{ req.status|status_css }}">
+                    <i class="bi {{ req.status|status_icon }}"></i>
                     {{ req.get_status_display }}
                 </span>
             </div>
         </div>
         
         <div class="row g-4">
-            
             <div class="col-lg-8">
                 <div class="p-3.5 rounded-3 border border-light-subtle bg-body-tertiary h-100">
                     <h6 class="text-muted small fw-bold text-uppercase tracking-wider mb-2">Описание проблемы</h6>
@@ -80,39 +67,39 @@
         </div>
 
         <div id="request-actions-container-{{ req.pk }}">
-            {% if req.status == 'pending' %}
-                {% if is_tech_support or req.author == user %}
-                    <div class="border-top border-light pt-3 mt-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
-                        <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Доступные действия с тикетом</span>
-                        
-                        <div class="d-flex gap-2">
-                            {% if is_tech_support %}
-                                <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='decline' %}"
-                                        hx-target="#modal-container"
-                                        hx-swap="innerHTML"
-                                        class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
-                                    <i class="bi bi-x-circle"></i> Отклонить
-                                </button>
-                                
-                                <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='convert' %}"
-                                        hx-target="#modal-container"
-                                        hx-swap="innerHTML"
-                                        class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
-                                    <i class="bi bi-gear-fill"></i> Создать задачу
-                                </button>
-                            {% endif %}
+            {% if actions.can_decline or actions.can_convert or actions.can_delete %}
+                <div class="border-top border-light pt-3 mt-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                    <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Доступные действия с тикетом</span>
+                    
+                    <div class="d-flex gap-2">
+                        {% if actions.can_decline %}
+                            <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='decline' %}"
+                                    hx-target="#modal-container"
+                                    hx-swap="innerHTML"
+                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
+                                <i class="bi bi-x-circle"></i> Отклонить
+                            </button>
+                        {% endif %}
 
-                            {% if req.author == user %}
-                                <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='delete' %}"
-                                        hx-target="#modal-container"
-                                        hx-swap="innerHTML"
-                                        class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
-                                    <i class="bi bi-trash3"></i> Удалить запрос
-                                </button>
-                            {% endif %}
-                        </div>
+                        {% if actions.can_convert %}
+                            <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='convert' %}"
+                                    hx-target="#modal-container"
+                                    hx-swap="innerHTML"
+                                    class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
+                                <i class="bi bi-gear-fill"></i> Создать задачу
+                            </button>
+                        {% endif %}
+
+                        {% if actions.can_delete %}
+                            <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='delete' %}"
+                                    hx-target="#modal-container"
+                                    hx-swap="innerHTML"
+                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
+                                <i class="bi bi-trash3"></i> Удалить запрос
+                            </button>
+                        {% endif %}
                     </div>
-                {% endif %}
+                </div>
             {% endif %}
         </div>
         
