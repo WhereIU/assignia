@@ -17,4 +17,4 @@ class ProjectTeamsPermissions(ProjectBasePermissions):
         """Check if the user is allowed to create/edit/delete teams and change rosters."""
         if not self.is_member:
             return False
-        return self.member_role in (ProjectRole.ADMIN, ProjectRole.OWNER)
+        return self.role in (ProjectRole.ADMIN, ProjectRole.OWNER)
