@@ -18,9 +18,18 @@ class MemberRoleForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        perms = kwargs.pop('perms', None)
         super().__init__(*args, **kwargs)
-        self.fields['role'].choices = [
-            (choice_key, choice_value) 
-            for choice_key, choice_value in ProjectRole.choices 
-            if choice_key != ProjectRole.OWNER
-        ]
+        
+        if perms:
+            self.fields['role'].choices = [
+                (role_key, role_label) 
+                for role_key, role_label in ProjectRole.choices 
+                if perms.can_add_target_role(role_key)
+            ]
+
+    def clean_role(self):
+        role = self.cleaned_data.get('role')
+        if self.perms and not self.perms.can_add_target_role(role):
+            raise forms.ValidationError("У вас нет прав назначать эту роль.")
+        return role

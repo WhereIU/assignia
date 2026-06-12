@@ -4,11 +4,10 @@
             <h5 class="modal-title fw-bold">Изменить роль</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
-
         <form hx-post="{% url 'project_members:member_update_role' username=project.owner.username slug=project.slug user_pk=target.user.pk %}"
-              hx-target="#tab-content"
-              hx-swap="innerHTML"
-              hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
+            hx-target="#tab-content"
+            hx-swap="innerHTML"
+            hx-on::after-request="if(event.detail.successful) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
             {% csrf_token %}
             
             <div class="modal-body py-3">
@@ -18,14 +17,7 @@
 
                 <div class="mb-2">
                     <label class="form-label small fw-semibold text-secondary">{{ form.role.label }}</label>
-                    
-                    <select name="role" id="id_role" class="form-select">
-                        {% for role_opt in available_roles %}
-                            <option value="{{ role_opt.value }}" {% if role_opt.value == target.role %}selected{% endif %}>
-                                {{ role_opt.label }}
-                            </option>
-                        {% endfor %}
-                    </select>
+                    {{ form.role }}
 
                     {% if form.role.errors %}
                         <div class="invalid-feedback d-block">{{ form.role.errors|join:", " }}</div>

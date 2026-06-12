@@ -17,7 +17,7 @@ class ProjectPermissions(ProjectMembersPermissions):
         """Can send, cancel or view invitations."""
         if not self.is_member:
             return False
-        return self.role_weight >= self._get_role_weight(ProjectRole.MANAGER)
+        return self.role_weight >= self._get_role_weight(ProjectRole.HR_ANALYST)
 
     @property
     def can_manage_settings(self) -> bool:
@@ -36,23 +36,23 @@ class ProjectPermissions(ProjectMembersPermissions):
         return self.project.owner == self.user
 
     @property
-    def can_assign_role(self, role_to_assign: str) -> bool:
+    def can_assign_role(self, target_role: str) -> bool:
         """
-        Check if user can assign role to target.
+        Check if user can assign a specific role to a new or existing member.
         """
-        if self.is_owner:
-            return role_to_assign != 'owner'
-            
-        if not self.membership:
+        if target_role == ProjectRole.OWNER:
             return False
+
+        if self.user.is_superuser:
+            return True
+
+        if self.project.owner == self.user:
+            return target_role != ProjectRole.OWNER
+
+        if self.can_manage_members:
+            current_weight = self.role_weight
+            target_weight = self._get_role_weight(target_role)
             
-        current_role = self.membership.role
-
-        if current_role == 'admin':
-            return role_to_assign in ['manager', 'developer', 'guest']
-
-        if current_role == 'manager':
-
-            return role_to_assign in ['developer', 'guest']
-
+            return current_weight > target_weight
+            
         return False

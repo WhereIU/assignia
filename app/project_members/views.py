@@ -114,7 +114,7 @@ def member_update_role(
     if not perms.can_edit_member(target):
         raise PermissionDenied("У вас нет прав на редактирование этого участника")
 
-    form = MemberRoleForm(request.POST, instance=target)
+    form = MemberRoleForm(request.POST, instance=target, perms=perms)
     if not form.is_valid():
         message_error(request, "Указана несуществующая роль")
         return _render_members_tab(request, project, perms)
@@ -157,7 +157,7 @@ def member_update_role_form(request: HttpRequest, username: str, slug: str, user
     if not perms.can_edit_member(target):
         raise PermissionDenied("У вас нет прав на редактирование этого участника")
 
-    form = MemberRoleForm(instance=target)
+    form = MemberRoleForm(instance=target, perms=perms)
     return render(request, "members/partials/_member_update_role_form.html", {
         "project": project,
         "target": target,
