@@ -34,12 +34,11 @@ jobs:
       - name: Create inventory from secret
         run: |
           mkdir -p ansible
-          cat > ansible/hosts.ini <<EOF
-          [assignia_server]
-          ${{ secrets.ANSIBLE_HOSTS }}
-          EOF
-          echo "=== Inventory content ==="
-          cat ansible/hosts.ini
+          printf '[assignia_server]\n' > ansible/hosts.ini
+          printf '%s\n' "${{ secrets.ANSIBLE_HOSTS }}" >> ansible/hosts.ini
+          echo "=== RAW inventory content ==="
+          cat -A ansible/hosts.ini
+          echo "=== END ==="
 
       - name: Run Ansible playbook
         uses: dawidd6/action-ansible-playbook@v2
