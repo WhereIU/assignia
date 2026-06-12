@@ -4,10 +4,19 @@
             <i class="bi bi-grid-3x3-gap me-2"></i>Аналитика команд
         </span>
         <div class="dropdown">
-            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">Сменить вид</button>
+            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">
+                Сменить вид
+            </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
                 <li><a class="dropdown-item active" href="#">Статистика команд</a></li>
-                <li><a class="dropdown-item" href="#" hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}" hx-target="#analytics-card-{{ block_id }}" hx-swap="outerHTML">Продуктивность участников</a></li>
+                <li>
+                    <a class="dropdown-item" href="#" 
+                       hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=participants&block_id={{ block_id }}" 
+                       hx-target="#analytics-card-{{ block_id }}" 
+                       hx-swap="outerHTML">
+                        Продуктивность участников
+                    </a>
+                </li>
             </ul>
         </div>
     </div>

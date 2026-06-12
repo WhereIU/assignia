@@ -1,7 +1,7 @@
 from __future__ import annotations
 from typing import TYPE_CHECKING
 
-from django.db.models import Avg, Count, F, Q, Sum
+from django.db.models import Count, F, Q, Sum
 
 from project_tasks.constants import TaskStatus
 from project_teams.models import Team
@@ -17,7 +17,6 @@ def get_teams_analytics(project: Project, search_query: str = "") -> QuerySet[Te
     base_filter = Q(tasks__project=project) & ~Q(tasks__status=TaskStatus.CANCELLED)
     
     queryset = Team.objects.filter(direction__project=project)
-    
     if search_query:
         queryset = queryset.filter(
             Q(name__icontains=search_query) | Q(direction__name__icontains=search_query)
@@ -33,20 +32,18 @@ def get_teams_analytics(project: Project, search_query: str = "") -> QuerySet[Te
             F("tasks__risk_chance") * F("tasks__risk_impact"),
             filter=base_filter,
         ),
-    )
+    ).order_by("name")
+
 
 def get_participants_analytics(project: Project, search_query: str = "", role_filter: str = "") -> QuerySet[User]:
     """Return participants of project annotated with performance metrics."""
-
     membership_filter = Q(projectmembership__project=project)
-    
     if role_filter:
         membership_filter &= Q(projectmembership__role=role_filter)
         
     queryset = User.objects.filter(membership_filter)
-    
     if search_query:
-        queryset = queryset.filter(Q(username__icontains=search_query))
+        queryset = queryset.filter(username__icontains=search_query)
         
     assign_filter = Q(task_assignments__task__project=project) & ~Q(
         task_assignments__task__status=TaskStatus.CANCELLED
@@ -73,4 +70,4 @@ def get_participants_analytics(project: Project, search_query: str = "", role_fi
                 task_assignments__task__status=TaskStatus.DONE,
             ),
         ),
-    ).order_by('-performance_score', 'username').distinct()
+    ).order_by(F('performance_score').desc(nulls_last=True), 'username')

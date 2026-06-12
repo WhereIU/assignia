@@ -4,9 +4,18 @@
             <i class="bi bi-people me-2"></i>Эффективность участников
         </span>
         <div class="dropdown">
-            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">Сменить вид</button>
+            <button class="btn btn-white btn-sm border shadow-sm dropdown-toggle text-dark small" type="button" data-bs-toggle="dropdown">
+                Сменить вид
+            </button>
             <ul class="dropdown-menu dropdown-menu-end shadow border-0 small">
-                <li><a class="dropdown-item" href="#" hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}" hx-target="#analytics-card-{{ block_id }}" hx-swap="outerHTML">Статистика команд</a></li>
+                <li>
+                    <a class="dropdown-item" href="#" 
+                       hx-get="{% url 'project_analytics:analytics_widget' username=project.owner.username slug=project.slug %}?type=teams&block_id={{ block_id }}" 
+                       hx-target="#analytics-card-{{ block_id }}" 
+                       hx-swap="outerHTML">
+                        Статистика команд
+                    </a>
+                </li>
                 <li><a class="dropdown-item active" href="#">Продуктивность участников</a></li>
             </ul>
         </div>
@@ -26,14 +35,14 @@
                            placeholder="Поиск участника...">
                 </div>
                 <div class="col-3">
-                  <select name="role" class="form-select form-select-sm text-dark">
-                      <option value="">Все роли</option>
-                      {% for value, label in project_roles.choices %}
-                          <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>
-                              {{ label }}
-                          </option>
-                      {% endfor %}
-                  </select>
+                    <select name="role" class="form-select form-select-sm text-dark">
+                        <option value="">Все роли</option>
+                        {% for value, label in project_roles.choices %}
+                            <option value="{{ value }}" {% if role_filter == value %}selected{% endif %}>
+                                {{ label }}
+                            </option>
+                        {% endfor %}
+                    </select>
                 </div>
                 <div class="col-2">
                     <button class="btn btn-primary btn-sm w-100" type="submit">
