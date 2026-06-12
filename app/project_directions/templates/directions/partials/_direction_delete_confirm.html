@@ -2,18 +2,18 @@
     <div class="modal-content border-0 shadow">
         <div class="modal-header bg-danger text-white py-2">
             <h6 class="modal-title d-flex align-items-center">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> Удаление
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Подтверждение
             </h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
         
         <form hx-post="{% url 'project_directions:direction_delete' direction_pk=direction.pk %}" 
               hx-swap="none"
-              hx-on::after-request="if(event.detail.xhr.status === 200) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
+              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
             {% csrf_token %}
             
             <div class="modal-body text-center py-3">
-                <p class="small text-muted mb-0">Удалить <strong>«{{ direction.name }}»</strong> навсегда?</p>
+                <p class="small text-muted mb-0">Перенести направление <strong>«{{ direction.name }}»</strong> в архив удалённых?</p>
             </div>
             
             <div class="modal-footer justify-content-center p-2 border-top-0">

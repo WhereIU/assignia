@@ -6,9 +6,12 @@
         </div>
         
         <form hx-post="{% url 'project_directions:direction_update' direction_pk=direction.pk %}" 
-              hx-target="this"
-              hx-swap="outerHTML"
-              hx-on::after-request="if(event.detail.xhr.status === 200) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
+            hx-target="this" 
+            hx-swap="outerHTML"
+            hx-on::before-request="
+                const mEl = document.getElementById('modal-container');
+                const m = bootstrap.Modal.getInstance(mEl);
+                if (m) { m.hide(); }">
             {% csrf_token %}
             
             <div class="modal-body">

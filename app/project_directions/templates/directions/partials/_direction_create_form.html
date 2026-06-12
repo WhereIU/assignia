@@ -5,9 +5,12 @@
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
         <form hx-post="{% url 'project_directions:direction_create' username=username slug=slug %}" 
-              hx-target="this"
-              hx-swap="outerHTML"
-              hx-on::after-request="if(event.detail.xhr.status === 200) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
+            hx-target="this" 
+            hx-swap="outerHTML"
+            hx-on::before-request="
+                const mEl = document.getElementById('modal-container');
+                const m = bootstrap.Modal.getInstance(mEl);
+                if (m) { m.hide(); }">
             {% csrf_token %}
             
             <div class="modal-body">
@@ -28,8 +31,8 @@
             </div>
             
             <div class="modal-footer">
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" class="btn btn-success btn-sm">Создать</button>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Отмена</button>
+                    <button type="submit" class="btn btn-success btn-sm">Создать</button>
             </div>
         </form>
     </div>

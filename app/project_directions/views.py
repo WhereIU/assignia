@@ -89,77 +89,46 @@ def directions_tab(request: HttpRequest, username: str, slug: str) -> HttpRespon
 @login_required
 @require_http_methods(["POST"])
 def direction_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Handle new direction form submission."""
     project = get_project(username=username, slug=slug)
-    if not project:
-        raise Http404("Проект не найден")
-
+    if not project: raise Http404()
     perms = ProjectDirectionsPermissions(request.user, project)
-    if not perms.can_manage_directions:
-        raise PermissionDenied()
+    if not perms.can_manage_directions: raise PermissionDenied()
 
     form = DirectionForm(request.POST)
-    if not form.is_valid():
-        message_error(request, "Исправьте ошибки в форме")
-        return render(
-            request,
-            "directions/partials/_direction_create_form.html",
-            {
-                "username": username,
-                "slug": slug,
-                "form": form,
-            },
-            status=422,
-        )
-
-    create_direction(
-        project=project, 
-        user=request.user, 
-        name=form.cleaned_data['name'], 
-        description=form.cleaned_data['description']
-    )
-    message_success(request, f"Направление «{form.cleaned_data['name']}» создано")
+    if form.is_valid():
+        create_direction(project=project, user=request.user, 
+                         name=form.cleaned_data['name'], description=form.cleaned_data['description'])
+        message_success(request, f"Направление «{form.cleaned_data['name']}» создано")
+        
+        response = HttpResponse(status=200)
+        response["HX-Trigger"] = "directionsChanged"
+        return response
     
-    response = HttpResponse(status=200)
-    response["HX-Trigger"] = "directionsChanged"
-    return response
+    message_error(request, "Исправьте ошибки в форме")
+    return render(request, "directions/partials/_direction_create_form.html", 
+        {"username": username, "slug": slug, "form": form}, status=422)
 
 
 @login_required
 @require_http_methods(["POST"])
 def direction_update(request: HttpRequest, direction_pk: int) -> HttpResponse:
-    """Handle editing of an active direction."""
     direction = get_direction_by_pk(pk=direction_pk, is_deleted=False)
-    if not direction:
-        raise Http404("Направление не найдено")
-
+    if not direction: raise Http404()
     perms = ProjectDirectionsPermissions(request.user, direction.project)
-    if not perms.can_manage_directions:
-        raise PermissionDenied()
+    if not perms.can_manage_directions: raise PermissionDenied()
 
     form = DirectionForm(request.POST, instance=direction)
-    if not form.is_valid():
-        message_error(request, "Исправьте ошибки в форме")
-        return render(
-            request,
-            "directions/partials/_direction_edit_form.html",
-            {
-                "direction": direction,
-                "form": form,
-            },
-            status=422,
-        )
+    if form.is_valid():
+        update_direction(direction=direction, name=form.cleaned_data['name'], description=form.cleaned_data['description'])
+        message_success(request, "Направление успешно обновлено")
+        
+        response = HttpResponse(status=200)
+        response["HX-Trigger"] = "directionsChanged"
+        return response
 
-    update_direction(
-        direction=direction, 
-        name=form.cleaned_data['name'], 
-        description=form.cleaned_data['description']
-    )
-    message_success(request, "Направление успешно обновлено")
-    
-    response = HttpResponse(status=200)
-    response["HX-Trigger"] = "directionsChanged"
-    return response
+    message_error(request, "Исправьте ошибки в форме")
+    return render(request, "directions/partials/_direction_edit_form.html", 
+            {"direction": direction, "form": form}, status=422)
 
 
 @login_required
@@ -177,7 +146,9 @@ def direction_delete(request: HttpRequest, direction_pk: int) -> HttpResponse:
     soft_delete_direction(direction=direction)
     message_success(request, f"Направление «{direction.name}» перенесено в архив")
     
-    response = HttpResponse(status=200)
+    response = HttpResponse(
+        status=200
+    )
     response["HX-Trigger"] = "directionsChanged"
     return response
 
