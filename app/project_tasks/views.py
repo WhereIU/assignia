@@ -308,7 +308,7 @@ def direction_remove_from_task(request: HttpRequest, task_pk: int) -> HttpRespon
 
     response = render(
         request,
-        "directions/partials/_selected_directions.html",
+        "tasks/partials/_selected_directions.html",
         {"task": task},
     )
     response["HX-Trigger"] = "taskComponentsChanged"
@@ -335,7 +335,7 @@ def team_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
 
     response = render(
         request,
-        "teams/partials/_selected_teams.html",
+        "tasks/partials/_selected_teams.html",
         {"task": task},
     )
     response["HX-Trigger"] = "taskComponentsChanged"
@@ -441,7 +441,7 @@ def team_remove_from_task(request: HttpRequest, task_pk: int) -> HttpResponse:
 
     response = render(
         request,
-        "teams/partials/_selected_teams.html",
+        "tasks/partials/_selected_teams.html",
         {"task": task},
     )
     response["HX-Trigger"] = "taskComponentsChanged"

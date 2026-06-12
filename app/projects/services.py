@@ -21,16 +21,13 @@ def create_project(*, form: ProjectCreateForm, user: User) -> Project:
     return project
 
 
-def update_project(
-    *, project: Project, name: str, description: str, is_public: bool
-) -> Project:
+def update_project(*, project: Project, **data) -> Project:
     """Update project fields and save."""
-    project.name = name
-    project.description = description
-    project.is_public = is_public
-    project.save()
+    for key, value in data.items():
+        setattr(project, key, value)
+    
+    project.save(update_fields=data.keys())
     return project
-
 
 def send_project_invitation(
     *, 
