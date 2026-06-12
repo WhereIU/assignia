@@ -6,51 +6,20 @@ on:
   pull_request:
     branches: [ main, dev ]
 
-env:
-  DEBUG: "1"
-  SQL_PORT: 5432
-  DJANGO_SETTINGS_MODULE: config.settings.dev
-  SECRET_KEY: ${{ secrets.SECRET_KEY }}
-  POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-  DJANGO_ALLOWED_HOSTS: ${{ secrets.ALLOWED_HOSTS }}
-  POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-  POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-  SQL_HOST: ${{ secrets.SQL_HOST }}
-
 jobs:
   test:
     runs-on: ubuntu-latest
-    environment: ci
-    services:
-      db:
-        image: postgres:15
-        env:
-          POSTGRES_DB: ${{ secrets.POSTGRES_DB }}
-          POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
-          POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
-        ports:
-          - ${{ env.SQL_PORT }}:5432
-        options: >-
-          --health-cmd "pg_isready -U ${{ secrets.POSTGRES_USER }} -d ${{ secrets.POSTGRES_DB }}"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
     steps:
       - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.11"
-      - name: Install dependencies
+      - name: Create .env.ci from secret
+        run: echo "${{ secrets.ENV_FILE_CI }}" > .env.ci
+      - name: Run tests with docker compose
         run: |
-          cd app
-          pip install -r ../requirements-dev.txt
-      - name: Django check
-        run: cd app && python manage.py check
-      - name: Check migrations
-        run: cd app && python manage.py makemigrations --check
-      - name: Run tests
-        run: cd app && pytest
+          docker compose -f docker-compose.ci.yml up --abort-on-container-exit --exit-code-from web
+      - name: Clean up
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down -v
+
   deploy:
     needs: test
     runs-on: ubuntu-latest
