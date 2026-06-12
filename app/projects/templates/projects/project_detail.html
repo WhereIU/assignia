@@ -56,7 +56,7 @@
     </li>
     {% endif %}
 
-    {% if is_privileged %}
+    {% if can_manage_invitations %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'members' %}active{% endif %}"
            hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
@@ -68,9 +68,6 @@
            <i class="bi bi-people me-1"></i>Участники
         </a>
     </li>
-    {% endif %}
-
-    {% if is_privileged %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'directions' %}active{% endif %}"
            hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
@@ -84,7 +81,7 @@
     </li>
     {% endif %}
 
-    {% if is_privileged %}
+    {% if can_manage_settings %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'settings' %}active{% endif %}"
            hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
@@ -105,15 +102,15 @@
         hx-get="{% url 'projects:project_overview_tab' username=project.owner.username slug=project.slug %}"
      {% elif active_tab == 'tasks' %}
         hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'directions' %}
+     {% elif active_tab == 'directions' and can_manage_invitations %}
         hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'members' %}
+     {% elif active_tab == 'members' and can_manage_invitations %}
         hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'analytics' %}
+     {% elif active_tab == 'analytics' and is_member %}
         hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'requests' %}
+     {% elif active_tab == 'requests' and user.is_authenticated %}
         hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'settings' %}
+     {% elif active_tab == 'settings' and can_manage_settings %}
         hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
      {% endif %}
      hx-trigger="load"

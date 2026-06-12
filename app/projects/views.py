@@ -2,32 +2,24 @@ from __future__ import annotations
 from typing import TYPE_CHECKING
 
 from django.contrib.auth.decorators import login_required
-from django.core.exceptions import ValidationError
-from django.http import Http404, HttpRequest, HttpResponse, HttpResponseForbidden
+from django.core.exceptions import PermissionDenied, ValidationError
+from django.http import Http404, HttpRequest, HttpResponse
 from django.shortcuts import redirect, render
 from django.urls import reverse
-from django.views.decorators.http import require_http_methods
+from django.views.decorators.http import require_http_methods, require_POST
 
-from project_members.views import _render_members_tab
-from common.selectors import get_page_filters, get_paginated_page
+from common.selectors import get_paginated_page
 from common.services import message_success, message_error, message_info
-from project_members.permissions import (
-    can_access_project,
-    is_admin_or_owner,
-    is_privileged,
-    is_project_member,
-    is_project_owner,
-)
-from project_tasks.selectors import get_tasks_by_project
 from project_members.services import create_membership as create_project_membership
-from project_tasks.services import apply_tasks_filters
 
-from .constants import InvitationStatus
 from .forms import ProjectCreateForm, ProjectInvitationForm, ProjectUpdateForm
+from .permissions import ProjectPermissions
 from .selectors import (
     get_available_projects,
     get_invitation_by_pk,
-    get_project
+    get_project,
+    get_pending_status_value,
+    get_default_invitation_role,
 )
 from .services import (
     accept_invitation,
@@ -38,12 +30,12 @@ from .services import (
     update_project,
 )
 
-
 if TYPE_CHECKING:
     from projects.models import Project
 
 
 def available_projects(request: HttpRequest) -> HttpResponse:
+    """View list of avaliable projects."""
     query = request.GET.get("q", "").strip()
     projects_queryset = get_available_projects(request.user, query=query)
     
@@ -68,6 +60,27 @@ def available_projects(request: HttpRequest) -> HttpResponse:
         context
     )
 
+
+@login_required
+def project_detail(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Project detail."""
+    project = get_project(username=username, slug=slug)
+    if not project:
+        raise Http404("Проект не найден")
+
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_view_project:
+        raise PermissionDenied("У вас нет доступа к этому проекту")
+
+    return render(request, "projects/project_detail.html", {
+        "project": project,
+        "active_tab": request.GET.get("tab", "overview"),
+        "is_member": perms.is_member,
+        "can_manage_invitations": perms.can_manage_invitations,
+        "can_manage_settings": perms.can_manage_settings,
+    })
+
+
 @login_required
 def project_overview_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
     """Render project overview tab."""
@@ -75,22 +88,23 @@ def project_overview_tab(request: HttpRequest, username: str, slug: str) -> Http
     if not project:
         raise Http404("Проект не найден")
 
-    if not can_access_project(request.user, project):
-        return HttpResponseForbidden("Вы не участник проекта")
-
-    context = {
-        "project": project,
-        "is_owner": is_project_owner(request.user, project),
-    }
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_view_project:
+        raise PermissionDenied("У вас нет доступа к информации проекта")
 
     return render(
         request, 
         "projects/partials/_project_overview_tab.html", 
-        context
+        {
+            "project": project,
+            "is_owner": perms.is_owner,
+        }
     )
+
 
 @login_required
 def project_create(request: HttpRequest) -> HttpResponse:
+    """Project create."""
     if request.method == "POST":
         form = ProjectCreateForm(request.POST, initial={"owner": request.user})
         if form.is_valid():
@@ -110,48 +124,16 @@ def project_create(request: HttpRequest) -> HttpResponse:
 
 
 @login_required
-def project_detail(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    project = get_project(username=username, slug=slug)
-    if not project or not can_access_project(request.user, project):
-        raise Http404()
-
-    return render(request, "projects/project_detail.html", {
-        "project": project,
-        "active_tab": request.GET.get("tab", "overview"),
-        "is_member": is_project_member(request.user, project),
-        "is_privileged": is_privileged(request.user, project),
-    })
-
-
-@login_required
-def project_join(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    project = get_project(username=username, slug=slug)
-    if not project:
-        raise Http404("Проект не найден")
-
-    if not project.is_public:
-        return HttpResponseForbidden("Нельзя вступить в приватный проект.")
-        
-    if is_project_member(request.user, project):
-        message_info(request, "Вы уже участник этого проекта.")
-    else:
-        create_project_membership(
-            user=request.user, project=project, role="participant"
-        )
-        message_success(request, f"Вы вступили в проект «{project.name}»!")
-        
-    return redirect(
-        "projects:project_detail", username=username, slug=slug
-    )
-
-
+@require_POST
 def project_delete(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Project delete."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_project_owner(user=request.user, project=project):
-        return HttpResponseForbidden("Нельзя удалить чужой проект")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_delete_project:
+        raise PermissionDenied("У вас нет прав для удаления этого проекта")
         
     project.delete()
     message_success(request, f"Проект «{project.name}» успешно удалён.")
@@ -162,14 +144,15 @@ def project_delete(request: HttpRequest, username: str, slug: str) -> HttpRespon
 
 
 @login_required
-@require_http_methods(["GET"])
 def project_delete_confirm(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Render project delete confirm."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_project_owner(user=request.user, project=project):
-        return HttpResponseForbidden("У вас нет прав для удаления этого проекта")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_delete_project:
+        raise PermissionDenied("У вас нет прав для удаления этого проекта")
         
     return render(request, "projects/partials/_project_delete_confirm.html", {
         "project": project
@@ -178,29 +161,32 @@ def project_delete_confirm(request: HttpRequest, username: str, slug: str) -> Ht
 
 @login_required
 def invitation_form(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Fetch invitation form."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_invitations:
+        raise PermissionDenied("Недостаточно прав для управления приглашениями")
 
-    form = ProjectInvitationForm(initial={"role": "participant"})
+    form = ProjectInvitationForm(initial={"role": get_default_invitation_role()})
     return _render_invitation_form(request, project, username, slug, form=form)
 
 
 @login_required
 @require_http_methods(["POST"])
 def invitation_send(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Send invitation."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_invitations:
+        raise PermissionDenied("Недостаточно прав для отправки приглашений")
 
     form = ProjectInvitationForm(request.POST)
-
     if not form.is_valid():
         message_error(request, "Исправьте ошибки в форме")
         return _render_invitation_form(request, project, username, slug, form=form, status=422)
@@ -231,6 +217,7 @@ def _render_invitation_form(
     form: ProjectInvitationForm,
     status: int = 200
 ) -> HttpResponse:
+    """Render invitation form."""
     template = (
         "projects/partials/_invitation_form_inner.html"
         if request.headers.get("HX-Target") == "modal-content"
@@ -253,18 +240,21 @@ def _render_invitation_form(
 
 
 @login_required
+@require_POST
 def invitation_cancel(
     request: HttpRequest, username: str, slug: str, invitation_pk: int
 ) -> HttpResponse:
+    """Cancel pending invitation."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_invitations:
+        raise PermissionDenied("Недостаточно прав для отмены приглашений")
 
     invitation = get_invitation_by_pk(
-        pk=invitation_pk, project=project, status=InvitationStatus.PENDING
+        pk=invitation_pk, project=project, status=get_pending_status_value()
     )
     if not invitation:
         raise Http404("Приглашение не найдено")
@@ -280,15 +270,17 @@ def invitation_cancel(
 @login_required
 @require_http_methods(["POST"])
 def invitation_accept(request: HttpRequest, invitation_pk: int) -> HttpResponse:
+    """Accept inbound assignement."""
     invitation = get_invitation_by_pk(
-        pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
+        pk=invitation_pk, status=get_pending_status_value()
     )
     if not invitation:
         raise Http404("Приглашение не найдено")
         
     project = invitation.project
+    perms = ProjectPermissions(request.user, project)
     
-    if is_project_member(request.user, project):
+    if perms.is_member:
         message_info(request, "Вы уже участник проекта")
     else:
         accept_invitation(invitation=invitation, user=request.user)
@@ -309,8 +301,9 @@ def invitation_accept(request: HttpRequest, invitation_pk: int) -> HttpResponse:
 @login_required
 @require_http_methods(["POST"])
 def invitation_decline(request: HttpRequest, invitation_pk: int) -> HttpResponse:
+    """Decline inbound assignment."""
     invitation = get_invitation_by_pk(
-        pk=invitation_pk, recipient=request.user, status=InvitationStatus.PENDING
+        pk=invitation_pk, status=get_pending_status_value()
     )
     if not invitation:
         raise Http404("Приглашение не найдено")
@@ -331,32 +324,34 @@ def invitation_decline(request: HttpRequest, invitation_pk: int) -> HttpResponse
 
 
 @login_required
-def project_settings_tab(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
+def project_settings_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Render settings."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_settings:
+        raise PermissionDenied("Недостаточно прав для изменения настроек")
+        
     return render(
         request,
         "projects/partials/_project_settings.html",
-        {"project": project},
+        {"project": project,
+        "can_delete_project": perms.can_delete_project},
     )
 
 
 @login_required
-def project_settings_form(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
+def project_settings_form(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Render settings form."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_settings:
+        raise PermissionDenied("Недостаточно прав")
         
     form = ProjectUpdateForm(instance=project, user=request.user)
     
@@ -376,18 +371,17 @@ def project_settings_form(
 
 @login_required
 @require_http_methods(["POST"])
-def project_update(
-    request: HttpRequest, username: str, slug: str
-) -> HttpResponse:
+def project_update(request: HttpRequest, username: str, slug: str) -> HttpResponse:
+    """Project update."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
         
-    if not is_admin_or_owner(request.user, project):
-        return HttpResponseForbidden("Недостаточно прав")
+    perms = ProjectPermissions(request.user, project)
+    if not perms.can_manage_settings:
+        raise PermissionDenied("Недостаточно прав")
 
     form = ProjectUpdateForm(request.POST, instance=project, user=request.user)
-
     if not form.is_valid():
         message_error(request, "Заполните обязательные поля корректно")
         return render(
@@ -398,7 +392,6 @@ def project_update(
         )
 
     update_project(project=project, **form.cleaned_data)
-    
     message_success(request, "Настройки проекта обновлены")
 
     return redirect(

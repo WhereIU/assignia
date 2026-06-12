@@ -29,7 +29,7 @@
     </div>
 </div>
 
-{% if user == project.owner %}
+{% if can_delete_project %}
 <div class="card border-danger-subtle bg-danger-subtle bg-opacity-10 shadow-sm">
     <div class="card-body p-4">
         <h5 class="text-danger fw-bold mb-2">Зона повышенной опасности</h5>

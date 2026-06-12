@@ -11,7 +11,7 @@
                     {% if current_target.is_authenticated %}
                         {% if project.owner == current_target %}
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle small px-2 py-1">Владелец</span>
-                        {% else %}
+                        {% elif current_target in project.members.all %}
                             <span class="badge bg-secondary-subtle text-secondary border border-secondary-subtle small px-2 py-1">Участник</span>
                         {% endif %}
                     {% endif %}

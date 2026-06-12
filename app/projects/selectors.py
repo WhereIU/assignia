@@ -95,3 +95,17 @@ def filter_invitations_by_search(invitations_queryset: QuerySet, search_query: s
     if search_query:
         return invitations_queryset.filter(recipient__username__icontains=search_query)
     return invitations_queryset
+
+def get_invitation_status_choices() -> list[tuple[str, str]]:
+    """Return all available invitation status choices."""
+    return InvitationStatus.choices
+
+
+def get_pending_status_value() -> str:
+    """Return value for PENDING status."""
+    return InvitationStatus.PENDING
+
+def get_default_invitation_role() -> str:
+    """Return default role string for new project invitations."""
+    from project_members.selectors import get_default_member_role
+    return get_default_member_role()

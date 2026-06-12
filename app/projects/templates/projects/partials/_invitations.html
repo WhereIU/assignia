@@ -1,23 +1,27 @@
 <div class="card mt-4" id="invitations-container">
     <div class="card-body">
-        <h5>Приглашения</h5>
+        <h5 class="mb-3">Приглашения</h5>
+        <ul class="list-group list-group-flush">
         {% for inv in invitations %}
-            <div class="d-flex justify-content-between align-items-center mb-2">
+            <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2.5" id="invitation-row-{{ inv.pk }}">
                 <div>
                     <strong>{{ inv.project.name }}</strong>
-                    <span class="text-muted small">от {{ inv.sender.username }} · {{ inv.created_at|date:"d.m.Y H:i" }}</span>
+                    <div class="text-muted small">от @{{ inv.sender.username }} · {{ inv.created_at|date:"d.m.Y H:i" }}</div>
                 </div>
                 <div>
                     <button hx-post="{% url 'projects:invitation_accept' inv.pk %}"
-                            hx-target="#invitations-container" hx-swap="outerHTML"
-                            class="btn btn-success btn-sm">Принять</button>
+                            hx-target="#invitation-row-{{ inv.pk }}" 
+                            hx-swap="outerHTML"
+                            class="btn btn-success btn-sm me-1">Принять</button>
                     <button hx-post="{% url 'projects:invitation_decline' inv.pk %}"
-                            hx-target="#invitations-container" hx-swap="outerHTML"
+                            hx-target="#invitation-row-{{ inv.pk }}" 
+                            hx-swap="outerHTML"
                             class="btn btn-outline-danger btn-sm">Отклонить</button>
                 </div>
-            </div>
+            </li>
         {% empty %}
-            <p>Нет активных приглашений.</p>
+            <p class="text-muted small mb-0">Нет active-приглашений.</p>
         {% endfor %}
+        </ul>
     </div>
 </div>

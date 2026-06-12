@@ -3,12 +3,10 @@ from typing import TYPE_CHECKING
 
 from django.core.exceptions import ValidationError
 
-from project_members.constants import ProjectRole
-from project_members.permissions import is_project_member
+from project_members.selectors import get_project_ids_for_user
 from project_members.services import create_membership
-
-from .constants import InvitationStatus
 from .models import Invitation, Project
+from .selectors import get_pending_status_value, get_default_invitation_role
 
 if TYPE_CHECKING:
     from .forms import ProjectCreateForm
@@ -39,17 +37,24 @@ def send_project_invitation(
     sender: User, 
     recipient: User, 
     project: Project, 
-    role: str = ProjectRole.PARTICIPANT 
+    role: str | None = None 
 ) -> Invitation:
     """Send invitation after validation; raises ValidationError on failure."""
     if recipient == sender:
         raise ValidationError("Нельзя пригласить самого себя")
-    if is_project_member(recipient, project):
+        
+    user_project_ids = get_project_ids_for_user(recipient)
+    if project.pk in user_project_ids:
         raise ValidationError("Пользователь уже участник проекта")
+        
+    pending_status = get_pending_status_value()
     if Invitation.objects.filter(
-        recipient=recipient, project=project, status=InvitationStatus.PENDING
+        recipient=recipient, project=project, status=pending_status
     ).exists():
         raise ValidationError("Приглашение уже существует")
+
+    if role is None:
+        role = get_default_invitation_role()
 
     return Invitation.objects.create(
         sender=sender, recipient=recipient, project=project, role=role
@@ -58,23 +63,24 @@ def send_project_invitation(
 
 def cancel_invitation(*, invitation: Invitation) -> None:
     """Cancel pending invitation."""
-    invitation.status = InvitationStatus.CANCELLED
+    invitation.status = "cancelled"
     invitation.save(update_fields=["status"])
 
 
 def accept_invitation(*, invitation: Invitation, user: User) -> None:
     """Accept invitation, create membership if not member yet, mark accepted."""
-    if not is_project_member(user, invitation.project):
+    user_project_ids = get_project_ids_for_user(user)
+    if invitation.project.pk not in user_project_ids:
         create_membership(
             user=user, 
             project=invitation.project, 
             role=invitation.role
         )
-    invitation.status = InvitationStatus.ACCEPTED
+    invitation.status = "accepted"
     invitation.save(update_fields=["status"])
 
 
 def decline_invitation(*, invitation: Invitation) -> None:
     """Decline invitation."""
-    invitation.status = InvitationStatus.DECLINED
+    invitation.status = "declined"
     invitation.save(update_fields=["status"])
