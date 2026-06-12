@@ -19,7 +19,7 @@ REGISTRATION_TIMEOUT = 30 * 60
 
 def save_temp_user_to_cache(form_data: dict) -> str:
     """Hashes the password, stores the form data in Redis, and generates a token."""
-    token = str(uuid.uuid4())
+    token = f"reg_{uuid.uuid4()}"
     
     temp_user_data = {
         "username": form_data.get("username"),
@@ -95,7 +95,7 @@ def _generate_email_confirmation_token(user: User, new_email: Optional[str] = No
     if old_token:
         cache.delete(f"email_confirmation:{old_token}")
 
-    token = str(uuid.uuid4())
+    token = f"chg_{uuid.uuid4()}"
     cache.set(
         f"email_confirmation:{token}",
         {

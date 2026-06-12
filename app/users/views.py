@@ -20,6 +20,7 @@ from .selectors import get_profile_projects_context, get_user_by_username
 from .services import (
     cancel_pending_email as cancel_new_email,
     change_user_email,
+    confirm_email_token,
     delete_user_avatar,
     send_registration_confirmation,
     create_user_from_cache,
@@ -72,15 +73,27 @@ def register(request: HttpRequest) -> HttpResponse:
 
 
 def confirm_email(request: HttpRequest, token: str) -> HttpResponse:
-    """Confirm token from cache, create active user in DB and log them in."""
-    user = create_user_from_cache(token)
-    
-    if not user:
-        message_error(request, "Ссылка недействительна, устарела или данные уже заняты.")
-        return redirect("users:register")
-        
-    login(request, user)
-    message_success(request, "Email подтверждён. Добро пожаловать.")
+    """Confirm token from cache."""
+    if token.startswith("reg_"):
+        user = create_user_from_cache(token)
+        if not user:
+            message_error(request, "Ссылка для регистрации устарела или данные уже заняты.")
+            return redirect("users:register")
+            
+        login(request, user)
+        message_success(request, "Регистрация завершена. Добро пожаловать!")
+        return redirect("core:home")
+
+    if token.startswith("chg_"):
+        user = confirm_email_token(token)
+        if not user:
+            message_error(request, "Ссылка для подтверждения email устарела.")
+            return redirect("users:account")
+            
+        message_success(request, "Email успешно изменен.")
+        return redirect("users:account")
+
+    message_error(request, "Недействительная ссылка.")
     return redirect("core:home")
 
 
