@@ -4,7 +4,7 @@
         {% if page_obj.has_previous %}
             <li class="page-item">
                 <a class="page-link" href="#"
-                    hx-get="{{ request.path }}"
+                    hx-get="{{ request.path }}?page={{ page_obj.previous_page_number }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
                     hx-target="#task-list-inner"
                     hx-swap="innerHTML">&laquo;</a>
             </li>
@@ -26,7 +26,7 @@
         {% if page_obj.has_next %}
             <li class="page-item">
                 <a class="page-link" href="#"
-                    hx-get="{{ request.path }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
+                    hx-get="{{ request.path }}?page={{ page_obj.next_page_number }}&status={{ filters.status }}&priority={{ filters.priority }}&risk={{ filters.risk }}&q={{ filters.q|urlencode }}"
                     hx-target="#task-list-inner"
                     hx-swap="innerHTML">&raquo;</a>
             </li>

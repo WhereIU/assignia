@@ -1,7 +1,7 @@
 <div class="position-relative">
     <div class="d-flex flex-column gap-2 mb-3">
         {% for task in page_obj %}
-            {% include 'tasks/partials/_task_item.html' with task=task %}
+            {% include 'tasks/partials/_task_item.html' with task=task user=request.user %}
         {% empty %}
             <div class="text-center py-5 bg-body-tertiary rounded-3 border border-dashed border-secondary-subtle">
                 <div class="text-muted mb-2">

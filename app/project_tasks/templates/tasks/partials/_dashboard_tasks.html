@@ -13,5 +13,5 @@
         {% endfor %}
     </div>
 
-    {% include 'partials/_paginator.html' with hx_target='#task-list-inner' hx_include='#task-filter-form' %}
+    {% include 'tasks/partials/_task_paginator.html' with page_obj=page_obj filters=filters %}
 </div>

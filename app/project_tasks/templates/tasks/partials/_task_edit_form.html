@@ -11,27 +11,30 @@
               hx-target="#task-card-container-{{ task.pk }}"
               hx-swap="outerHTML">
             {% csrf_token %}
+            {% load task_ui %}
             
             <div class="modal-body py-4" style="max-height: 75vh;">
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small">{{ form.name.label }}</label>
-                    {{ form.name }}
                     {% if form.name.errors %}
-                        <script>document.getElementsByName('name')[0].classList.add('is-invalid');</script>
+                        {{ form.name|add_class:"is-invalid" }}
                         <div class="invalid-feedback d-block mt-1">
                             {% for error in form.name.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
                         </div>
+                    {% else %}
+                        {{ form.name }}
                     {% endif %}
                 </div>
                 
                 <div class="mb-3">
                     <label class="form-label fw-semibold text-secondary small">{{ form.description.label }}</label>
-                    {{ form.description }}
                     {% if form.description.errors %}
-                        <script>document.getElementsByName('description')[0].classList.add('is-invalid');</script>
+                        {{ form.description|add_class:"is-invalid" }}
                         <div class="invalid-feedback d-block mt-1">
                             {% for error in form.description.errors %}<i class="bi bi-exclamation-circle-fill me-1"></i> {{ error }}{% endfor %}
                         </div>
+                    {% else %}
+                        {{ form.description }}
                     {% endif %}
                 </div>
                 

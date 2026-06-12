@@ -8,7 +8,7 @@
 
     <div class="card-body p-4">
         <div id="messages-list-wrapper" class="mb-4">
-            {% include 'tasks/partials/_task_comments_list.html' with comments=comments page_obj=page_obj %}
+            {% include 'tasks/partials/_task_comments_list.html' with task=task comments=comments page_obj=page_obj %}
         </div>
 
         {% if user.is_authenticated %}

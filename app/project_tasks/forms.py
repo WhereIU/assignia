@@ -38,4 +38,3 @@ class TaskCreateForm(forms.ModelForm):
                 }
             ),
         }
-    

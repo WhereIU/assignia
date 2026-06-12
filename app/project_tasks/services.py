@@ -1,26 +1,22 @@
 from typing import List, Optional
 
 from django.db import transaction
-from django.contrib.auth import get_user_model
 from django.db.models import Q, Case, When, IntegerField, QuerySet
 
-from project_members.permissions import is_project_member
 from project_directions.selectors import get_directions_by_project
 from project_teams.selectors import get_teams_by_project
-from users.models import User
+from users.selectors import get_user_by_pk
 
+from .permissions import ProjectTasksPermissions
 from .constants import TaskStatus, RiskLevel, PriorityLevel
 from .models import Task, TaskAssignment, TaskComment
-
-
-User = get_user_model()
 
 
 def create_task(
     *,
     form,
     project,
-    creator: User,
+    creator,
     assignee_ids: Optional[List[int]] = None,
 ) -> Task:
     """Save new task from form and sync assignees."""
@@ -35,32 +31,32 @@ def create_task(
     return task
 
 
-def delete_task(*, task: Task) -> Task:
+def delete_task(*, task: Task) -> None:
     """Delete task."""
     task.delete()
 
 
-def take_task(*, task: Task, user: User) -> Task:
+def take_task(*, task: Task, user) -> Task:
     """Assign a user to a task and set status to in progress."""
-    TaskAssignment.objects.create(task=task, user=user)
+    TaskAssignment.objects.get_or_create(task=task, user=user)
     task.status = TaskStatus.IN_PROGRESS
     task.save(update_fields=["status"])
     return task
 
 
-def add_task_comment(*, task: Task, author: User, text: str) -> TaskComment:
+def add_task_comment(*, task: Task, author, text: str) -> TaskComment:
     """Add comment to task."""
     return TaskComment.objects.create(task=task, author=author, text=text)
 
 
 def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
-    """Assign user to task.
-    Returns error message on failure, or None on success."""
-    user = User.objects.filter(pk=user_id).first()
+    """Assign user to task. Returns error message on failure, or None on success."""
+    user = get_user_by_pk(user_id)
     if not user:
         return "Пользователь не найден"
 
-    if not is_project_member(user, task.project):
+    perms = ProjectTasksPermissions(user, task.project)
+    if not perms.is_member:
         return "Пользователь не участник проекта"
 
     TaskAssignment.objects.get_or_create(task=task, user=user)
@@ -69,15 +65,14 @@ def assign_user_to_task(*, task: Task, user_id: int) -> Optional[str]:
 
 def remove_user_from_task(*, task: Task, user_id: int) -> None:
     """Remove user from task's assignees."""
-    user = User.objects.filter(pk=user_id).first()
+    user = get_user_by_pk(user_id)
     if not user:
         return
     TaskAssignment.objects.filter(task=task, user=user).delete()
 
 
 def add_direction_to_task(*, task: Task, direction_id: int) -> Optional[str]:
-    """Add direction to task.
-    Returns error message on failure, or None on success."""
+    """Add direction to task."""
     directions = get_directions_by_project(task.project, is_deleted=False)
     direction = directions.filter(pk=direction_id).first()
     if not direction:
@@ -96,8 +91,7 @@ def remove_direction_from_task(*, task: Task, direction_id: int) -> None:
 
 
 def add_team_to_task(*, task: Task, team_id: int) -> Optional[str]:
-    """Add team to task.
-    Returns error message on failure, or None on success."""
+    """Add team to task."""
     teams = get_teams_by_project(task.project, is_deleted=False)
     team = teams.filter(pk=team_id).first()
     if not team:
@@ -163,17 +157,17 @@ def _sync_assignees(task: Task, assignee_ids: List[int]) -> None:
     """Replace current assignees with the provided list of user IDs."""
     task.assignments.exclude(user__pk__in=assignee_ids).delete()
     for user_id in assignee_ids:
-        user = User.objects.filter(pk=user_id).first()
+        user = get_user_by_pk(user_id)
         if not user:
             continue
-        if is_project_member(user, task.project):
+        perms = ProjectTasksPermissions(user, task.project)
+        if perms.is_member:
             TaskAssignment.objects.get_or_create(task=task, user=user)
 
 
 @transaction.atomic
-def update_task(task: Task, data: dict) -> None:
-    """Update task."""
-
+def update_task(task: Task, **data) -> None:
+    """Update task fields from provided data."""
     if 'name' in data:
         task.name = data.get('name')
     if 'description' in data:

@@ -7,7 +7,6 @@
 {% endblock %}
 
 {% block content %}
-{% include 'tasks/partials/_task_card.html' with task=task %}
-
-{% include 'tasks/partials/_task_comments.html' %}
+    {% include 'tasks/partials/_task_card.html' with task=task actions=actions %}
+    {% include 'tasks/partials/_task_comments.html' with task=task comments=comments page_obj=page_obj %}
 {% endblock %}

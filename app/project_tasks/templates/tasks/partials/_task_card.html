@@ -1,3 +1,5 @@
+{% load task_ui %}
+
 <div id="task-card-container-{{ task.pk }}" class="card border-0 shadow-sm overflow-hidden mb-4 rounded-4" style="background: #ffffff;">
     
     <div style="height: 4px;" class="
@@ -29,29 +31,23 @@
             </div>
             
             <div class="col-sm-4 text-sm-end">
-                <span id="task-status-badge-{{ task.pk }}" class="badge rounded-pill px-3 py-2 border fs-7 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm
-                    {% if task.is_deleted %}bg-danger-subtle text-danger border-danger-subtle
-                    {% elif task.status == 'done' %}bg-success-subtle text-success border-success-subtle
-                    {% elif task.status == 'in_progress' %}bg-warning-subtle text-warning border-warning-subtle
-                    {% else %}bg-info-subtle text-info border-info-subtle{% endif %}">
-                    
-                    {% if task.is_deleted %}<i class="bi bi-trash3-fill"></i>
-                    {% elif task.status == 'done' %}<i class="bi bi-check-all"></i>
-                    {% elif task.status == 'in_progress' %}<i class="bi bi-play-fill animate-pulse"></i>
-                    {% else %}<i class="bi bi-bookmark-plus"></i>{% endif %}
-                    
+                <span id="task-status-badge-{{ task.pk }}" class="badge rounded-pill px-3 py-2 border fs-7 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm {% if task.is_deleted %}bg-danger-subtle text-danger border-danger-subtle{% else %}{{ task.status|task_status_css }}{% endif %}">
+                    {% if task.is_deleted %}
+                        <i class="bi bi-trash3-fill"></i>
+                    {% else %}
+                        <i class="bi {{ task.status|task_status_icon }}"></i>
+                    {% endif %}
                     {{ task.get_status_display }}
                 </span>
             </div>
         </div>
         
         <div class="row g-4">
-            
             <div class="col-lg-8">
                 <div class="p-3.5 rounded-3 border border-light-subtle bg-body-tertiary h-100">
                     <h6 class="text-muted small fw-bold text-uppercase tracking-wider mb-2">Описание задачи</h6>
                     {% if task.description %}
-                        <p class="text-dark mb-0 text-break lh-base fs-6" style="white-space: pre-line; color: #2d3748 !important;">{{ task.description }}</p>
+                        <p class="text-dark mb-0 text-break html-p lh-base fs-6" style="white-space: pre-line; color: #2d3748 !important;">{{ task.description }}</p>
                     {% else %}
                         <p class="text-muted small mb-0 fst-italic">Описание отсутствует.</p>
                     {% endif %}
@@ -79,7 +75,7 @@
                             <i class="bi bi-exclamation-triangle text-secondary fs-5"></i>
                             <div>
                                 <span class="text-muted small d-block">Приоритет</span>
-                                <span class="fw-semibold {% if task.priority == 3 %}text-danger{% elif task.priority == 2 %}text-warning{% else %}text-secondary{% endif %}">
+                                <span class="fw-semibold {{ task.priority|priority_icon_color }}">
                                     {{ task.get_priority_display|default:"Не указан" }}
                                 </span>
                             </div>
@@ -144,27 +140,26 @@
                 </div>
             </div>
         </div>
+
         <div id="task-actions-container-{{ task.pk }}">
             <div class="border-top border-light pt-3 mt-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
                 <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Доступные действия с задачей</span>
 
                 <div class="d-flex gap-2">
-                    {% if not task.is_deleted and task.status != 'done' and user.is_authenticated %}
-                      {% if is_assignee %}
-                              <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-1">
-                                  <i class="bi bi-check-circle-fill"></i> Вы выполняете эту задачу
-                              </span>
-                          {% else %}
-                              <button hx-post="{% url 'project_tasks:task_take' task_pk=task.pk %}"
-                                      hx-target="#task-card-container-{{ task.pk }}"
-                                      hx-swap="outerHTML"
-                                      class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
-                                  <i class="bi bi-hand-index-thumb-fill"></i> Взять задачу
-                              </button>
-                          {% endif %}
+                    {% if actions.is_assignee %}
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-1">
+                            <i class="bi bi-check-circle-fill"></i> Вы выполняете эту задачу
+                        </span>
+                    {% elif actions.can_take %}
+                        <button hx-post="{% url 'project_tasks:task_take' task_pk=task.pk %}"
+                                hx-target="#task-card-container-{{ task.pk }}"
+                                hx-swap="outerHTML"
+                                class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
+                            <i class="bi bi-hand-index-thumb-fill"></i> Взять задачу
+                        </button>
                     {% endif %}
 
-                    {% if is_privileged and not task.is_deleted %}
+                    {% if actions.can_edit %}
                         <button hx-get="{% url 'project_tasks:task_edit' task_pk=task.pk %}"
                                 hx-target="#modal-container"
                                 class="btn btn-outline-secondary btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all"
@@ -174,7 +169,7 @@
                         </button>
                     {% endif %}
 
-                    {% if is_privileged %}
+                    {% if actions.can_delete %}
                         <button hx-get="{% url 'project_tasks:task_delete_confirm' task_pk=task.pk %}"
                                 hx-target="#modal-container"
                                 class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all"
