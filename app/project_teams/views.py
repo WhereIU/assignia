@@ -363,7 +363,7 @@ def team_member_add(request: HttpRequest, team_pk: int, user_pk: int) -> HttpRes
     if not perms.can_manage_teams:
         raise PermissionDenied()
 
-    user = get_user_by_pk(pk=user_pk)
+    user = get_user_by_pk(user_pk=user_pk)
     if not user:
         return HttpResponse("Пользователь не найден", status=404)
 
@@ -403,7 +403,7 @@ def team_member_remove(request: HttpRequest, team_pk: int, user_pk: int) -> Http
     if not perms.can_manage_teams:
         raise PermissionDenied()
 
-    user = get_user_by_pk(pk=user_pk)
+    user = get_user_by_pk(user_pk=user_pk)
     if not user:
         return HttpResponse("Пользователь не найден", status=404)
         
@@ -431,7 +431,7 @@ def team_member_remove(request: HttpRequest, team_pk: int, user_pk: int) -> Http
 def team_member_delete_confirm(request: HttpRequest, team_pk: int, user_pk: int) -> HttpResponse:
     """Render team member removal confirmation."""
     team = get_team_by_pk(pk=team_pk)
-    target_user = get_user_by_pk(pk=user_pk)
+    target_user = get_user_by_pk(user_pk==user_pk)
     if not team or not target_user:
         raise Http404("Элементы не найдены")
         
