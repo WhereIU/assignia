@@ -206,3 +206,13 @@ footer {
         max-width: 640px;
     }
 }
+
+@media (max-width: 575.98px) {
+    .custom-search-dropdown {
+        left: 10px !important;
+        right: 10px !important;
+        width: calc(100% - 20px) !important;
+        transform: none !important;
+        top: 100% !important;
+    }
+}
