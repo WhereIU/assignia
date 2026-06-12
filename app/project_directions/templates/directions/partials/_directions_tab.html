@@ -6,8 +6,8 @@
 <div class="card shadow-sm border-0">
     <div class="card-body p-0">
         <div class="p-3 border-bottom bg-light-subtle rounded-top d-flex flex-column flex-md-row justify-content-between align-items-stretch align-items-md-center gap-3">
-            <form hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
-                  hx-target="#tab-content"
+            <form hx-get="{% url 'project_directions:directions_tab' username=username slug=slug %}"
+                  hx-target="#directions-list-wrapper"
                   hx-swap="innerHTML"
                   class="flex-grow-1 mb-0"
                   style="max-width: 400px;">
@@ -31,29 +31,32 @@
             </form>
 
             <div class="d-flex align-items-center justify-content-between justify-content-md-end gap-2">
-                
-                {% if not show_deleted %}
-                    <button class="btn btn-sm btn-light border-secondary-subtle text-secondary px-3"
-                            hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}?show_deleted=1"
-                            hx-target="#tab-content" 
-                            hx-swap="innerHTML">
-                        <i class="bi bi-eye me-1"></i> Показать удалённые
-                    </button>
-                {% else %}
-                    <button class="btn btn-sm btn-dark px-3"
-                            hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
-                            hx-target="#tab-content" 
-                            hx-swap="innerHTML">
-                        <i class="bi bi-eye-slash me-1"></i> Скрыть удалённые
-                    </button>
-                {% endif %}
+                {% if can_manage %}
+                    {% if not show_deleted %}
+                        <button class="btn btn-sm btn-light border-secondary-subtle text-secondary px-3"
+                                hx-get="{% url 'project_directions:directions_tab' username=username slug=slug %}?show_deleted=1"
+                                hx-target="#tab-content" 
+                                hx-swap="innerHTML">
+                            <i class="bi bi-eye me-1"></i> Показать удалённые
+                        </button>
+                    {% else %}
+                        <button class="btn btn-sm btn-dark px-3"
+                                hx-get="{% url 'project_directions:directions_tab' username=username slug=slug %}"
+                                hx-target="#tab-content" 
+                                hx-swap="innerHTML">
+                            <i class="bi bi-eye-slash me-1"></i> Скрыть удалённые
+                        </button>
+                    {% endif %}
 
                     <button class="btn btn-sm btn-primary d-inline-flex align-items-center gap-1 px-3"
-                            hx-get="{% url 'project_directions:direction_create_form' username=project.owner.username slug=project.slug %}"
+                            hx-get="{% url 'project_directions:direction_create_form' username=username slug=slug %}"
                             hx-target="#modal-container" 
-                            hx-swap="innerHTML">
+                            hx-swap="innerHTML"
+                            data-bs-toggle="modal"
+                            data-bs-target="#modal-container">
                         <i class="bi bi-plus-lg"></i> Добавить направление
                     </button>
+                {% endif %}
             </div>
         </div>
 
@@ -61,7 +64,7 @@
 
         <div id="directions-list-wrapper"
              class="p-3"
-             hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}?show_deleted={{ show_deleted|yesno:'1,0' }}"
+             hx-get="{% url 'project_directions:directions_tab' username=username slug=slug %}?show_deleted={{ show_deleted|yesno:'1,0' }}"
              hx-trigger="directionsChanged from:body"
              hx-include="#directions-search-input"
              hx-swap="innerHTML">

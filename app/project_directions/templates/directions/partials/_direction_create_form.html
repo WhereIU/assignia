@@ -7,28 +7,22 @@
         <form hx-post="{% url 'project_directions:direction_create' username=username slug=slug %}" 
               hx-target="this"
               hx-swap="outerHTML"
-              hx-on::before-request="
-                const modalEl = document.getElementById('modal-container');
-                const modal = bootstrap.Modal.getInstance(modalEl);
-                if (modal) { modal.hide(); }
-              ">
+              hx-on::after-request="if(event.detail.xhr.status === 200) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
             {% csrf_token %}
             
             <div class="modal-body">
                 <div class="mb-3">
-                    <label class="form-label">{{ form.name.label }}</label>
-                    {{ form.name }}
+                    <label class="form-label fw-medium small">{{ form.name.label }}</label>
+                    <input type="text" name="name" class="form-control {% if form.name.errors %}is-invalid{% endif %}" value="{{ form.name.value|default:'' }}" required>
                     {% if form.name.errors %}
-                        <script>document.getElementsByName('name')[0].classList.add('is-invalid');</script>
-                        <div class="invalid-feedback d-block">{{ form.name.errors|join:", " }}</div>
+                        <div class="invalid-feedback">{{ form.name.errors|join:", " }}</div>
                     {% endif %}
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">{{ form.description.label }}</label>
-                    {{ form.description }}
+                    <label class="form-label fw-medium small">{{ form.description.label }}</label>
+                    <textarea name="description" class="form-control {% if form.description.errors %}is-invalid{% endif %}" rows="3">{{ form.description.value|default:'' }}</textarea>
                     {% if form.description.errors %}
-                        <script>document.getElementsByName('description')[0].classList.add('is-invalid');</script>
-                        <div class="invalid-feedback d-block">{{ form.description.errors|join:", " }}</div>
+                        <div class="invalid-feedback">{{ form.description.errors|join:", " }}</div>
                     {% endif %}
                 </div>
             </div>

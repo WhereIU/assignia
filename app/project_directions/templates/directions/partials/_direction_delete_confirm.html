@@ -2,14 +2,14 @@
     <div class="modal-content border-0 shadow">
         <div class="modal-header bg-danger text-white py-2">
             <h6 class="modal-title d-flex align-items-center">
-                <i class="bi bi-exclamation-triangle-fill me-2"></i> Подтверждение
+                <i class="bi bi-exclamation-triangle-fill me-2"></i> Архив
             </h6>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Закрыть"></button>
         </div>
         
         <form hx-post="{% url 'project_directions:direction_delete' direction_pk=direction.pk %}" 
               hx-swap="none"
-              hx-on::after-request="bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide();">
+              hx-on::after-request="if(event.detail.xhr.status === 200) { bootstrap.Modal.getInstance(document.getElementById('modal-container')).hide(); }">
             {% csrf_token %}
             
             <div class="modal-body text-center py-3">
@@ -18,7 +18,7 @@
             
             <div class="modal-footer justify-content-center p-2 border-top-0">
                 <button type="button" class="btn btn-light btn-sm px-3" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" class="btn btn-danger btn-sm px-3">Да, удалить</button>
+                <button type="submit" class="btn btn-danger btn-sm px-3">Да, архивировать</button>
             </div>
         </form>
     </div>
