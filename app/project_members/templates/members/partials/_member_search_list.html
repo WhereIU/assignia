@@ -1,5 +1,5 @@
 {% for member in members %}
-  {% include 'members/partials/_members_item.html' with member=member %}
+    {% include 'members/partials/_member_item.html' with member=member %}
 {% empty %}
     <div class="text-muted small px-2 py-1">Ничего не найдено</div>
 {% endfor %}
