@@ -56,7 +56,7 @@ class ProjectMembersPermissions(ProjectBasePermissions):
     """Permissions for managing project members and their roles."""
 
     @property
-    def can_view_member_tab(self) -> bool:
+    def can_view_members(self) -> bool:
         """Check if user can view the project members tab."""
         if self.project.is_public:
             return True

@@ -127,3 +127,9 @@ def get_available_tasks_for_projects(project_ids: list[int]) -> QuerySet[Task]:
 def get_tasks_assigned_to_user(user: User) -> QuerySet[Task]:
     """Return non‑deleted tasks assigned by user."""
     return Task.objects.filter(assignments__user=user, is_deleted=False)
+
+
+def get_task_count_for_project(project) -> int:
+    """Return total count of tasks for a project."""
+    from .models import Task
+    return Task.objects.filter(project=project, is_deleted=False).count()

@@ -8,6 +8,8 @@ from django.shortcuts import redirect, render
 from django.urls import reverse
 from django.views.decorators.http import require_http_methods, require_POST
 
+from project_members.selectors import get_project_member_count
+from project_tasks.selectors import get_task_count_for_project
 from common.selectors import get_paginated_page
 from common.services import message_success, message_error, message_info
 from project_members.services import create_membership as create_project_membership
@@ -20,6 +22,7 @@ from .selectors import (
     get_project,
     get_pending_status_value,
     get_default_invitation_role,
+    get_project_tabs_permissions,
 )
 from .services import (
     accept_invitation,
@@ -71,19 +74,18 @@ def project_detail(request: HttpRequest, username: str, slug: str) -> HttpRespon
     perms = ProjectPermissions(request.user, project)
     if not perms.can_view_project:
         raise PermissionDenied("У вас нет доступа к этому проекту")
-
+    
+    tabs_perms = get_project_tabs_permissions(request.user, project)
+    
     return render(request, "projects/project_detail.html", {
         "project": project,
         "active_tab": request.GET.get("tab", "overview"),
-        "is_member": perms.is_member,
-        "can_manage_invitations": perms.can_manage_invitations,
-        "can_manage_settings": perms.can_manage_settings,
+        **tabs_perms,
     })
 
 
 @login_required
 def project_overview_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
-    """Render project overview tab."""
     project = get_project(username=username, slug=slug)
     if not project:
         raise Http404("Проект не найден")
@@ -98,6 +100,8 @@ def project_overview_tab(request: HttpRequest, username: str, slug: str) -> Http
         {
             "project": project,
             "is_owner": perms.is_owner,
+            "tasks_count": get_task_count_for_project(project),
+            "members_count": get_project_member_count(project),
         }
     )
 

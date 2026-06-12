@@ -5,6 +5,12 @@ import random
 from django.db.models import Q
 
 from project_members.selectors import get_project_ids_for_user
+from projects.permissions import ProjectPermissions
+from project_members.permissions import ProjectMembersPermissions
+from project_directions.permissions import ProjectDirectionsPermissions
+from project_tasks.permissions import ProjectTasksPermissions
+from project_requests.permissions import ProjectRequestsPermissions
+from project_analytics.permissions import ProjectAnalyticsPermissions
 
 from .models import Project, Invitation
 from .constants import InvitationStatus
@@ -109,3 +115,26 @@ def get_default_invitation_role() -> str:
     """Return default role string for new project invitations."""
     from project_members.selectors import get_default_member_role
     return get_default_member_role()
+
+
+def get_project_tabs_permissions(user, project):
+    """
+    Aggregate all permissions for tabs.
+    """
+    project_perms = ProjectPermissions(user, project)
+    members_perms = ProjectMembersPermissions(user, project)
+    directions_perms = ProjectDirectionsPermissions(user, project)
+    tasks_perms = ProjectTasksPermissions(user, project)
+    requests_perms = ProjectRequestsPermissions(user, project)
+    analytics_perms = ProjectAnalyticsPermissions(user, project)
+
+    return {
+        "can_view_tasks": tasks_perms.can_view_tasks,
+        "can_view_requests": requests_perms.can_view_requests,
+        "can_view_analytics": analytics_perms.can_view_analytics,
+        "can_view_members": members_perms.can_view_members,
+        "can_view_directions": directions_perms.can_view_directions,
+        "can_manage_invitations": project_perms.can_manage_invitations,
+        "can_manage_settings": project_perms.can_manage_settings,
+        "can_manage_directions": directions_perms.can_manage_directions,
+    }

@@ -58,3 +58,8 @@ def get_assignable_roles_for_user(perms: ProjectMembersPermissions) -> List[Dict
         for role_value, role_label in ProjectRole.choices
         if perms.can_add_target_role(role_value)
     ]
+
+
+def get_project_member_count(project: Project) -> int:
+    """Return count of members for a project."""
+    return ProjectMembership.objects.filter(project=project).count()

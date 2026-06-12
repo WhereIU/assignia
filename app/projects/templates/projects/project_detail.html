@@ -8,7 +8,6 @@
         <a class="nav-link project-tab-link {% if not active_tab or active_tab == 'overview' %}active{% endif %}"
            hx-get="{% url 'projects:project_overview_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=overview"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
@@ -16,24 +15,24 @@
         </a>
     </li>
 
+    {% if can_view_tasks %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'tasks' %}active{% endif %}"
            hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=tasks"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
            <i class="bi bi-list-task me-1"></i>Задачи
         </a>
     </li>
+    {% endif %}
 
-    {% if user.is_authenticated %}
+    {% if can_view_requests %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'requests' %}active{% endif %}"
            hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=requests"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
@@ -42,12 +41,11 @@
     </li>
     {% endif %}
 
-    {% if is_member %}
+    {% if can_view_analytics %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'analytics' %}active{% endif %}"
            hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=analytics"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
@@ -56,23 +54,24 @@
     </li>
     {% endif %}
 
-    {% if can_manage_invitations %}
+    {% if can_view_members %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'members' %}active{% endif %}"
            hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=members"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
            <i class="bi bi-people me-1"></i>Участники
         </a>
     </li>
+    {% endif %}
+
+    {% if can_view_directions %}
     <li class="nav-item">
         <a class="nav-link project-tab-link {% if active_tab == 'directions' %}active{% endif %}"
            hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=directions"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
@@ -86,7 +85,6 @@
         <a class="nav-link project-tab-link {% if active_tab == 'settings' %}active{% endif %}"
            hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
            hx-target="#tab-content" 
-           hx-swap="innerHTML"
            hx-push-url="{% url 'projects:project_detail' username=project.owner.username slug=project.slug %}?tab=settings"
            hx-on:click="document.querySelectorAll('.project-tab-link').forEach(el => el.classList.remove('active')); this.classList.add('active')"
            href="#">
@@ -98,20 +96,13 @@
 
 {% block content %}
 <div id="tab-content" hx-disinherit="*"
-     {% if active_tab == 'overview' %}
-        hx-get="{% url 'projects:project_overview_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'tasks' %}
-        hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'directions' and can_manage_invitations %}
-        hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'members' and can_manage_invitations %}
-        hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'analytics' and is_member %}
-        hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'requests' and user.is_authenticated %}
-        hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
-     {% elif active_tab == 'settings' and can_manage_settings %}
-        hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
+     {% if active_tab == 'overview' %} hx-get="{% url 'projects:project_overview_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'tasks' %} hx-get="{% url 'project_tasks:tasks_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'directions' %} hx-get="{% url 'project_directions:directions_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'members' %} hx-get="{% url 'project_members:members_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'analytics' %} hx-get="{% url 'project_analytics:analytics_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'requests' %} hx-get="{% url 'project_requests:requests_tab' username=project.owner.username slug=project.slug %}"
+     {% elif active_tab == 'settings' %} hx-get="{% url 'projects:project_settings_tab' username=project.owner.username slug=project.slug %}"
      {% endif %}
      hx-trigger="load"
      hx-swap="innerHTML">

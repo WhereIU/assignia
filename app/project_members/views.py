@@ -88,7 +88,7 @@ def members_tab(request: HttpRequest, username: str, slug: str) -> HttpResponse:
         raise Http404("Проект не найден")
         
     perms = ProjectMembersPermissions(request.user, project)
-    if not perms.can_view_member_tab:
+    if not perms.can_view_members:
         raise PermissionDenied("Недостаточно прав для просмотра участников")
         
     search = request.GET.get("search", "")
