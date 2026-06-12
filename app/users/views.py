@@ -7,7 +7,6 @@ from django.urls import reverse_lazy
 from django.views.decorators.http import require_POST
 
 from common.services import message_error, message_success
-from common.selectors import get_paginated_page
 from projects.selectors import get_all_public_projects_of_user
 
 from .forms import (
@@ -17,13 +16,13 @@ from .forms import (
     ProfileEditForm,
     UserCreationForm,
 )
-from .selectors import filter_projects_by_search, get_user_by_username
+from .selectors import get_profile_projects_context, get_user_by_username
 from .services import (
     cancel_pending_email as cancel_new_email,
     change_user_email,
-    confirm_email_token,
-    send_email_confirmation,
     delete_user_avatar,
+    send_registration_confirmation,
+    create_user_from_cache,
 )
 
 
@@ -54,13 +53,16 @@ def register(request: HttpRequest) -> HttpResponse:
     if request.method == "POST":
         form = UserCreationForm(request.POST)
         if form.is_valid():
-            user = form.save(commit=False)
-            user.is_active = False
-            user.save()
-            send_email_confirmation(user)
+            try:
+                send_registration_confirmation(form.cleaned_data)
+            except RuntimeError as exc:
+                message_error(request, str(exc))
+                return render(request, "users/register.html", {"form": form})
+
             message_success(request, "Подтвердите email для активации аккаунта.")
+            
             request.session["login_prefill"] = {
-                "username": user.username,
+                "username": form.cleaned_data.get("username"),
                 "password": form.cleaned_data.get("password1"),
             }
             return redirect("users:login")
@@ -70,11 +72,13 @@ def register(request: HttpRequest) -> HttpResponse:
 
 
 def confirm_email(request: HttpRequest, token: str) -> HttpResponse:
-    """Confirm email token and log user in."""
-    user = confirm_email_token(token)
+    """Confirm token from cache, create active user in DB and log them in."""
+    user = create_user_from_cache(token)
+    
     if not user:
-        message_error(request, "Ссылка недействительна или устарела.")
+        message_error(request, "Ссылка недействительна, устарела или данные уже заняты.")
         return redirect("users:register")
+        
     login(request, user)
     message_success(request, "Email подтверждён. Добро пожаловать.")
     return redirect("core:home")
@@ -88,19 +92,16 @@ def public_profile(request: HttpRequest, username: str) -> HttpResponse:
 
     projects_queryset = get_all_public_projects_of_user(profile_user)
     
-    user_projects_count = projects_queryset.count()
-
-    search_query = request.GET.get("q", "").strip()
-    filtered_projects = filter_projects_by_search(projects_queryset, search_query)
-
-    page_number = request.GET.get("page", "1")
-    projects = get_paginated_page(queryset=filtered_projects, page=page_number, per_page=6)
+    projects_context = get_profile_projects_context(
+        projects_queryset=projects_queryset,
+        search_query=request.GET.get("q", ""),
+        page_number=request.GET.get("page", "1")
+    )
 
     context = {
         "profile_user": profile_user,
-        "projects": projects,
-        "total_projects_count": user_projects_count,
-        "search_query": search_query,
+        "total_projects_count": projects_queryset.count(),
+        **projects_context
     }
 
     if request.headers.get("HX-Request"):
@@ -144,7 +145,7 @@ def delete_avatar(request: HttpRequest) -> HttpResponse:
 
 @login_required
 def account(request: HttpRequest) -> HttpResponse:
-    """Manage account settings (email and password forms)."""
+    """Manage account settings."""
     email_form = AccountEmailForm(instance=request.user)
     password_form = PasswordChangeForm(request.user)
 

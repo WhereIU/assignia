@@ -1,10 +1,12 @@
+import json
 from django import forms
 from django.contrib.auth.forms import (
     UserCreationForm as DjangoUserCreationForm,
     UserChangeForm, 
     PasswordChangeForm as DjangoPasswordChangeForm,  
     AuthenticationForm
-    )
+)
+from django.core.cache import cache
 from django.core.exceptions import ValidationError
 
 from .models import User
@@ -80,7 +82,6 @@ class UserCreationForm(DjangoUserCreationForm):
             raise forms.ValidationError(
                 'Пользователь с таким именем уже существует.'
             )
-
         return username
 
     def clean_email(self):
@@ -89,8 +90,27 @@ class UserCreationForm(DjangoUserCreationForm):
             raise forms.ValidationError(
                 'Пользователь с такой почтой уже существует.'
             )
-
         return email
+
+    def clean(self):
+        """Дополнительная проверка: свободны ли данные в оперативной памяти Redis."""
+        cleaned_data = super().clean()
+        username = cleaned_data.get("username")
+        email = cleaned_data.get("email")
+        
+        if username or email:
+            for key in cache.iter_keys("temp_user:*"):
+                raw_data = cache.get(key)
+                if raw_data:
+                    cached_user = json.loads(raw_data)
+                    
+                    if username and cached_user.get("username") == username:
+                        self.add_error("username", "Этот логин сейчас ожидает подтверждения регистрации.")
+                        
+                    if email and cached_user.get("email") == email:
+                        self.add_error("email", "На эту почту уже отправлено письмо, подтвердите его.")
+                        
+        return cleaned_data
 
 
 class ProfileEditForm(UserChangeForm):
@@ -113,28 +133,24 @@ class ProfileEditForm(UserChangeForm):
 
     class Meta:
         model = User
-
         fields = (
             'first_name',
             'last_name',
             'bio',
             'avatar',
         )
-
         labels = {
             'first_name': 'Имя',
             'last_name': 'Фамилия',
             'bio': 'О себе',
             'avatar': 'Аватар',
         }
-
         widgets = {
             'first_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Имя',
                 'maxlength': 32,
             }),
-
             'last_name': forms.TextInput(attrs={
                 'class': 'form-control',
                 'placeholder': 'Фамилия',
@@ -145,19 +161,18 @@ class ProfileEditForm(UserChangeForm):
 
 class AccountEmailForm(forms.ModelForm):
     email = forms.EmailField(
-    max_length=128,
-    widget=forms.EmailInput(attrs={
-        "class": "form-control",
-        "placeholder": "email@example.com",
-        "maxlength": 128,
-        })
+        max_length=128,
+        widget=forms.EmailInput(attrs={
+            "class": "form-control",
+            "placeholder": "email@example.com",
+            "maxlength": 128,
+            })
     )
 
     class Meta:
         model = User
         fields = ('email',)
         labels = {'email': 'Email'}
-
 
     def clean_email(self):
         email = self.cleaned_data['email'].strip().lower()
