@@ -14,6 +14,11 @@ def get_user_by_username(username: str) -> Optional[User]:
     return User.objects.filter(username=username).first()
 
 
+def get_user_by_pk(user_pk: str) -> Optional[User]:
+    """Return user by user_pk."""
+    return User.objects.filter(pk=user_pk).first()
+
+
 def filter_projects_by_search(projects_queryset: QuerySet, search_query: str) -> QuerySet:
     """Returns filtered projects by search."""
     if search_query:
