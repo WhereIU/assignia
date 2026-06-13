@@ -39,13 +39,13 @@ exec-web:
 	docker compose exec web bash
 
 save-images:
-	docker save -o assignia-images.tar python:3.11-slim postgres:15 nginx:latest redis:7-alpine
+	docker save -o assignia-images.tar python:3.13-slim postgres:16 nginx:latest redis:7.4-alpine
 
 load-images:
 	docker load -i assignia-images.tar
 
 deploy-ansible:
-	ansible-playbook -i ansible/hosts.ini ansible/deploy.yml
+	ansible-playbook -i ansible/my_inventory.ini ansible/deploy.yml
 
 deploy-local-ansible:
-	ansible-playbook -i ansible/hosts.ini ansible/deploy_local.yml
+	ansible-playbook -i ansible/my_inventory.ini ansible/deploy_local.yml
