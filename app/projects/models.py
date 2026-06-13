@@ -1,6 +1,7 @@
 from django.db import models
 from django.conf import settings
 from django.utils.text import slugify
+from django.core.validators import MaxLengthValidator
 
 from project_members.constants import ProjectRole
 from common.models import TimeStampedModel
@@ -11,7 +12,10 @@ from .constants import InvitationStatus
 class Project(TimeStampedModel):
     name = models.CharField(max_length=32)
     slug = models.SlugField(max_length=32)
-    description = models.TextField(blank=True)
+    description = models.TextField(
+        blank=True,
+        validators=[MaxLengthValidator(300, message="Описание проекта не должно превышать 300 символов.")]
+    )
     owner = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='owned_projects')
     is_public = models.BooleanField(default=False)
     options = models.JSONField(default=dict, blank=True)

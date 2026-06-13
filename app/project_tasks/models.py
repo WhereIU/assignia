@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.core.validators import MaxLengthValidator
 
 from common.models import (
     TimeStampedModel,
@@ -11,7 +12,10 @@ from .constants import TaskStatus, PriorityLevel, RiskLevel
 class Task(TimeStampedModel, SoftDeleteModel):
     project = models.ForeignKey('projects.Project', on_delete=models.CASCADE, related_name='tasks')
     name = models.CharField(max_length=64)
-    description = models.TextField(blank=True)
+    description = models.TextField(
+        blank=True,
+        validators=[MaxLengthValidator(1000, message="Описание задачи не должно превышать 1000 символов.")]
+    )
     creator = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name='created_tasks')
     priority = models.IntegerField(choices=PriorityLevel.choices, default=PriorityLevel.MEDIUM)
     risk_chance = models.IntegerField(choices=RiskLevel.choices, default=RiskLevel.LOW)
