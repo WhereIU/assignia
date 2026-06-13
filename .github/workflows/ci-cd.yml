@@ -43,9 +43,9 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           options: |
             --extra-vars 'deploy_method=copy'
-      env:
-        ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
-        SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
-        SSL_ONLINE_KEY: ${{ secrets.SSL_ONLINE_KEY }}
-        SSL_RU_FULLCHAIN: ${{ secrets.SSL_RU_FULLCHAIN }}
-        SSL_RU_KEY: ${{ secrets.SSL_RU_KEY }}
+        env:
+          ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
+          SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
+          SSL_ONLINE_KEY: ${{ secrets.SSL_ONLINE_KEY }}
+          SSL_RU_FULLCHAIN: ${{ secrets.SSL_RU_FULLCHAIN }}
+          SSL_RU_KEY: ${{ secrets.SSL_RU_KEY }}
