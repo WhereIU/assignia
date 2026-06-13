@@ -1,5 +1,5 @@
 - name: Deploy Assignia
-  hosts: "{{ target_host | default('assignia_server') }}"
+  hosts: assignia_server
 
   tasks:
     # Copy method (default)

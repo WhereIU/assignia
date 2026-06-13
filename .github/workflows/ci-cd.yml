@@ -26,15 +26,23 @@ jobs:
     runs-on: ubuntu-latest
     environment: cd
     if: github.ref == 'refs/heads/main'
+    env:
+      DJANGO_SETTINGS_MODULE: config.settings.prod
     steps:
-      - uses: actions/checkout@v3
-      - name: Install ansible
-        run: pip install ansible
-      - name: Run deploy
-        run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
-          chmod 600 key.pem
-          ansible-playbook -i "${{ secrets.ANSIBLE_HOSTS }}," -u ${{ secrets.SSH_USER }} --private-key key.pem ansible/deploy.yml --extra-vars "deploy_method=copy"
+        - uses: actions/checkout@v3
+        - name: Create inventory file
+          run: |
+            echo "[assignia_server]" > inventory.ini
+            echo "${{ secrets.ANSIBLE_HOSTS }}" >> inventory.ini
+
+        - name: Run Ansible playbook
+          uses: dawidd6/action-ansible-playbook@v2
+          with:
+            playbook: ansible/deploy.yml
+            inventory: inventory.ini
+            key: ${{ secrets.SSH_PRIVATE_KEY }}
+            options: |
+              --extra-vars 'deploy_method=copy'
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
           SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
