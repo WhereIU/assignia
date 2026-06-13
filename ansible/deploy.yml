@@ -1,6 +1,6 @@
 - name: Deploy Assignia
   hosts: assignia_server
-
+  become: yes
   tasks:
     # Copy method (default)
     - name: Copy project files to server
@@ -9,10 +9,10 @@
         dest: /opt/assignia/
       loop:
         - ../docker-compose.prod.yml
-        - ../app
         - ../requirements.txt  
         - ../nginx
         - ../docker
+        - ../app
       when: (deploy_method | default('copy')) == 'copy'
 
     - name: Create .env.prod from secret
