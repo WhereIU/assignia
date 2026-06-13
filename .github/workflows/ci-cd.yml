@@ -21,29 +21,6 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.ci.yml down -v
 
-name: CI/CD
-
-on:
-  push:
-    branches: [ main, dev ]
-  pull_request:
-    branches: [ main, dev ]
-
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    environment: ci
-    steps:
-      - uses: actions/checkout@v3
-      - name: Create .env.ci from secret
-        run: echo "${{ secrets.ENV_FILE_CI }}" > .env.ci
-      - name: Run tests with docker compose
-        run: |
-          docker compose -f docker-compose.ci.yml up --abort-on-container-exit --exit-code-from web
-      - name: Clean up
-        if: always()
-        run: docker compose -f docker-compose.ci.yml down -v
-
   deploy:
     needs: test
     runs-on: ubuntu-latest
