@@ -15,21 +15,21 @@
 
 | Категория | Стек |
 |-----------|------|
-| Бэкенд | Python 3.11, Django 3.2.12, PostgreSQL 15 |
+| Бэкенд | Python 3.13, Django 5.1, PostgreSQL 16 |
 | Фронтенд | Bootstrap 5, HTMX, JavaScript |
-| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible, Redis 7 |
+| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible, Redis 7.4 |
 | Безопасность | HTTPS, CSRF-защита, XSS-защита, SQL-защита |
 
 ## Запуск 
 
 ```bash
-1. Начало пользования
+#1. Начало пользования
 # Переход в рабочее пространство
 git clone https://github.com/WhereIU/assignia.git
 cd assignia
 ## или другой репозиторий
 
-2.1 Запуск разработки
+#2.1 Запуск разработки
 # Конфигурирование для локальной разработки 
 cp .env.example .env 
 ## Конфигурация .env
@@ -40,7 +40,7 @@ make install
 # Запуск для разработки
 make run
 
-2.2 Запуск продакшен
+#2.2 Запуск продакшен
 # Конфигурирование для продакшена
 cp .env.example .env.prod
 ## Конфигурация .env.prod
@@ -51,22 +51,20 @@ make install-prod
 # Запуск продакшена локально
 make run-prod
 
-3.0 Подготовка к деплою
-## Замена nginx сертификатов
-## Настройка подключения к серверам по ssh
+#3.0 Подготовка к деплою
+## Замена nginx сертификатов на свои, включая включение их в nginx/.nginx.conf
+## Настройка подключения к серверам по ssh (ansible)
 
-3.1 Локальный деплой
-## Настройка серверов ansible/hosts.ini
+#3.1 Локальный деплой
+## Настройка серверов ansible/my_inventory.ini
 make deploy-ansible
 
-3.2 Автоматический деплой
+#3.2 Автоматический деплой
 # Новые версии в github ветку main активируют CI/CD
 ## Для полноценной работы необходимо добавить в github секретах два окружения ci и cd:
-## В ci добавляются секреты: SECRET_KEY (тестовый ключ джанго), 
-## POSTGRES_DB, POSTGRES_USER, SQL_HOST, POSTGRES_PASSWORD (для тестовой бд по умолчанию),
-## ALLOWED_HOSTS (разрешенные хосты для тестов в джанго). 
+## В ci добавляются секрет ENV_FILE_CI (заполненный по .env.example примеру в вид разработки .env),
 ## В cd окружении добавляются секреты: ENV_FILE_PROD (заполненный по .env.example примеру в вид продакшена .env.prod),
-## SSH_PRIVATE_KEY, SSH_USER, ANSIBLE_HOSTS (для подключения к удалённым серверам). 
+## SSH_PRIVATE_KEY, ANSIBLE_HOSTS (для подключения к удалённым серверам) и сертификаты (по nginx, см. workflow/ci-cd.yml). 
 ```
 
 MIT License — см. файл [LICENCE](LICENCE).
