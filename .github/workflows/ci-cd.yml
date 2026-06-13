@@ -21,25 +21,43 @@ jobs:
         if: always()
         run: docker compose -f docker-compose.ci.yml down -v
 
+name: CI/CD
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    environment: ci
+    steps:
+      - uses: actions/checkout@v3
+      - name: Create .env.ci from secret
+        run: echo "${{ secrets.ENV_FILE_CI }}" > .env.ci
+      - name: Run tests with docker compose
+        run: |
+          docker compose -f docker-compose.ci.yml up --abort-on-container-exit --exit-code-from web
+      - name: Clean up
+        if: always()
+        run: docker compose -f docker-compose.ci.yml down -v
+
   deploy:
     needs: test
     runs-on: ubuntu-latest
     environment: cd
     if: github.ref == 'refs/heads/main'
-    env:
-      DJANGO_SETTINGS_MODULE: config.settings.prod
     steps:
       - uses: actions/checkout@v3
-
-      - name: Run Ansible playbook
-        uses: dawidd6/action-ansible-playbook@v2
-        with:
-          playbook: ansible/deploy.yml
-          inventory: localhost,
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          options: |
-            --user ${{ secrets.SSH_USER }}
-            --extra-vars "target_host=${{ secrets.ANSIBLE_HOSTS }} deploy_method=copy"
+      - name: Install ansible
+        run: pip install ansible
+      - name: Run deploy
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > key.pem
+          chmod 600 key.pem
+          ansible-playbook -i "${{ secrets.ANSIBLE_HOSTS }}," -u ${{ secrets.SSH_USER }} --private-key key.pem ansible/deploy.yml --extra-vars "deploy_method=copy"
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
           SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
