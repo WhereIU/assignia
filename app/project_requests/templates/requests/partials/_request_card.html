@@ -16,7 +16,7 @@
         <div class="row align-items-center g-3 pb-3 border-bottom border-light mb-4">
             <div class="col-sm-8">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge bg-light text-secondary border border-light-subtle rounded-pill px-2.5 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
+                    <span class="badge bg-light text-secondary border border-light-subtle rounded-pill px-3 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
                         Тикет техподдержки
                     </span>
                 </div>
@@ -35,7 +35,7 @@
         
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="p-3.5 rounded-3 border border-light-subtle bg-body-tertiary h-100">
+                <div class="p-3 rounded-3 border border-light-subtle bg-body-tertiary h-100">
                     <h6 class="text-muted small fw-bold text-uppercase tracking-wider mb-2">Описание проблемы</h6>
                     <p class="text-dark mb-0 text-break lh-base fs-6" style="white-space: pre-line; color: #2d3748 !important;">{{ req.description }}</p>
                 </div>
@@ -68,15 +68,15 @@
 
         <div id="request-actions-container-{{ req.pk }}">
             {% if actions.can_decline or actions.can_convert or actions.can_delete %}
-                <div class="border-top border-light pt-3 mt-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+                <div class="border-top border-light pt-3 mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
                     <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Доступные действия с тикетом</span>
                     
-                    <div class="d-flex gap-2">
+                    <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
                         {% if actions.can_decline %}
                             <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='decline' %}"
                                     hx-target="#modal-container"
                                     hx-swap="innerHTML"
-                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
+                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center justify-content-center gap-1.5 transition-all">
                                 <i class="bi bi-x-circle"></i> Отклонить
                             </button>
                         {% endif %}
@@ -85,7 +85,7 @@
                             <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='convert' %}"
                                     hx-target="#modal-container"
                                     hx-swap="innerHTML"
-                                    class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
+                                    class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm transition-all hover-up">
                                 <i class="bi bi-gear-fill"></i> Создать задачу
                             </button>
                         {% endif %}
@@ -94,7 +94,7 @@
                             <button hx-get="{% url 'project_requests:request_action_confirm' request_pk=req.pk action_type='delete' %}"
                                     hx-target="#modal-container"
                                     hx-swap="innerHTML"
-                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all">
+                                    class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center justify-content-center gap-1.5 transition-all">
                                 <i class="bi bi-trash3"></i> Удалить запрос
                             </button>
                         {% endif %}
@@ -112,6 +112,4 @@
     .hover-left:hover .bi-arrow-left { transform: translateX(-3px); transition: transform 0.2s; }
     .fs-7 { font-size: 0.85rem; }
     .fs-8 { font-size: 0.75rem; }
-    .px-2\.5 { padding-left: 0.65rem; padding-right: 0.65rem; }
-    .p-3\.5 { padding: 1.15rem; }
 </style>

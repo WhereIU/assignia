@@ -21,7 +21,7 @@
         <div class="row align-items-center g-3 pb-3 border-bottom border-light mb-4">
             <div class="col-sm-8">
                 <div class="d-flex align-items-center gap-2 flex-wrap">
-                    <span class="badge bg-light text-success border border-success-subtle rounded-pill px-2.5 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
+                    <span class="badge bg-light text-success border border-success-subtle rounded-pill px-3 py-1 fs-8 fw-semibold text-uppercase tracking-wider">
                         Задача проекта
                     </span>
                 </div>
@@ -44,7 +44,7 @@
         
         <div class="row g-4">
             <div class="col-lg-8">
-                <div class="p-3.5 rounded-3 border border-light-subtle bg-body-tertiary h-100">
+                <div class="p-3 rounded-3 border border-light-subtle bg-body-tertiary h-100">
                     <h6 class="text-muted small fw-bold text-uppercase tracking-wider mb-2">Описание задачи</h6>
                     {% if task.description %}
                         <p class="text-dark mb-0 text-break html-p lh-base fs-6" style="white-space: pre-line; color: #2d3748 !important;">{{ task.description }}</p>
@@ -142,19 +142,19 @@
         </div>
 
         <div id="task-actions-container-{{ task.pk }}">
-            <div class="border-top border-light pt-3 mt-4 d-flex flex-wrap justify-content-between align-items-center gap-2">
+            <div class="border-top border-light pt-3 mt-4 d-flex flex-column flex-sm-row justify-content-between align-items-start align-items-sm-center gap-3">
                 <span class="text-muted small"><i class="bi bi-info-circle me-1"></i> Доступные действия с задачей</span>
 
-                <div class="d-flex gap-2">
+                <div class="d-flex flex-column flex-sm-row gap-2 w-100 w-sm-auto">
                     {% if actions.is_assignee %}
-                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center gap-1">
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 rounded-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1">
                             <i class="bi bi-check-circle-fill"></i> Вы выполняете эту задачу
                         </span>
                     {% elif actions.can_take %}
                         <button hx-post="{% url 'project_tasks:task_take' task_pk=task.pk %}"
                                 hx-target="#task-card-container-{{ task.pk }}"
                                 hx-swap="outerHTML"
-                                class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center gap-1.5 shadow-sm transition-all hover-up">
+                                class="btn btn-success btn-sm px-3 py-1.5 rounded-2 fw-semibold d-inline-flex align-items-center justify-content-center gap-1.5 shadow-sm transition-all hover-up">
                             <i class="bi bi-hand-index-thumb-fill"></i> Взять задачу
                         </button>
                     {% endif %}
@@ -162,7 +162,7 @@
                     {% if actions.can_edit %}
                         <button hx-get="{% url 'project_tasks:task_edit' task_pk=task.pk %}"
                                 hx-target="#modal-container"
-                                class="btn btn-outline-secondary btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all"
+                                class="btn btn-outline-secondary btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center justify-content-center gap-1.5 transition-all"
                                 data-bs-toggle="modal"
                                 data-bs-target="#modal-container">
                             <i class="bi bi-pencil"></i> Редактировать
@@ -172,7 +172,7 @@
                     {% if actions.can_delete %}
                         <button hx-get="{% url 'project_tasks:task_delete_confirm' task_pk=task.pk %}"
                                 hx-target="#modal-container"
-                                class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center gap-1.5 transition-all"
+                                class="btn btn-outline-danger btn-sm px-3 py-1.5 rounded-2 fw-medium d-inline-flex align-items-center justify-content-center gap-1.5 transition-all"
                                 data-bs-toggle="modal"
                                 data-bs-target="#modal-container">
                             <i class="bi bi-trash3"></i> Удалить задачу
@@ -183,3 +183,11 @@
         </div>
     </div>
 </div>
+
+<style>
+    .transition-all { transition: all 0.2s ease-in-out; }
+    .hover-up:hover { transform: translateY(-1px); }
+    .hover-left:hover .bi-arrow-left { transform: translateX(-3px); transition: transform 0.2s; }
+    .fs-7 { font-size: 0.85rem; }
+    .fs-8 { font-size: 0.75rem; }
+</style>
