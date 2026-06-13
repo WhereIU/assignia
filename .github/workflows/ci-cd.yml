@@ -31,20 +31,15 @@ jobs:
     steps:
       - uses: actions/checkout@v3
 
-      - name: Create inventory from secret
-        run: |
-          mkdir -p ansible
-          printf '[assignia_server]\n' > ansible/hosts.ini
-          printf '%s\n' "${{ secrets.ANSIBLE_HOSTS }}" >> ansible/hosts.ini
-
       - name: Run Ansible playbook
         uses: dawidd6/action-ansible-playbook@v2
         with:
           playbook: ansible/deploy.yml
-          inventory: ansible/hosts.ini
+          inventory: localhost,
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           options: |
-            --extra-vars "deploy_method=copy"
+            --user ${{ secrets.SSH_USER }}
+            --extra-vars "target_host=${{ secrets.ANSIBLE_HOSTS }} deploy_method=copy"
         env:
           ENV_FILE_CONTENT: ${{ secrets.ENV_FILE_PROD }}
           SSL_ONLINE_FULLCHAIN: ${{ secrets.SSL_ONLINE_FULLCHAIN }}
