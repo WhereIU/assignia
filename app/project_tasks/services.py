@@ -181,7 +181,7 @@ def update_task(task: Task, **data) -> None:
         if new_status in TaskStatus.values:
             task.status = new_status
 
-    if 'priority' in data:
+    if 'priority' in data and data.get('priority'):
         try:
             new_priority = int(data.get('priority'))
             if new_priority in PriorityLevel.values:

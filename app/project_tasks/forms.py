@@ -4,7 +4,7 @@ from .models import Task
 class TaskCreateForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['name', 'description', 'priority', 'risk_chance', 'risk_impact', 'deadline']
+        fields = ['name', 'description', 'priority', 'risk_chance', 'risk_impact', 'deadline', 'status']
         labels = {
             'name': 'Название задачи',
             'description': 'Описание',
@@ -12,6 +12,7 @@ class TaskCreateForm(forms.ModelForm):
             'risk_chance': 'Шанс риска',
             'risk_impact': 'Последствия риска',
             'deadline': 'Дедлайн',
+            'status': 'Статус задачи',
         }
         widgets = {
             'name': forms.TextInput(attrs={

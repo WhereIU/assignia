@@ -218,7 +218,11 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
                 status=422
             )
         else:
-            update_task(task, **request.POST.dict())
+            allowed_fields = ['status', 'priority', 'risk_chance', 'risk_impact']
+            safe_data = {k: v for k, v in request.POST.items() if k in allowed_fields}
+            
+            update_task(task, **safe_data)
+            
             return render(
                 request,
                 "tasks/partials/_task_card.html",
@@ -283,7 +287,7 @@ def direction_add_to_task(request: HttpRequest, task_pk: int) -> HttpResponse:
 
     response = render(
         request,
-        "directions/partials/_selected_directions.html",
+        "tasks/partials/_selected_directions.html",
         {"task": task},
     )
     response["HX-Trigger"] = "taskComponentsChanged"
