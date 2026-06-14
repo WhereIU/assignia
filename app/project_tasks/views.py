@@ -6,10 +6,10 @@ from django.views.decorators.http import require_POST, require_http_methods
 from django.urls import reverse
 
 from common.selectors import get_page_filters, get_paginated_page
-from common.services import message_success
+from common.services import message_error, message_success
 from projects.selectors import get_project
 
-from .forms import TaskCreateForm
+from .forms import TaskCreateForm, TaskUpdateForm
 from .permissions import ProjectTasksPermissions
 from .selectors import (
     get_task_by_pk,
@@ -106,11 +106,12 @@ def task_create(request: HttpRequest, username: str, slug: str) -> HttpResponse:
                 assignee_ids=request.POST.getlist("assignee_ids"),
             )
             message_success(request, "Задача успешно создана")
-            
-            response = HttpResponse(status=200)
+
+            response = HttpResponse("", status=200)
             response["HX-Trigger"] = "tasksChanged"
             return response
-            
+
+        message_error(request, "Исправьте поля ввода") 
         return render(
             request,
             "tasks/partials/_task_create_form.html",
@@ -196,7 +197,7 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
     if request.method == "POST":
         is_full_form = "name" in request.POST
         if is_full_form:
-            form = TaskCreateForm(request.POST, instance=task)
+            form = TaskUpdateForm(request.POST, instance=task)
             if form.is_valid():
                 update_task(task, **form.cleaned_data)
                 message_success(request, "Изменения сохранены")
@@ -233,7 +234,7 @@ def task_edit(request: HttpRequest, task_pk: int) -> HttpResponse:
                 },
             )
 
-    form = TaskCreateForm(instance=task)
+    form = TaskUpdateForm(instance=task)
     return render(
         request,
         "tasks/partials/_task_edit_form.html",

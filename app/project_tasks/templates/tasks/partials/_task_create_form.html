@@ -1,17 +1,21 @@
-<div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px;">
-    <div class="modal-content border-0 shadow-lg">
-        <div class="modal-header bg-light border-0 py-3">
-            <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
-                <i class="bi bi-kanban text-success"></i> Новая задача проекта
-            </h5>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
-        </div>
-        
-        <form hx-post="{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}" 
-              hx-target="#modal-container"
-              hx-swap="innerHTML">
-            {% csrf_token %}
-            {% load task_ui %}
+{% load task_ui %}
+<form hx-post="{% url 'project_tasks:task_create' username=project.owner.username slug=project.slug %}" 
+      hx-target="this"
+      hx-swap="outerHTML"
+      hx-on::before-request="
+          const mEl = document.getElementById('modal-container');
+          const m = bootstrap.Modal.getInstance(mEl);
+          if (m) { m.hide(); }">
+    {% csrf_token %}
+
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width: 600px;">
+        <div class="modal-content border-0 shadow-lg">
+            <div class="modal-header bg-light border-0 py-3">
+                <h5 class="modal-title fw-bold text-dark d-flex align-items-center gap-2">
+                    <i class="bi bi-kanban text-success"></i> Новая задача проекта
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Закрыть"></button>
+            </div>
             
             <div class="modal-body py-4" style="max-height: 75vh;">
                 <div class="mb-3">
@@ -56,8 +60,8 @@
             
             <div class="modal-footer bg-light border-0 py-3 d-flex justify-content-end gap-2">
                 <button type="button" class="btn btn-outline-secondary fw-medium px-3" data-bs-dismiss="modal">Отмена</button>
-                <button type="submit" class="btn btn-success fw-medium px-4 shadow-sm" data-bs-dismiss="modal">Создать</button>
+                <button type="submit" class="btn btn-success fw-medium px-4 shadow-sm">Создать</button>
             </div>
-        </form>
+        </div>
     </div>
-</div>
+</form>

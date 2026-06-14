@@ -1,10 +1,11 @@
 from django import forms
+
 from .models import Task
 
 class TaskCreateForm(forms.ModelForm):
     class Meta:
         model = Task
-        fields = ['name', 'description', 'priority', 'risk_chance', 'risk_impact', 'deadline', 'status']
+        fields = ['name', 'description', 'priority', 'risk_chance', 'risk_impact', 'deadline']
         labels = {
             'name': 'Название задачи',
             'description': 'Описание',
@@ -12,7 +13,6 @@ class TaskCreateForm(forms.ModelForm):
             'risk_chance': 'Шанс риска',
             'risk_impact': 'Последствия риска',
             'deadline': 'Дедлайн',
-            'status': 'Статус задачи',
         }
         widgets = {
             'name': forms.TextInput(attrs={
@@ -38,4 +38,19 @@ class TaskCreateForm(forms.ModelForm):
                     'max': '3000-12-31T23:59',
                 }
             ),
+        }
+
+
+class TaskUpdateForm(TaskCreateForm):
+    class Meta(TaskCreateForm.Meta):
+        fields = TaskCreateForm.Meta.fields + ['status']
+        
+        labels = {
+            **TaskCreateForm.Meta.labels,
+            'status': 'Статус задачи',
+        }
+
+        widgets = {
+            **TaskCreateForm.Meta.widgets,
+            'status': forms.Select(attrs={'class': 'form-select'}),
         }
