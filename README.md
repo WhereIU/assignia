@@ -15,9 +15,9 @@
 
 | Категория | Стек |
 |-----------|------|
-| Бэкенд | Python 3.13, Django 5.1, PostgreSQL 16 |
+| Бэкенд | Python 3.13, Django 5.1, PostgreSQL 16, Redis 7.4 |
 | Фронтенд | Bootstrap 5, HTMX, JavaScript |
-| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible, Redis 7.4 |
+| DevOps | Docker, Docker Compose, Nginx, GitHub Actions, Ansible |
 | Безопасность | HTTPS, CSRF-защита, XSS-защита, SQL-защита |
 
 ## Запуск 
