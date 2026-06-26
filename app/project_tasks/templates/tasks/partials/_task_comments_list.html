@@ -1,5 +1,5 @@
 <div class="d-flex flex-column gap-2 mb-3">
-    {% for comment in comments %}
+    {% for comment in page_obj %}
         {% include 'partials/_chat_message_item.html' with author=comment.author created_at=comment.created_at text=comment.text project_owner=task.project.owner %}
     {% empty %}
         <div class="text-center py-4 text-muted small">

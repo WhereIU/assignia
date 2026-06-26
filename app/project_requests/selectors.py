@@ -22,7 +22,7 @@ def get_request_by_pk(pk: int) -> Optional[TaskRequest]:
 
 def get_request_messages(req: TaskRequest) -> QuerySet[RequestMessage]:
     """Return messages by request."""
-    return RequestMessage.objects.filter(request=req).order_by("created_at")
+    return RequestMessage.objects.filter(request=req)
 
 
 def get_request_status_choices() -> List[Dict[str, str]]:

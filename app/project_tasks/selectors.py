@@ -56,7 +56,7 @@ def get_tasks_by_project(project) -> QuerySet[Task]:
 def get_task_comments_context(task: Task, page_number: int | str) -> dict:
     """Return task comments context."""
     from common.selectors import get_paginated_page
-    comments = task.comments.select_related("author").order_by("created_at")
+    comments = task.comments.select_related("author").order_by("-created_at")
     page_obj = get_paginated_page(queryset=comments, per_page=15, page=page_number)
     return {"page_obj": page_obj, "task": task}
 
